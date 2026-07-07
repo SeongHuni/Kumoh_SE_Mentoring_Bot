@@ -1,0 +1,2 @@
+"""Department RAG chatbot package."""
+
