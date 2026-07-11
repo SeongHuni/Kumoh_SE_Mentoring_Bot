@@ -58,3 +58,12 @@ class AnswerSource(BaseModel):
     source: str
     published_at: str | None = None
     score: float
+
+
+class RecentNotice(BaseModel):
+    title: str
+    url: str
+    source: str
+    published_at: str | None = None
+    topic_key: str
+    topic_label: str
