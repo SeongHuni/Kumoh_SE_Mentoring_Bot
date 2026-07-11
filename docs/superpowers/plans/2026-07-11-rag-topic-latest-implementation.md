@@ -492,6 +492,7 @@ git commit -m "feat: mark latest posts by topic"
 - Modify: `backend/app/vector_store.py`
 - Modify: `backend/scripts/index.py`
 - Modify: `backend/app/main.py`
+- Modify: `backend/app/rag.py`
 - Modify: `backend/tests/test_vector_store.py`
 
 - [ ] **Step 1: metadata와 where 필터 실패 테스트 작성**
@@ -588,6 +589,8 @@ def get_enriched_posts() -> list[BoardPost]:
 ```
 
 RAG service 생성 시 `topic_catalog=get_topic_catalog()`과 `posts=get_enriched_posts()`를 전달한다. 원본 파일이 없어 health만 확인하는 상황에서는 `get_enriched_posts`가 빈 목록을 반환하도록 `FileNotFoundError`를 잡고, 채팅은 기존 벡터 검색 결과로 계속 동작하게 한다.
+
+이 단계에서는 `RAGService.__init__`가 해당 두 값을 optional context로 받아 저장할 수 있게만 한다. 주제 filter 적용과 추천·최근 공지 사용은 Task 4에서 구현한다. `main.py`가 실제로 service를 초기화할 수 있는지 테스트로 확인한다.
 
 - [ ] **Step 4: vector store 관련 테스트 통과 확인**
 
