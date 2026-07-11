@@ -60,6 +60,8 @@
 - Create: `backend/tests/test_topic_rules.py`
 - Modify: `backend/app/domain.py`
 - Modify: `backend/app/config.py`
+- Modify: `backend/app/chunking.py`
+- Modify: `backend/app/vector_store.py`
 - Modify: `backend/tests/test_local_service.py`
 - Modify: `.env.example`
 
@@ -258,7 +260,21 @@ topic_label: str
 is_latest_topic: bool
 ```
 
-새 필드가 필수인 `TextChunk` fixture를 사용하는 기존 `test_rag.py`, `test_local_service.py`, `test_vector_store.py`에는 `topic_key="general"`, `topic_label="전체 공지"`, `is_latest_topic=False`를 함께 넣는다. Task 4에서 추가하는 RAG fixture만 `course_openings` 값을 사용한다.
+새 필수가 된 `TextChunk`을 생성하는 기존 `chunking.py`와 `vector_store.py`에는 각각 `post` 또는 Chroma metadata에서 `topic_key`, `topic_label`, `is_latest_topic`을 전달한다. 이 단계에서는 vector upsert metadata와 where 필터를 추가하지 않고, 해당 저장·검색 동작은 Task 3에서 구현한다. 기존 `test_rag.py`, `test_local_service.py`, `test_vector_store.py` fixture에는 `topic_key="general"`, `topic_label="전체 공지"`, `is_latest_topic=False`를 함께 넣는다. Task 4에서 추가하는 RAG fixture만 `course_openings` 값을 사용한다.
+
+기존 생성 지점은 다음 최소 필드를 전달한다.
+
+```python
+# chunking.py
+topic_key=post.topic_key or "general",
+topic_label=post.topic_label or "전체 공지",
+is_latest_topic=post.is_latest_topic,
+
+# vector_store.py, until Task 3 stores metadata
+topic_key=str(metadata.get("topic_key", "general")),
+topic_label=str(metadata.get("topic_label", "전체 공지")),
+is_latest_topic=bool(metadata.get("is_latest_topic", False)),
+```
 
 `config.py`에는 `topic_rules_path: Path`를 추가하고 기본값을 `_resolve_path(os.getenv("TOPIC_RULES_PATH", "./data/topic_rules.json"))`로 설정한다. `.env.example`에도 `TOPIC_RULES_PATH=./data/topic_rules.json`을 추가한다.
 
