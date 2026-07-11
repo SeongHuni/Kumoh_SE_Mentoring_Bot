@@ -22,4 +22,27 @@ def test_chunk_post_preserves_source_metadata() -> None:
     assert chunks[0].id == "kumoh:42:0"
     assert all(chunk.post_id == "42" for chunk in chunks)
     assert all(chunk.url == post.url for chunk in chunks)
+    assert chunks[0].topic_key == "general"
+    assert chunks[0].topic_label == "전체 공지"
+    assert chunks[0].is_latest_topic is False
     assert chunks[0].text.startswith("제목: 수강신청 안내")
+
+
+def test_chunk_post_preserves_enriched_topic_metadata() -> None:
+    post = BoardPost(
+        id="43",
+        source="kumoh",
+        title="개설강좌 안내",
+        content="개설강좌 최신 안내입니다.",
+        published_at="2026-02-11",
+        url="https://example.com/posts/43",
+        topic_key="course",
+        topic_label="수업",
+        is_latest_topic=True,
+    )
+
+    chunk = chunk_post(post)[0]
+
+    assert chunk.topic_key == "course"
+    assert chunk.topic_label == "수업"
+    assert chunk.is_latest_topic is True
