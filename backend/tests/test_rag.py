@@ -1,7 +1,8 @@
 from collections.abc import Sequence
 
-from backend.app.domain import RetrievedChunk, TextChunk
+from backend.app.domain import BoardPost, RetrievedChunk, TextChunk
 from backend.app.rag import NO_ANSWER, RAGService
+from backend.app.topic_rules import TopicCatalog
 
 
 def retrieved(score: float = 0.9) -> RetrievedChunk:
@@ -66,3 +67,27 @@ def test_rag_rejects_low_similarity_without_calling_generation() -> None:
     assert result.grounded is False
     assert result.answer == NO_ANSWER
     assert provider.answer_called is False
+
+
+def test_rag_accepts_and_stores_topic_context() -> None:
+    provider = FakeProvider()
+    catalog = TopicCatalog(default_topic_key="general", rules=())
+    posts = [
+        BoardPost(
+            id="123",
+            source="kumoh",
+            title="캡스톤디자인 안내",
+            content="신청 안내",
+            url="https://example.com/123",
+        )
+    ]
+
+    service = RAGService(
+        provider=provider,
+        vector_store=FakeStore([]),  # type: ignore[arg-type]
+        topic_catalog=catalog,
+        posts=posts,
+    )
+
+    assert service.topic_catalog is catalog
+    assert service.posts == posts

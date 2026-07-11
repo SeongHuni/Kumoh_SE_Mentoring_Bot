@@ -49,19 +49,30 @@ class ChromaVectorStore:
                     "url": chunk.url,
                     "published_at": chunk.published_at or "",
                     "chunk_index": chunk.chunk_index,
+                    "topic_key": chunk.topic_key,
+                    "topic_label": chunk.topic_label,
+                    "is_latest_topic": chunk.is_latest_topic,
                 }
                 for chunk in chunks
             ],
         )
 
-    def query(self, embedding: Sequence[float], top_k: int) -> list[RetrievedChunk]:
+    def query(
+        self,
+        embedding: Sequence[float],
+        top_k: int,
+        where: dict[str, object] | None = None,
+    ) -> list[RetrievedChunk]:
         if self.count() == 0:
             return []
-        result = self.collection.query(
-            query_embeddings=[list(embedding)],
-            n_results=min(top_k, self.count()),
-            include=["documents", "metadatas", "distances"],
-        )
+        query_kwargs: dict[str, object] = {
+            "query_embeddings": [list(embedding)],
+            "n_results": min(top_k, self.count()),
+            "include": ["documents", "metadatas", "distances"],
+        }
+        if where is not None:
+            query_kwargs["where"] = where
+        result = self.collection.query(**query_kwargs)
         ids = result.get("ids", [[]])[0]
         documents = result.get("documents", [[]])[0]
         metadatas = result.get("metadatas", [[]])[0]
@@ -82,9 +93,9 @@ class ChromaVectorStore:
                         url=str(metadata.get("url", "")),
                         published_at=str(metadata.get("published_at") or "") or None,
                         chunk_index=int(metadata.get("chunk_index", 0)),
-                        topic_key=str(metadata.get("topic_key", "general")),
-                        topic_label=str(metadata.get("topic_label", "전체 공지")),
-                        is_latest_topic=bool(metadata.get("is_latest_topic", False)),
+                        topic_key=str(metadata["topic_key"]),
+                        topic_label=str(metadata["topic_label"]),
+                        is_latest_topic=bool(metadata["is_latest_topic"]),
                     ),
                     score=max(0.0, min(1.0, 1.0 - float(distance))),
                 )

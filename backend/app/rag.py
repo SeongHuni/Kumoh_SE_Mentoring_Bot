@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import re
 
-from backend.app.domain import AnswerSource, RetrievedChunk
+from backend.app.domain import AnswerSource, BoardPost, RetrievedChunk
 from backend.app.openai_service import AIProvider
 from backend.app.schemas import ChatResponse
+from backend.app.topic_rules import TopicCatalog
 from backend.app.vector_store import ChromaVectorStore
 
 NO_ANSWER = (
@@ -22,11 +23,15 @@ class RAGService:
         vector_store: ChromaVectorStore,
         top_k: int = 5,
         min_score: float = 0.2,
+        topic_catalog: TopicCatalog | None = None,
+        posts: list[BoardPost] | None = None,
     ) -> None:
         self.provider = provider
         self.vector_store = vector_store
         self.top_k = top_k
         self.min_score = min_score
+        self.topic_catalog = topic_catalog
+        self.posts = posts if posts is not None else []
 
     @staticmethod
     def _sources(items: list[RetrievedChunk]) -> list[AnswerSource]:
