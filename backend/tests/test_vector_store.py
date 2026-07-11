@@ -12,6 +12,9 @@ def make_chunk(chunk_id: str, title: str) -> TextChunk:
         url=f"https://example.com/{chunk_id}",
         published_at="2026-01-01",
         chunk_index=0,
+        topic_key="general",
+        topic_label="전체 공지",
+        is_latest_topic=False,
     )
 
 

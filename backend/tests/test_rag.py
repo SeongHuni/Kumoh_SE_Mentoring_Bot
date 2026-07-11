@@ -15,6 +15,9 @@ def retrieved(score: float = 0.9) -> RetrievedChunk:
             url="https://example.com/123",
             published_at="2026-03-19",
             chunk_index=0,
+            topic_key="general",
+            topic_label="전체 공지",
+            is_latest_topic=False,
         ),
         score=score,
     )

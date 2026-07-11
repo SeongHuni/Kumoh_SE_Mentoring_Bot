@@ -55,6 +55,9 @@ def chunk_post(post: BoardPost, chunk_size: int = 900, overlap: int = 150) -> li
                     url=post.url,
                     published_at=post.published_at,
                     chunk_index=index,
+                    topic_key=post.topic_key or "general",
+                    topic_label=post.topic_label or "전체 공지",
+                    is_latest_topic=post.is_latest_topic,
                 )
             )
         if end >= len(text):

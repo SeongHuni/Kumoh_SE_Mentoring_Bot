@@ -31,6 +31,7 @@ class Settings:
     chroma_path: Path
     chroma_collection: str
     raw_posts_path: Path
+    topic_rules_path: Path
     rag_top_k: int
     rag_min_score: float
     crawler_delay_seconds: float
@@ -55,6 +56,7 @@ def get_settings() -> Settings:
         chroma_path=_resolve_path(os.getenv("CHROMA_PATH", "./chroma_db")),
         chroma_collection=os.getenv("CHROMA_COLLECTION", "se_mentor_posts"),
         raw_posts_path=_resolve_path(os.getenv("RAW_POSTS_PATH", "./data/raw/posts.json")),
+        topic_rules_path=_resolve_path(os.getenv("TOPIC_RULES_PATH", "./data/topic_rules.json")),
         rag_top_k=max(1, int(os.getenv("RAG_TOP_K", "5"))),
         rag_min_score=float(os.getenv("RAG_MIN_SCORE", "0.20")),
         crawler_delay_seconds=max(0.0, float(os.getenv("CRAWLER_DELAY_SECONDS", "1.0"))),

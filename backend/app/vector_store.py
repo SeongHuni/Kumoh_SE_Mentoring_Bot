@@ -82,6 +82,9 @@ class ChromaVectorStore:
                         url=str(metadata.get("url", "")),
                         published_at=str(metadata.get("published_at") or "") or None,
                         chunk_index=int(metadata.get("chunk_index", 0)),
+                        topic_key=str(metadata.get("topic_key", "general")),
+                        topic_label=str(metadata.get("topic_label", "전체 공지")),
+                        is_latest_topic=bool(metadata.get("is_latest_topic", False)),
                     ),
                     score=max(0.0, min(1.0, 1.0 - float(distance))),
                 )

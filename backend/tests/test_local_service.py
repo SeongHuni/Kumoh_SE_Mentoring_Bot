@@ -24,6 +24,9 @@ def test_local_answer_contains_source_marker() -> None:
             url="https://example.com/1",
             published_at="2026-02-20",
             chunk_index=0,
+            topic_key="general",
+            topic_label="전체 공지",
+            is_latest_topic=False,
         ),
         score=0.8,
     )
