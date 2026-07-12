@@ -1,6 +1,6 @@
 # SE Mentor Bot 자동 평가 작업 인수인계
 
-> 갱신 시점: 2026-07-12, 설계 승인 후 사양 문서 작성 단계
+> 갱신 시점: 2026-07-12, 설계·상세 구현 계획 완료·실행 방식 선택 전
 
 ## 작업 목표
 
@@ -28,6 +28,7 @@
 설계 문서:
 
 - `docs/superpowers/specs/2026-07-12-rag-evaluation-design.md`
+- `docs/superpowers/plans/2026-07-12-rag-evaluation-implementation.md`
 
 ## 진행도
 
@@ -36,18 +37,18 @@
 | 코드·문서 현황 재검토 | 완료 | main, PROJECT_STATUS, RAG·provider·data interface 확인 |
 | 접근안 비교 | 완료 | End-to-End, retrieval-only, provider matrix 비교 |
 | 사용자 설계 승인 | 완료 | 사용자가 `승인` 응답 |
-| 설계 문서 작성·커밋 | 진행 중 | placeholder·모순·범위 self-review 완료, 커밋 필요 |
-| 상세 구현 계획 | 대기 | 설계 문서 사용자 확인 후 작성 |
-| TDD 구현 | 대기 | 계획 승인 후 시작 |
+| 설계 문서 작성·커밋 | 완료 | `ebb7bbb docs: design automated rag evaluation workflow` |
+| 상세 구현 계획 | 완료 | Task 1~6, RED/GREEN·커밋·진행 기록 단계와 self-review 완료 |
+| TDD 구현 | 대기 | subagent-driven 또는 inline 실행 방식 선택 후 시작 |
 | 전체 검증·최종 리뷰 | 대기 | 구현 완료 후 실행 |
 
 ## 다음 작업자 즉시 수행 항목
 
-1. 설계 문서 placeholder·모순·범위 self-review
-2. `git diff --check`
-3. 설계·진행 문서 커밋
-4. 사용자에게 사양 파일 검토 요청
-5. 승인 후 `writing-plans`로 상세 구현 계획 작성
+1. 구현 계획과 인수인계 갱신 커밋 확인
+2. 사용자에게 subagent-driven 또는 inline 실행 방식 선택 요청
+3. `superpowers:using-git-worktrees`로 `codex/rag-evaluation` 격리 브랜치 준비
+4. 격리 worktree baseline 26 backend tests·9 frontend tests·Ruff 확인
+5. Task 1 EvaluationCase RED 테스트부터 시작
 
 ## TDD 진행 기록 형식
 
