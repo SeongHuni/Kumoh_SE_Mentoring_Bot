@@ -67,3 +67,9 @@
 - 데이터 갱신 뒤 `expected_grounded`와 source 제목 baseline을 원문과 다시 대조해야 한다.
 - OpenAI, live crawler, CI는 이번 구현 범위 밖이다.
 - `.env`, API key, `chroma_db`, 평가 생성 보고서는 커밋하지 않는다.
+
+### Task 1 — EvaluationCase와 loader
+
+- RED: evaluation module 부재로 test collection 실패
+- GREEN: 유효 입력, 중복 id, kebab-case, grounded/source 모순 테스트 통과
+- 다음 시작점: topic·grounded·latest source 평가 실패 테스트
