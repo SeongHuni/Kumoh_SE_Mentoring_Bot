@@ -2,29 +2,8 @@
 
 import { FormEvent, useRef, useState } from "react";
 
-type Source = {
-  title: string;
-  url: string;
-  source: string;
-  published_at: string | null;
-  score: number;
-};
-
-type AssistantMessage = {
-  id: number;
-  role: "assistant";
-  content: string;
-  sources: Source[];
-  grounded?: boolean;
-};
-
-type UserMessage = {
-  id: number;
-  role: "user";
-  content: string;
-};
-
-type Message = AssistantMessage | UserMessage;
+import { ChatMessage } from "./components/ChatMessage";
+import type { AssistantMessage, Message, UserMessage } from "./components/types";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const suggestions = [
@@ -39,6 +18,8 @@ const initialMessage: AssistantMessage = {
   content:
     "안녕하세요! 학과 공지와 SE 게시판을 바탕으로 학사·진로 정보를 찾아드려요. 궁금한 내용을 질문해 주세요.",
   sources: [],
+  suggested_questions: suggestions,
+  recent_notices: [],
 };
 
 export default function Home() {
@@ -74,6 +55,8 @@ export default function Home() {
           content: payload.answer,
           sources: payload.sources ?? [],
           grounded: payload.grounded,
+          suggested_questions: payload.suggested_questions ?? [],
+          recent_notices: payload.recent_notices ?? [],
         },
       ]);
     } catch (error) {
@@ -88,6 +71,8 @@ export default function Home() {
               : "서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.",
           sources: [],
           grounded: false,
+          suggested_questions: [],
+          recent_notices: [],
         },
       ]);
     } finally {
@@ -131,49 +116,12 @@ export default function Home() {
 
         <div className="message-list" aria-live="polite">
           {messages.map((message) => (
-            <article key={message.id} className={`message-row ${message.role}`}>
-              <div className="avatar" aria-hidden="true">
-                {message.role === "assistant" ? "SE" : "나"}
-              </div>
-              <div className="message-stack">
-                <div className="message-bubble">
-                  {message.content.split("\n").map((line, index) => (
-                    <span key={`${message.id}-${index}`}>
-                      {line}
-                      {index < message.content.split("\n").length - 1 && <br />}
-                    </span>
-                  ))}
-                </div>
-                {message.role === "assistant" && message.sources.length > 0 && (
-                  <div className="source-panel">
-                    <p className="source-heading">참고한 게시글</p>
-                    <div className="source-grid">
-                      {message.sources.map((source, index) => (
-                        <a
-                          className="source-card"
-                          href={source.url}
-                          key={`${source.url}-${index}`}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          <span className="source-index">{String(index + 1).padStart(2, "0")}</span>
-                          <span className="source-copy">
-                            <strong>{source.title}</strong>
-                            <small>
-                              {source.source === "kumoh" ? "학과 게시판" : "SE 게시판"}
-                              {source.published_at ? ` · ${source.published_at}` : ""}
-                            </small>
-                          </span>
-                          <span className="source-arrow" aria-hidden="true">
-                            ↗
-                          </span>
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </article>
+            <ChatMessage
+              key={message.id}
+              message={message}
+              isLoading={isLoading}
+              onSuggestion={(suggestion) => void submitQuestion(suggestion)}
+            />
           ))}
 
           {isLoading && (
@@ -191,15 +139,6 @@ export default function Home() {
         </div>
 
         <footer className="composer-wrap">
-          {messages.length === 1 && (
-            <div className="suggestions" aria-label="추천 질문">
-              {suggestions.map((suggestion) => (
-                <button key={suggestion} type="button" onClick={() => void submitQuestion(suggestion)}>
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          )}
           <form className="composer" onSubmit={handleSubmit}>
             <label className="sr-only" htmlFor="question">
               질문 입력
