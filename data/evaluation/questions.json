@@ -4,5 +4,19 @@
   {"question": "취업 관련 특강이나 프로그램이 있어?", "category": "취업"},
   {"question": "수강지도 상담은 어떻게 신청해?", "category": "상담"},
   {"question": "장학금 신청 공지를 찾아줘", "category": "장학"},
-  {"question": "오늘 학생식당 메뉴를 알려줘", "category": "범위 밖"}
+  {"question": "오늘 학생식당 메뉴를 알려줘", "category": "범위 밖"},
+  {
+    "question": "이번 학기 개설강좌를 알려줘",
+    "category": "수업",
+    "expected_topic_key": "course_openings",
+    "expected_latest_only": true,
+    "expected_grounded": true
+  },
+  {
+    "question": "데이터에 없는 기숙사 식단을 알려줘",
+    "category": "범위 밖",
+    "expected_topic_key": "general",
+    "expected_latest_only": true,
+    "expected_grounded": false
+  }
 ]

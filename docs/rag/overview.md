@@ -20,24 +20,30 @@
 flowchart LR
     A[공개 게시판] --> B[크롤러]
     B --> C[data/raw/posts.json]
-    C --> D[정규화 및 청킹]
+    C --> TC[주제 분류 및 최신본 계산]
+    TR[data/topic_rules.json] --> TC
+    TC --> D[정규화 및 청킹]
     D --> E[Embedding Provider]
     E --> F[(Chroma Vector DB)]
-    Q[사용자 질문] --> QE[질문 임베딩]
+    Q[사용자 질문] --> QT[질문 주제 분류]
+    TR --> QT
+    QT --> QE[질문 임베딩]
     QE --> F
+    QT --> WF[주제 및 최신본 where filter]
+    WF --> F
     F --> R[Top-K 벡터 검색]
     R --> RR[제목 기반 재정렬]
     RR --> T[절대·상대 임계값 필터]
     T --> G[답변 Provider]
-    G --> API[FastAPI 응답]
-    API --> UI[Next.js 채팅 및 출처 카드]
+    G --> API[답변·출처·추천 질문·최근 공지]
+    API --> UI[Next.js 채팅 UI]
 ```
 
 파이프라인은 오프라인 인덱싱과 온라인 질의로 나뉜다.
 
 ```text
-오프라인: crawl → raw JSON → chunk → embed → Chroma upsert
-온라인: question → embed → cosine search → rerank → filter → answer + sources
+오프라인: crawl → raw JSON → topic/latest enrichment → chunk → embed → Chroma upsert
+온라인: question → topic classification → latest-only where filter → embed → cosine search → rerank → score filter → answer + sources + follow-ups
 ```
 
 ## 확장 우선순위

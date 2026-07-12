@@ -33,6 +33,23 @@
 
 원본은 `data/raw/posts.json`에 UTF-8 JSON으로 저장한다. 벡터 DB를 원본 저장소로 사용하지 않는다.
 
+## 주제 보강과 최신 게시글 계산
+
+`data/topic_rules.json`은 주제 키(`key`), 화면 표시명(`label`), 분류 키워드(`keywords`), 추천 질문(`suggested_questions`)을 관리하는 단일 유지보수 지점이다. `TOPIC_RULES_PATH`로 다른 파일을 지정할 수 있지만, 운영 규칙은 한 파일에서 관리한다. 제목과 본문에 이미 지정된 `topic_key`가 없으면 가장 긴 일치 키워드를 우선해 분류하고, 일치 항목이 없으면 `default_topic_key`인 `general`을 사용한다.
+
+인덱싱 전에 `enrich_posts`가 `topic_key`, `topic_label`, `is_latest_topic`을 파생한다. 주제별 최신 게시글은 다음 우선순위로 결정한다.
+
+1. 파싱 가능한 `published_at`이 있는 게시글을 우선한다.
+2. 유효한 게시일끼리는 `published_at`이 가장 늦은 게시글을 선택한다.
+3. 게시일이 없거나 잘못된 형식이면 `crawled_at`을 비교값으로 사용한다.
+4. 같은 시각이면 `crawled_at`으로 순서를 결정한다.
+
+주제마다 한 게시글만 `is_latest_topic=true`가 되며 그 게시글에서 생성된 모든 청크가 같은 값을 갖는다. 같은 주제의 이전 게시글도 원본과 인덱스에는 보존되지만 온라인 답변 검색에서는 제외된다. 원본 게시글 또는 `data/topic_rules.json`을 변경하면 다음 명령으로 전체 인덱스를 재생성해야 한다.
+
+```powershell
+backend/.venv/Scripts/python -m backend.scripts.index --reset
+```
+
 ## 정규화와 청킹
 
 `chunking.py`는 공백과 과도한 줄바꿈을 정리한 뒤 다음 헤더를 본문 앞에 추가한다.

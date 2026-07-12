@@ -12,6 +12,7 @@
 | `CHROMA_PATH` | `./chroma_db` | 벡터 저장 위치 |
 | `CHROMA_COLLECTION` | `se_mentor_posts` | 컬렉션 이름 |
 | `RAW_POSTS_PATH` | `./data/raw/posts.json` | 원본 JSON |
+| `TOPIC_RULES_PATH` | `./data/topic_rules.json` | 주제·키워드·추천 질문 규칙 |
 | `RAG_TOP_K` | `5` | 초기 벡터 검색 수 |
 | `RAG_MIN_SCORE` | `0.20` | 절대 임계값 |
 | `CRAWLER_DELAY_SECONDS` | `1.0` | 사이트 요청 간격 |
@@ -37,6 +38,15 @@ Invoke-RestMethod http://localhost:8000/api/health
 
 `/api/health`에서 provider, 모델명, 인덱싱 청크 수를 확인한다. 인덱스가 비어 있으면 채팅 API는 `409`, OpenAI 호출 실패는 `502`를 반환한다.
 
+`data/topic_rules.json`은 주제 관리의 단일 유지보수 지점이다. 주제 키·표시명·키워드·추천 질문 또는 원본 게시글을 변경하면 반드시 `--reset`으로 전체 재인덱싱한다. 최신성은 유효한 `published_at`을 우선하고, 누락되거나 파싱할 수 없을 때 `crawled_at`을 사용한다. 온라인 검색은 `is_latest_topic=true`를 적용해 같은 주제의 이전 게시글을 제외한다.
+
+규칙 변경 후에는 `/api/chat` 응답에서 다음을 함께 점검한다.
+
+- `sources`가 분류된 주제의 최신 게시글만 가리키는지
+- `suggested_questions`가 해당 주제 또는 `general` 규칙과 일치하는지
+- `recent_notices`에 주제 라벨·게시일·canonical URL이 있는지
+- 근거가 없을 때 `grounded=false`이고 추측성 답변을 만들지 않는지
+
 ## 테스트와 평가
 
 현재 단위 테스트는 청킹, 학과 게시판 파싱, 저장 중복 제거, Chroma 최근접 검색, RAG 임계값, 로컬 임베딩 결정성 및 출처 표기를 검사한다.
@@ -50,6 +60,8 @@ backend/.venv/Scripts/python -m pytest backend/tests
 
 - 기대 문서가 Top-1/Top-3/Top-5에 포함되는지
 - 범위 밖 질문이 `grounded=false`인지
+- `expected_topic_key`와 실제 주제 분류가 일치하는지
+- `expected_latest_only=true` 질문의 모든 출처가 주제별 최신 게시글인지
 - 답변의 날짜·대상·신청 경로가 원문과 일치하는지
 - 표시한 `[자료 N]`과 source 카드가 일치하는지
 - provider별 지연시간, API 비용, 실패율
