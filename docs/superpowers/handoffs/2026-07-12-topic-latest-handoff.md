@@ -2,6 +2,8 @@
 
 > 기록 시점: 2026-07-12, Task 1~8 구현·전체 검증 완료
 
+> 최신 전체 진행도·개선 TODO·검증 기준은 `docs/PROJECT_STATUS.md`에서 관리한다.
+
 ## 작업 위치
 
 - 저장소: `C:\Users\tjdgns\3-2_SummerSIG\Kumoh_SE_Mentoring_Bot`

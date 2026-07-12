@@ -2,7 +2,7 @@
 
 SE 게시판과 금오공과대학교 소프트웨어전공 공지사항의 공개 게시글 약 100건을 수집하고, 검색된 게시글만 근거로 답변하는 RAG 챗봇 프로토타입입니다. 답변에는 사용한 게시글의 제목·작성일·원문 링크와 함께 추천 질문·최근 공지가 표시됩니다.
 
-RAG 단계별 흐름, 현재 선택값, 대안 및 변경 시 재인덱싱 기준은 [`docs/RAG_ARCHITECTURE.md`](docs/RAG_ARCHITECTURE.md)를 참고하세요.
+전체 진행도·우선순위 TODO·검증 기준은 [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md), RAG 단계별 흐름과 변경 시 재인덱싱 기준은 [`docs/RAG_ARCHITECTURE.md`](docs/RAG_ARCHITECTURE.md)를 참고하세요.
 
 ## 구성
 

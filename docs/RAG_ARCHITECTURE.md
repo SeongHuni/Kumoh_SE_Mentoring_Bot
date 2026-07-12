@@ -6,6 +6,7 @@
 
 | 문서 | 다루는 내용 |
 | --- | --- |
+| [`PROJECT_STATUS.md`](PROJECT_STATUS.md) | 전체 진행도, 우선순위 TODO, 검증 매트릭스 |
 | [`rag/overview.md`](rag/overview.md) | 현재 운영 상태, 전체 데이터 흐름, 확장 우선순위 |
 | [`rag/data-pipeline.md`](rag/data-pipeline.md) | 게시판 수집, 원본 스키마, 정규화와 청킹 |
 | [`rag/providers.md`](rag/providers.md) | `AI_PROVIDER`, 로컬/OpenAI provider, 임베딩 불변조건 |
