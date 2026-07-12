@@ -14,7 +14,7 @@
 | `RAW_POSTS_PATH` | `./data/raw/posts.json` | 원본 JSON |
 | `TOPIC_RULES_PATH` | `./data/topic_rules.json` | 주제·키워드·추천 질문 규칙 |
 | `RAG_TOP_K` | `5` | 초기 벡터 검색 수 |
-| `RAG_MIN_SCORE` | `0.20` | 절대 임계값 |
+| `RAG_MIN_SCORE` | `0.09` | 절대 임계값(로컬 해시 임베딩 보정값) |
 | `CRAWLER_DELAY_SECONDS` | `1.0` | 사이트 요청 간격 |
 | `SEBOARD_API_URL` | 빈 값 | 확인된 공개 API 주소 |
 

@@ -58,7 +58,7 @@ def get_settings() -> Settings:
         raw_posts_path=_resolve_path(os.getenv("RAW_POSTS_PATH", "./data/raw/posts.json")),
         topic_rules_path=_resolve_path(os.getenv("TOPIC_RULES_PATH", "./data/topic_rules.json")),
         rag_top_k=max(1, int(os.getenv("RAG_TOP_K", "5"))),
-        rag_min_score=float(os.getenv("RAG_MIN_SCORE", "0.20")),
+        rag_min_score=float(os.getenv("RAG_MIN_SCORE", "0.09")),
         crawler_delay_seconds=max(0.0, float(os.getenv("CRAWLER_DELAY_SECONDS", "1.0"))),
         crawler_timeout_seconds=max(1.0, float(os.getenv("CRAWLER_TIMEOUT_SECONDS", "20.0"))),
         seboard_api_url=os.getenv("SEBOARD_API_URL") or None,
