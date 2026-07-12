@@ -882,6 +882,7 @@ git commit -m "feat: return topic-aware chat follow-ups"
 - Create: `frontend/vitest.config.ts`
 - Create: `frontend/vitest.setup.ts`
 - Modify: `frontend/package.json`
+- Modify: `.gitignore`
 
 - [ ] **Step 1: 테스트 도구 설정과 실패 테스트 작성**
 
@@ -902,6 +903,8 @@ devDependencies에는 다음 패키지를 추가한다.
 ```
 
 Install: `npm --prefix frontend install`
+
+TypeScript와 Next.js가 생성하는 `*.tsbuildinfo`는 빌드 캐시이므로 `.gitignore`에 추가하고 커밋 대상에서 제외한다.
 
 `frontend/vitest.config.ts`:
 
