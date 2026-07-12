@@ -241,6 +241,8 @@ a {
   background: white;
   font-size: 15px;
   line-height: 1.72;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
   box-shadow: 0 7px 22px rgba(16, 37, 31, 0.05);
 }
 
@@ -317,6 +319,90 @@ a {
   font-size: 16px;
 }
 
+.follow-up-section {
+  margin-top: 12px;
+}
+
+.recent-notice-section {
+  margin-top: 12px;
+}
+
+.follow-up-heading,
+.notice-heading {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.recommendation-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.recommendation-chips button {
+  padding: 8px 11px;
+  color: var(--green-dark);
+  border: 1px solid rgba(0, 102, 79, 0.2);
+  border-radius: 999px;
+  background: rgba(183, 237, 207, 0.25);
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+}
+
+.recommendation-chips button:hover:not(:disabled) {
+  background: rgba(183, 237, 207, 0.55);
+}
+
+.recommendation-chips button:disabled {
+  cursor: wait;
+  opacity: 0.5;
+}
+
+.recent-notice-list {
+  display: grid;
+  gap: 7px;
+}
+
+.notice-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 5px 12px;
+  padding: 11px 13px;
+  color: var(--ink);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: rgba(246, 248, 240, 0.9);
+}
+
+.notice-card:hover {
+  border-color: rgba(0, 102, 79, 0.34);
+  background: white;
+}
+
+.notice-card strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.notice-card small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.notice-arrow {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  color: var(--green);
+  align-self: center;
+}
+
 .typing {
   display: flex;
   gap: 5px;
@@ -351,28 +437,6 @@ a {
   padding: 14px clamp(18px, 5vw, 56px) 18px;
   border-top: 1px solid var(--line);
   background: rgba(247, 247, 241, 0.82);
-}
-
-.suggestions {
-  display: flex;
-  gap: 7px;
-  padding-bottom: 10px;
-  overflow-x: auto;
-}
-
-.suggestions button {
-  flex: 0 0 auto;
-  padding: 8px 11px;
-  color: var(--green-dark);
-  border: 1px solid rgba(0, 102, 79, 0.19);
-  border-radius: 999px;
-  background: rgba(183, 237, 207, 0.22);
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.suggestions button:hover {
-  background: rgba(183, 237, 207, 0.5);
 }
 
 .composer {
@@ -448,6 +512,16 @@ a {
 }
 
 @media (max-width: 720px) {
+  .recommendation-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .recommendation-chips button {
+    flex: 0 0 auto;
+  }
+
   .page-shell {
     padding: 0;
   }

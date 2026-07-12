@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import re
 
-from backend.app.domain import AnswerSource, RetrievedChunk
+from backend.app.domain import AnswerSource, BoardPost, RetrievedChunk
 from backend.app.openai_service import AIProvider
+from backend.app.recommendations import recent_notices, suggested_questions
 from backend.app.schemas import ChatResponse
+from backend.app.topic_rules import TopicCatalog
 from backend.app.vector_store import ChromaVectorStore
 
 NO_ANSWER = (
@@ -22,11 +24,15 @@ class RAGService:
         vector_store: ChromaVectorStore,
         top_k: int = 5,
         min_score: float = 0.2,
+        topic_catalog: TopicCatalog | None = None,
+        posts: list[BoardPost] | None = None,
     ) -> None:
         self.provider = provider
         self.vector_store = vector_store
         self.top_k = top_k
         self.min_score = min_score
+        self.topic_catalog = topic_catalog
+        self.posts = posts if posts is not None else []
 
     @staticmethod
     def _sources(items: list[RetrievedChunk]) -> list[AnswerSource]:
@@ -64,14 +70,41 @@ class RAGService:
         return sorted(reranked, key=lambda item: item.score, reverse=True)
 
     def ask(self, question: str) -> ChatResponse:
+        topic = self.topic_catalog.classify(question) if self.topic_catalog else None
         query_embedding = self.provider.embed([question])[0]
+        where = None
+        if topic is not None:
+            where = {"is_latest_topic": True}
+            if topic.key != self.topic_catalog.default_topic_key:
+                where = {
+                    "$and": [
+                        {"is_latest_topic": True},
+                        {"topic_key": topic.key},
+                    ]
+                }
         retrieved = self._rerank(
-            question, self.vector_store.query(query_embedding, self.top_k)
+            question, self.vector_store.query(query_embedding, self.top_k, where=where)
         )
         candidates = [item for item in retrieved if item.score >= self.min_score]
         best_score = max((item.score for item in candidates), default=0.0)
         relevant = [item for item in candidates if item.score >= best_score * 0.75]
+        suggestions = (
+            suggested_questions(self.topic_catalog, topic.key) if topic else []
+        )
+        notices = recent_notices(self.posts, topic.key, self.topic_catalog) if topic else []
         if not relevant:
-            return ChatResponse(answer=NO_ANSWER, sources=[], grounded=False)
+            return ChatResponse(
+                answer=NO_ANSWER,
+                sources=[],
+                grounded=False,
+                suggested_questions=suggestions,
+                recent_notices=notices,
+            )
         answer = self.provider.answer(question, relevant)
-        return ChatResponse(answer=answer, sources=self._sources(relevant), grounded=True)
+        return ChatResponse(
+            answer=answer,
+            sources=self._sources(relevant),
+            grounded=True,
+            suggested_questions=suggestions,
+            recent_notices=notices,
+        )

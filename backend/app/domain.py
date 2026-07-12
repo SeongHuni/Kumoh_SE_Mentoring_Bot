@@ -20,6 +20,9 @@ class BoardPost(BaseModel):
     url: str
     attachments: list[Attachment] = Field(default_factory=list)
     crawled_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    topic_key: str | None = None
+    topic_label: str | None = None
+    is_latest_topic: bool = False
 
     @field_validator("id", "source", "title", "content", "url")
     @classmethod
@@ -39,6 +42,9 @@ class TextChunk(BaseModel):
     url: str
     published_at: str | None
     chunk_index: int
+    topic_key: str
+    topic_label: str
+    is_latest_topic: bool
 
 
 class RetrievedChunk(BaseModel):
@@ -52,3 +58,12 @@ class AnswerSource(BaseModel):
     source: str
     published_at: str | None = None
     score: float
+
+
+class RecentNotice(BaseModel):
+    title: str
+    url: str
+    source: str
+    published_at: str | None = None
+    topic_key: str
+    topic_label: str

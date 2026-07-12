@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-from backend.app.domain import AnswerSource
+from backend.app.domain import AnswerSource, RecentNotice
 
 
 class ChatRequest(BaseModel):
@@ -20,6 +20,8 @@ class ChatResponse(BaseModel):
     answer: str
     sources: list[AnswerSource]
     grounded: bool
+    suggested_questions: list[str] = Field(default_factory=list)
+    recent_notices: list[RecentNotice] = Field(default_factory=list)
 
 
 class HealthResponse(BaseModel):

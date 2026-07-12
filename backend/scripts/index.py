@@ -6,6 +6,8 @@ from backend.app.chunking import chunk_posts
 from backend.app.config import get_settings
 from backend.app.provider_factory import create_provider, effective_models, selected_provider_name
 from backend.app.storage import load_posts
+from backend.app.topic_classifier import enrich_posts
+from backend.app.topic_rules import load_topic_catalog
 from backend.app.vector_store import ChromaVectorStore
 
 
@@ -20,7 +22,8 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     settings = get_settings()
-    posts = load_posts(settings.raw_posts_path)
+    catalog = load_topic_catalog(settings.topic_rules_path)
+    posts = enrich_posts(load_posts(settings.raw_posts_path), catalog)
     chunks = chunk_posts(posts, chunk_size=args.chunk_size, overlap=args.overlap)
     provider = create_provider(settings)
     store = ChromaVectorStore(settings.chroma_path, settings.chroma_collection)

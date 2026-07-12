@@ -8,9 +8,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from openai import APIError
 
 from backend.app.config import get_settings
+from backend.app.domain import BoardPost
 from backend.app.provider_factory import create_provider, effective_models, selected_provider_name
 from backend.app.rag import RAGService
 from backend.app.schemas import ChatRequest, ChatResponse, HealthResponse
+from backend.app.storage import load_posts
+from backend.app.topic_classifier import enrich_posts
+from backend.app.topic_rules import TopicCatalog, load_topic_catalog
 from backend.app.vector_store import ChromaVectorStore
 
 settings = get_settings()
@@ -34,6 +38,19 @@ def get_vector_store() -> ChromaVectorStore:
 
 
 @lru_cache(maxsize=1)
+def get_topic_catalog() -> TopicCatalog:
+    return load_topic_catalog(settings.topic_rules_path)
+
+
+@lru_cache(maxsize=1)
+def get_enriched_posts() -> list[BoardPost]:
+    try:
+        return enrich_posts(load_posts(settings.raw_posts_path), get_topic_catalog())
+    except FileNotFoundError:
+        return []
+
+
+@lru_cache(maxsize=1)
 def get_rag_service() -> RAGService:
     provider = create_provider(settings)
     return RAGService(
@@ -41,6 +58,8 @@ def get_rag_service() -> RAGService:
         vector_store=get_vector_store(),
         top_k=settings.rag_top_k,
         min_score=settings.rag_min_score,
+        topic_catalog=get_topic_catalog(),
+        posts=get_enriched_posts(),
     )
 
 
