@@ -1,6 +1,6 @@
 # SE Mentor Bot 주제별 최신성·추천 UX 인수인계
 
-> 기록 시점: 2026-07-12, Task 5 구현 중단 직후
+> 기록 시점: 2026-07-12, Task 5 리뷰 완료·Task 6 시작 직전
 
 ## 작업 위치
 
@@ -8,7 +8,8 @@
 - 격리 worktree: `C:\Users\tjdgns\3-2_SummerSIG\Kumoh_SE_Mentoring_Bot\.worktrees\topic-latest`
 - 구현 브랜치: `codex/topic-latest`
 - 기준 브랜치: `main`
-- 현재 완료 구현 HEAD: `4b91844 feat: return topic-aware chat follow-ups`
+- 최근 구현 커밋: `18ae704 test: add frontend follow-up components`
+- 현재 브랜치 HEAD: `ab06f63 docs: include frontend build cache ignore`
 - 설계: `docs/superpowers/specs/2026-07-11-rag-topic-latest-design.md`
 - 구현 계획: `docs/superpowers/plans/2026-07-11-rag-topic-latest-implementation.md`
 
@@ -61,61 +62,54 @@
 - backend 테스트 25개 통과, Task 4 대상 Ruff 통과
 - 사양 리뷰와 품질 리뷰 통과
 
-## 현재 미커밋 상태 — Task 5
+### Task 5 — 프론트엔드 후속 콘텐츠 컴포넌트
 
-Task 5 에이전트는 TDD RED를 확인하고 컴포넌트를 구현했으나 최종 검증 전에 중단됐다. 커밋은 없다.
+- 커밋: `18ae704 test: add frontend follow-up components`
+- `Message`, `Source`, `RecentNotice` TypeScript 타입 분리
+- `ChatMessage`, `RecommendationChips`, `RecentNoticeList` 컴포넌트 추가
+- Vitest·Testing Library 환경과 컴포넌트 테스트 7개 추가
+- 빈 배열, disabled 추천 버튼, user message의 assistant-only 영역 미표시까지 회귀 테스트
+- Task 6 CSS 계약과 맞는 `notice-heading`, `notice-card`, `notice-arrow` markup 적용
+- `*.tsbuildinfo` ignore 추가
+- clean `npm ci`, 테스트, TypeScript, ESLint, production build 통과
+- 사양 리뷰와 품질 리뷰 통과
 
-수정·생성 파일:
+검증 기록:
 
-- `frontend/package.json`
-- `frontend/package-lock.json`
-- `frontend/vitest.config.ts`
-- `frontend/vitest.setup.ts`
-- `frontend/app/components/types.ts`
-- `frontend/app/components/RecommendationChips.tsx`
-- `frontend/app/components/RecommendationChips.test.tsx`
-- `frontend/app/components/RecentNoticeList.tsx`
-- `frontend/app/components/RecentNoticeList.test.tsx`
-- `frontend/app/components/ChatMessage.tsx`
-- `frontend/app/components/ChatMessage.test.tsx`
+- `npm ci --ignore-scripts --dry-run`: exit 0
+- clean `npm ci --ignore-scripts`: exit 0
+- Vitest: 3 files, 7 tests passed
+- TypeScript `--noEmit --incremental false`: exit 0
+- ESLint: exit 0
+- Next.js production build: exit 0, static pages 4개 생성
+- 런타임 버전 유지: Next 15.5.20, React/React DOM 19.1.1
 
-테스트 진행 상태:
+## 현재 상태
 
-- RED: 세 테스트 모두 대상 컴포넌트 부재로 실패 확인
-- 구현 후 첫 실행: 2개 통과, `ChatMessage.test.tsx` 1개 실패
-- 실패 원인으로 추정된 최근 공지 heading 충돌을 수정한 뒤 재실행 전 중단
-- lint, TypeScript 검사, build, `git diff --check` 미실행
-
-생성된 `frontend/tsconfig.tsbuildinfo`는 빌드 캐시이므로 커밋하지 않는다. 필요하면 `.gitignore`에 `*.tsbuildinfo`를 추가한다.
+- worktree는 clean이다.
+- Task 1~5 구현 및 각 task의 사양·품질 리뷰가 완료됐다.
+- 다음 작업은 Task 6 `page.tsx` 통합과 `globals.css` 스타일이다.
+- Task 5의 Vitest CJS API deprecation warning은 비차단 경고다.
+- npm은 기존 dependency advisory 5건과 deprecated transitive package 1건을 보고했지만 Task 5 기능 검증을 막지 않는다.
 
 ## 즉시 재개 절차
 
 ```powershell
 Set-Location C:\Users\tjdgns\3-2_SummerSIG\Kumoh_SE_Mentoring_Bot\.worktrees\topic-latest
 git status --short --branch
-npm --prefix frontend run test -- --run
-npm --prefix frontend run lint
-npm --prefix frontend exec tsc -- --noEmit
-git diff --check
+git show --stat 18ae704
+Get-Content docs/superpowers/plans/2026-07-11-rag-topic-latest-implementation.md
 ```
 
-Task 5 검증 실패 시 테스트를 바꾸기 전에 컴포넌트의 접근성 이름과 실제 렌더링을 확인한다. 통과하면 Task 5 파일만 커밋한다.
+Task 6은 `page.tsx`와 `globals.css`만 수정하며, 기존 Task 5 컴포넌트의 public props와 class contract를 재사용한다.
 
 ```powershell
-git add frontend/package.json frontend/package-lock.json frontend/vitest.config.ts frontend/vitest.setup.ts frontend/app/components
-git commit -m "test: add frontend follow-up components"
+npm --prefix frontend run test -- --run
+npm --prefix frontend run lint
+npm --prefix frontend run build
 ```
 
-Task 5 완료 후에는 반드시 사양 리뷰 → 코드 품질 리뷰 순서로 검토한다.
-
 ## 남은 작업
-
-### Task 5 마무리
-
-- 컴포넌트 테스트 재실행
-- lint·TypeScript 검사·build 확인
-- `tsconfig.tsbuildinfo` 제외
-- 커밋 후 사양·품질 리뷰
 
 ### Task 6 — 페이지 통합과 스타일
 
@@ -152,7 +146,8 @@ backend/.venv/Scripts/python -m backend.scripts.index --reset
 ```
 
 - 전체 Ruff에는 `backend/tests/test_topic_rules.py` import order 오류가 남아 있다. 최종 검증 전에 Ruff 자동 수정 또는 수동 import 정렬로 해결하고 전체 Ruff를 다시 실행한다.
-- `frontend/package-lock.json` 변경량이 크다. Task 5 테스트 의존성 추가 외에 런타임 dependency 버전이 의도치 않게 바뀌지 않았는지 리뷰한다.
+- `frontend/package-lock.json`은 clean `npm ci`로 검증됐고 런타임 dependency 버전은 유지됐다.
+- Vitest가 Vite CJS Node API deprecation warning을 출력한다. 현재 비차단이며 ESM config 전환은 별도 정리 대상이다.
 - `.env`, API key, Chroma DB, build output, `tsconfig.tsbuildinfo`를 커밋하지 않는다.
 - 메인 checkout의 별도 사용자 변경을 worktree에서 되돌리거나 덮어쓰지 않는다.
 
