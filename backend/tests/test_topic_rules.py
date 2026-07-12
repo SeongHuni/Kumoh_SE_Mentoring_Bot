@@ -1,7 +1,6 @@
 import json
 
 import pytest
-
 from backend.app.topic_rules import load_topic_catalog
 
 
