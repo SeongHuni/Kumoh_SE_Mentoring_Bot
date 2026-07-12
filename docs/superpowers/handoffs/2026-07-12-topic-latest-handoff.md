@@ -1,6 +1,6 @@
 # SE Mentor Bot 주제별 최신성·추천 UX 인수인계
 
-> 기록 시점: 2026-07-12, Task 5 리뷰 완료·Task 6 시작 직전
+> 기록 시점: 2026-07-12, Task 6 완료·Task 7 시작 직전
 
 ## 작업 위치
 
@@ -8,8 +8,8 @@
 - 격리 worktree: `C:\Users\tjdgns\3-2_SummerSIG\Kumoh_SE_Mentoring_Bot\.worktrees\topic-latest`
 - 구현 브랜치: `codex/topic-latest`
 - 기준 브랜치: `main`
-- 최근 구현 커밋: `18ae704 test: add frontend follow-up components`
-- 현재 브랜치 HEAD: `ab06f63 docs: include frontend build cache ignore`
+- 최근 구현 커밋: `07fd1b2 feat: show chat recommendations and recent notices`
+- 현재 브랜치 HEAD: `07fd1b2 feat: show chat recommendations and recent notices`
 - 설계: `docs/superpowers/specs/2026-07-11-rag-topic-latest-design.md`
 - 구현 계획: `docs/superpowers/plans/2026-07-11-rag-topic-latest-implementation.md`
 
@@ -84,11 +84,24 @@
 - Next.js production build: exit 0, static pages 4개 생성
 - 런타임 버전 유지: Next 15.5.20, React/React DOM 19.1.1
 
+### Task 6 — 페이지 통합과 읽기 쉬운 스타일
+
+- 커밋: `07fd1b2 feat: show chat recommendations and recent notices`
+- API의 `suggested_questions`와 `recent_notices`를 assistant message state에 저장
+- 오류 message에는 두 배열을 빈 배열로 유지
+- 기존 말풍선·출처 markup을 `ChatMessage`로 교체
+- 추천 질문 클릭은 기존 `submitQuestion` 경로와 로딩 잠금을 재사용
+- 답변 줄바꿈·긴 문자열, 추천 chip, 최근 공지 카드, 모바일 가로 스크롤 스타일 추가
+- 초기 추천 질문 중복 렌더링을 실패 테스트로 재현한 뒤 기존 composer 추천 영역과 죽은 CSS 제거
+- Vitest 3 files, 9 tests 통과
+- TypeScript, ESLint, Next.js production build 통과
+- 서브에이전트 사용 한도 종료 후 현재 세션에서 TDD·검증 절차를 유지해 완료
+
 ## 현재 상태
 
 - worktree는 clean이다.
-- Task 1~5 구현 및 각 task의 사양·품질 리뷰가 완료됐다.
-- 다음 작업은 Task 6 `page.tsx` 통합과 `globals.css` 스타일이다.
+- Task 1~6 구현이 완료됐다. Task 1~5는 사양·품질 리뷰까지 완료됐고, Task 6은 현재 세션 자체 검토와 전체 프론트 검증을 통과했다.
+- 다음 작업은 Task 7 운영 문서와 평가 질문 반영이다.
 - Task 5의 Vitest CJS API deprecation warning은 비차단 경고다.
 - npm은 기존 dependency advisory 5건과 deprecated transitive package 1건을 보고했지만 Task 5 기능 검증을 막지 않는다.
 
@@ -97,11 +110,11 @@
 ```powershell
 Set-Location C:\Users\tjdgns\3-2_SummerSIG\Kumoh_SE_Mentoring_Bot\.worktrees\topic-latest
 git status --short --branch
-git show --stat 18ae704
+git show --stat 07fd1b2
 Get-Content docs/superpowers/plans/2026-07-11-rag-topic-latest-implementation.md
 ```
 
-Task 6은 `page.tsx`와 `globals.css`만 수정하며, 기존 Task 5 컴포넌트의 public props와 class contract를 재사용한다.
+Task 7은 문서와 `data/evaluation/questions.json`만 수정하고 애플리케이션 동작은 변경하지 않는다.
 
 ```powershell
 npm --prefix frontend run test -- --run
@@ -110,15 +123,6 @@ npm --prefix frontend run build
 ```
 
 ## 남은 작업
-
-### Task 6 — 페이지 통합과 스타일
-
-- `page.tsx`가 API의 `suggested_questions`, `recent_notices`를 message state에 저장
-- `ChatMessage`로 기존 말풍선·출처 UI 교체
-- 추천 질문 클릭 시 기존 `submitQuestion` 경로 재사용
-- 오류 message에는 두 배열을 빈 배열로 설정
-- `globals.css`에 답변 본문, 추천 chip, 최근 공지 카드, 모바일 스타일 추가
-- 프론트 테스트·lint·build 후 리뷰
 
 ### Task 7 — 운영 문서와 평가 질문
 
