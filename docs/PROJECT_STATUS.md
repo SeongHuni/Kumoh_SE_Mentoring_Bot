@@ -1,15 +1,15 @@
 # SE Mentor Bot 프로젝트 상태와 다음 작업
 
 > 기준일: 2026-07-12
-> 기준 브랜치: `codex/topic-latest`
-> 구현 기준 커밋: `8a02351 docs: finalize topic latest handoff`
+> 기준 브랜치: `main`
+> 통합 기준 커밋: `8dc3078 Merge branch 'codex/topic-latest'`
 
 이 문서는 프로젝트의 현재 진행도, 남은 위험, 개선 TODO, 단계별 검증 기준을 한곳에서 관리하는 운영 기준 문서다. 세션별 상세 이력은 [`superpowers/handoffs/2026-07-12-topic-latest-handoff.md`](superpowers/handoffs/2026-07-12-topic-latest-handoff.md), RAG 설계는 [`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md)를 참고한다.
 
 ## 1. 현재 결론
 
 - 계획된 **주제별 최신 RAG와 추천 UX 기능은 구현·검증 완료** 상태다.
-- 구현은 `codex/topic-latest` 브랜치에 있고 **`main`에는 아직 병합되지 않았다**.
+- 구현 브랜치의 변경은 `main`에 병합되어 `origin/main`으로 푸시됐다.
 - 로컬 프로토타입은 실행 가능하지만, **실데이터 최신성·SE 게시판 수집·자동 평가·운영 안전성은 추가 검증이 필요**하다.
 - 따라서 현재 단계는 `기능 완료 → 통합 대기`이며, 파일럿 또는 운영 완료로 판단하지 않는다.
 
@@ -23,7 +23,7 @@
 | 단위·컴포넌트 테스트 | 통과 | backend 26개, frontend 9개 | 커버리지 사각지대 해소 |
 | 문서·운영 절차 | 완료 | README와 RAG 운영 문서, 재인덱싱 절차 존재 | 데이터/환경 변경 때 현행화 |
 | 데이터 준비 | 부분 완료 | 학과 게시글 46건, 79청크 인덱싱 확인 | 양쪽 공식 소스 재수집과 최신성 감사 |
-| 브랜치 통합 | 미완료 | `main`과 `codex/topic-latest` 분리 | 병합 또는 PR 후 전체 회귀 검증 |
+| 브랜치 통합 | 완료 | `8dc3078` 병합 커밋 및 `origin/main` 푸시 | 후속 변경마다 동일한 회귀 검증 |
 | 파일럿 준비 | 차단 | 자동 평가·실수집·주제 세분화 검증 부족 | P0·P1 TODO 완료 |
 | 운영 준비 | 미착수 | CI, 관측성, rate limit, backup 기준 미완성 | 운영 검증 매트릭스 충족 |
 
@@ -31,9 +31,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| `main` HEAD | `f78be6a docs: include frontend build cache ignore` |
+| `main` HEAD | `8dc3078 Merge branch 'codex/topic-latest'` |
 | 기능 구현 기준 HEAD | `8a02351 docs: finalize topic latest handoff` |
-| 문서 작성 전 브랜치 분기 | `main` 전용 5커밋 / 기능 브랜치 전용 17커밋 |
+| 병합 전 브랜치 분기 | `main` 전용 5커밋 / 기능 브랜치 전용 18커밋 |
 | provider | `local` |
 | embedding | `local-hash-embedding-v1`, 1,536차원 |
 | answer | `local-extractive-answer-v1` |
@@ -117,7 +117,7 @@
 
 | ID | 작업 | 완료 조건 | 필수 검증 |
 | --- | --- | --- | --- |
-| P0-1 | `codex/topic-latest` 통합 | `main` 병합 또는 PR 승인, 양쪽에 중복 적용된 문서 커밋을 검토하고 의도한 기능·문서 변경만 반영 | 병합 전 충돌 rehearsal, 병합 후 backend/frontend 전체 회귀, `git diff --check` |
+| P0-1 | 브랜치 통합 | 완료: `8dc3078`로 `main` 병합·`origin/main` 푸시 | 병합 후 backend/frontend 전체 회귀·`git diff --check` 통과 기록 |
 | P0-2 | 공식 데이터 재수집 | 학과·SE 두 소스 수집 성공, 소스별 건수·최신 게시일 기록, `--reset` 재인덱싱 | `--allow-partial` 없이 수집 성공, 샘플 원문 URL·날짜 대조 |
 | P0-3 | 최신성 범위 정책 확정 | `topic_key` 1건 정책 유지 또는 `freshness_scope_key` 같은 문서 시리즈 단위 도입 결정 | 동시 유효 공지 2건, 학기 변경, 날짜 누락 fixture 테스트 |
 | P0-4 | 주제 규칙 데이터 감사 | 잘못 분류된 최신 공지 수정, `graduation` 자료 부재 처리 결정 | 주제별 표본 5건 수동 라벨링, confusion 기록 |
