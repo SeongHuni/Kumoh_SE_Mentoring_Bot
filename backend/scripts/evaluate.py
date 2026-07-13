@@ -8,6 +8,7 @@ from tempfile import NamedTemporaryFile
 
 from backend.app.config import REPOSITORY_ROOT, get_settings
 from backend.app.evaluation import (
+    EvaluationReport,
     build_evaluation_report,
     evaluate_cases,
     load_evaluation_cases,
@@ -88,21 +89,20 @@ def _atomic_write(target: Path, content: str) -> None:
     temporary_path.replace(target)
 
 
-def write_reports(report, output_dir: Path) -> tuple[Path, Path]:
+def write_reports(report: EvaluationReport, output_dir: Path) -> None:
     json_path = output_dir / "latest.json"
     markdown_path = output_dir / "latest.md"
     _atomic_write(json_path, report.model_dump_json(indent=2) + "\n")
     _atomic_write(markdown_path, render_markdown(report))
-    return json_path, markdown_path
 
 
-def print_summary(report) -> None:
+def print_summary(report: EvaluationReport) -> None:
     summary = report.summary
     print(f"총 {summary.total}건 · 통과 {summary.passed}건 · 실패 {summary.failed}건")
     print(f"프로바이더: {report.provider} · 청크: {report.indexed_chunks}")
 
 
-def run_evaluation(args: argparse.Namespace):
+def run_evaluation(args: argparse.Namespace) -> EvaluationReport:
     settings = get_settings()
     effective_settings = (
         replace(settings, ai_provider="local")

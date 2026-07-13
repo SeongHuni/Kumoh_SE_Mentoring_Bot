@@ -102,7 +102,7 @@
 ### Task 3 — 평가 CLI와 원자적 보고서
 
 - RED import failure: `backend.scripts.evaluate` 미노출로 collection import 실패
-- GREEN exit 0/1/2, minimum cases, empty index: CLI 종료코드/사전검증/빈 인덱스 처리 구현 중
-- atomic latest.json/latest.md and ignore confirmation: `NamedTemporaryFile` 기반 원자적 기록과 `data/evaluation/reports/` ignore 추가
-- exact full backend count: 전체 backend 회귀와 Ruff 검증 예정
+- GREEN exit 0/1/2, minimum cases, empty index: CLI 종료코드·최소 케이스·빈 인덱스 테스트 완료
+- atomic latest.json/latest.md and ignore confirmation: `NamedTemporaryFile` 기반 원자적 기록과 `data/evaluation/reports/` ignore 확인 완료
+- exact full backend count: 50 passed
 - next: committed dataset 30 cases/category distribution RED

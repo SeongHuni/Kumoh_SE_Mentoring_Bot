@@ -110,6 +110,7 @@ def test_main_returns_two_without_report_on_execution_error(
 
     assert exit_code == 2
     assert not (tmp_path / "latest.json").exists()
+    assert not (tmp_path / "latest.md").exists()
     assert "평가 실행 오류: 벡터 인덱스가 비어 있습니다." in capsys.readouterr().err
 
 
