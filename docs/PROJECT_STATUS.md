@@ -1,8 +1,8 @@
 # SE Mentor Bot 프로젝트 상태와 다음 작업
 
 > 기준일: 2026-07-13
-> 기준 브랜치: `codex/rag-evaluation`
-> 로컬·원격 `main` 기준: `8473c78 Ignore evaluation reports and export script entrypoint`
+> 기준 브랜치: `main`
+> 자동 평가 통합 커밋: `6334bdc Merge pull request #2 from SeongHuni/codex/rag-evaluation`
 > 기존 기능 통합 커밋: `8dc3078 Merge branch 'codex/topic-latest'`
 
 이 문서는 프로젝트의 현재 진행도, 남은 위험, 개선 TODO, 단계별 검증 기준을 한곳에서 관리하는 운영 기준 문서다. 자동 평가 구현 이력은 [`superpowers/handoffs/2026-07-12-rag-evaluation-handoff.md`](superpowers/handoffs/2026-07-12-rag-evaluation-handoff.md), RAG 설계는 [`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md)를 참고한다.
@@ -10,7 +10,7 @@
 ## 1. 현재 결론
 
 - 계획된 **주제별 최신 RAG와 추천 UX 기능은 구현·검증 완료** 상태다.
-- 자동 평가 CLI와 30개 구조화 baseline은 `codex/rag-evaluation`에서 구현 완료됐고, JSON·Markdown 보고서와 exit 0/1/2 계약도 검증됐다.
+- 자동 평가 CLI와 30개 구조화 baseline은 PR #2로 `main`에 통합됐고, JSON·Markdown 보고서와 exit 0/1/2 계약도 병합 후 재검증됐다.
 - 실제 local 평가는 30개 중 25개만 통과했다. **평가 도구 완료와 RAG 품질 완료는 별개**이며, 아래 5개 실패를 해결하기 전에는 품질 완료로 판단하지 않는다.
 - 로컬 프로토타입은 실행 가능하지만, **실데이터 최신성·SE 게시판 수집·5개 RAG 품질 결함·운영 안전성은 추가 검증이 필요**하다.
 - 따라서 현재 단계는 `품질 자동화 도구 완료 → 측정된 RAG 결함 개선`이며, 파일럿 또는 운영 완료로 판단하지 않는다.
@@ -34,7 +34,7 @@
 | 자동 평가 도구 | 완료 | 30개 case, 4개 check, JSON·Markdown 보고서, exit 0/1/2 검증 | 실패 5건 수정 후 품질 재측정 |
 | 문서·운영 절차 | 완료 | README와 RAG 운영 문서에 재인덱싱·자동 평가 절차 존재 | 데이터/환경 변경 때 현행화 |
 | 데이터 준비 | 부분 완료 | 학과 게시글 46건, 79청크 인덱싱 확인 | 양쪽 공식 소스 재수집과 최신성 감사 |
-| 브랜치 통합 | 부분 완료 | 자동 평가 브랜치 push 및 Draft PR #2 생성 | PR 검토·main 병합 후 전체 회귀 |
+| 브랜치 통합 | 완료 | PR #2 ready 전환·`6334bdc`로 main 병합·병합 후 전체 회귀 | 후속 기능은 새 브랜치와 PR로 통합 |
 | 파일럿 준비 | 차단 | 자동 평가 5건 실패·실수집·주제 세분화 검증 부족 | P0·P1 TODO 완료 |
 | 운영 준비 | 미착수 | CI, 관측성, rate limit, backup 기준 미완성 | 운영 검증 매트릭스 충족 |
 
@@ -44,7 +44,7 @@
 | --- | --- |
 | 기능 통합 커밋 | `8dc3078 Merge branch 'codex/topic-latest'` |
 | 기능 구현 기준 HEAD | `8a02351 docs: finalize topic latest handoff` |
-| 병합 전 브랜치 분기 | `main` 전용 5커밋 / 기능 브랜치 전용 18커밋 |
+| 자동 평가 통합 | PR #2, merge commit `6334bdc` |
 | provider | `local` |
 | embedding | `local-hash-embedding-v1`, 1,536차원 |
 | answer | `local-extractive-answer-v1` |
@@ -111,13 +111,13 @@
 
 | 검증 | 결과 | 해석 |
 | --- | --- | --- |
-| backend pytest | 57개 통과 | 평가 schema·evaluator·CLI·dataset·module 실행 계약 포함 |
+| backend pytest | 병합 후 main에서 57개 통과 | 평가 schema·evaluator·CLI·dataset·module 실행 계약 포함 |
 | backend Ruff | 통과 | 현재 Python 정적 검사 오류 없음 |
 | backend line coverage | 이전 측정 68% | Task 6 이후 coverage를 별도 재측정해야 함 |
-| frontend Vitest | 3 files, 9 tests 통과 | 컴포넌트 계약 검증 |
-| frontend TypeScript | 통과 | 타입 오류 없음 |
-| frontend ESLint | 통과 | 현재 lint 오류 없음 |
-| Next.js production build | 통과, 정적 페이지 4개 | production 빌드 가능 |
+| frontend Vitest | 병합 후 main에서 3 files, 9 tests 통과 | 컴포넌트 계약 검증 |
+| frontend TypeScript | 병합 후 main에서 통과 | 타입 오류 없음 |
+| frontend ESLint | 병합 후 main에서 통과 | 현재 lint 오류 없음 |
+| Next.js production build | 병합 후 main에서 통과, 정적 페이지 4개 | production 빌드 가능 |
 | 재인덱싱 | 게시글 46건, 청크 79개 | local provider 인덱스 생성 가능 |
 | 자동 평가 | 30건 중 25건 통과, exit 1 | 도구는 정상 완료됐고 RAG 품질 실패 5건은 후속 수정 대상 |
 | 평가 metric | topic 30/30, grounded 25/30, latest-only 28/30, source-title 10/11 | 분류보다 검색·근거 판정 개선 우선 |
@@ -139,7 +139,7 @@
 
 | ID | 작업 | 완료 조건 | 필수 검증 |
 | --- | --- | --- | --- |
-| P0-1 | 브랜치 통합 | 완료: `8dc3078`로 `main` 병합·`origin/main` 푸시 | 병합 후 backend/frontend 전체 회귀·`git diff --check` 통과 기록 |
+| P0-1 | 브랜치 통합 — **완료** | 기존 기능 `8dc3078`, 자동 평가 PR #2 `6334bdc`로 `main` 통합 | 병합 후 backend 57·frontend 9, Ruff·TypeScript·ESLint·build·CLI 경고 회귀 통과 |
 | P0-2 | 공식 데이터 재수집 | 학과·SE 두 소스 수집 성공, 소스별 건수·최신 게시일 기록, `--reset` 재인덱싱 | `--allow-partial` 없이 수집 성공, 샘플 원문 URL·날짜 대조 |
 | P0-3 | 최신성 범위 정책 확정 | `topic_key` 1건 정책 유지 또는 `freshness_scope_key` 같은 문서 시리즈 단위 도입 결정 | 동시 유효 공지 2건, 학기 변경, 날짜 누락 fixture 테스트 |
 | P0-4 | 주제 규칙 데이터 감사 | 잘못 분류된 최신 공지 수정, `graduation` 자료 부재 처리 결정 | 주제별 표본 5건 수동 라벨링, confusion 기록 |

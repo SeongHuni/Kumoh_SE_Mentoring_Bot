@@ -1,6 +1,6 @@
 # SE Mentor Bot 자동 평가 작업 인수인계
 
-> 갱신 시점: 2026-07-13, Task 1~6 완료·원격 main 통합 회귀 수정·Draft PR 게시 완료
+> 갱신 시점: 2026-07-13, Task 1~6 완료·PR #2 main 병합·병합 후 회귀 검증 완료
 
 ## 작업 목표
 
@@ -10,10 +10,10 @@
 
 - 격리 작업 트리: `C:\Users\tjdgns\3-2_SummerSIG\Kumoh_SE_Mentoring_Bot\.worktrees\topic-latest`
 - 작업 브랜치: `codex/rag-evaluation`
-- 로컬 `main`과 `origin/main`: `8473c78 Ignore evaluation reports and export script entrypoint`.
+- 자동 평가 PR #2 merge commit: `6334bdc534b424f6cb7dca9ba38453d1c0ed84a7`.
 - `origin/main`은 `2a0b447` merge commit으로 기능 브랜치에 통합했다.
-- `codex/rag-evaluation`은 원격에 push됐고 Draft PR #2가 생성됐다: `https://github.com/SeongHuni/Kumoh_SE_Mentoring_Bot/pull/2`.
-- 아직 `main`에는 병합하지 않았다.
+- `codex/rag-evaluation`은 원격에 유지하며 PR #2로 `main`에 병합됐다: `https://github.com/SeongHuni/Kumoh_SE_Mentoring_Bot/pull/2`.
+- PR은 Draft 해제 후 `MERGEABLE/CLEAN`을 확인하고 일반 merge 방식으로 병합했다.
 - Task 6 검증·리뷰 기록 커밋: `742436b docs: finalize rag evaluation handoff`.
 - 원격 통합 회귀 수정 커밋: `f4a6898 fix: avoid eager evaluation script import`.
 - 생성된 `chroma_db`와 `data/evaluation/reports/`는 Git 제외 상태다.
@@ -49,7 +49,8 @@
 | Task 6 전체 검증 | 완료 | backend/frontend/실평가/보안·Git hygiene 통과, quality exit 1 재현 |
 | 전체 구현 독립 리뷰 | 완료 | 백엔드와 데이터·문서·보안 분리 리뷰 모두 Critical/Important/Minor 없음, Approved |
 | PR 통합 preflight | 완료 | origin/main 병합, eager import RuntimeWarning RED→GREEN, 전체 회귀 통과 |
-| Draft PR 게시 | 완료 | origin/codex/rag-evaluation push, main 대상 Draft PR #2 생성 |
+| PR 게시·통합 | 완료 | Draft PR #2 생성, ready 전환, `6334bdc`로 main 병합 |
+| 병합 후 검증 | 완료 | main 기준 backend 57·frontend 9, 정적 검사·production build·CLI 경고 회귀 통과 |
 
 ## 커밋 목록
 
@@ -69,15 +70,16 @@
 14. `2a0b447 Merge remote-tracking branch 'origin/main' into codex/rag-evaluation`
 15. `f4a6898 fix: avoid eager evaluation script import`
 16. `9f1b1fa docs: align rag evaluation integration status`
+17. `9f9a9da docs: record rag evaluation draft pr`
+18. `6334bdc Merge pull request #2 from SeongHuni/codex/rag-evaluation`
 
 ## 다음 작업자 즉시 수행 항목
 
-1. Draft PR #2의 변경·검증·mergeability를 검토한다.
-2. 준비가 끝나면 Draft를 ready로 전환하고 `main`에 병합한다.
-3. 병합 후 `main`에서 backend/frontend 전체 회귀와 실제 평가를 다시 실행한다.
-4. PR 병합 전까지 worktree를 삭제하지 않는다.
-5. 통합 후 다음 구현은 평가 실패 5건을 재현하는 집중 RAG 결함 수정 계획부터 시작한다.
-6. 그다음 P0-2 공식 데이터 재수집과 30개 baseline 원문 재검토를 진행한다.
+1. 평가 실패 5건을 각각 재현하는 집중 RAG 결함 수정 계획부터 시작한다.
+2. false-positive 3건과 false-negative 2건을 테스트로 고정하고 검색·근거 판정을 개선한다.
+3. P0-2 공식 데이터 재수집과 30개 baseline 원문 재검토를 진행한다.
+4. `course_openings`의 2025-08-07 자료가 실제 최신인지 공식 원문과 대조한다.
+5. 후속 구현은 `main`에서 새 `codex/` 브랜치를 만들고, 기존 worktree는 로컬 인덱스·가상환경이 더 필요 없을 때 정리한다.
 
 ## TDD 진행 기록 형식
 
@@ -200,7 +202,7 @@
 - Git hygiene: `latest.json`, `latest.md` 모두 `.gitignore`의 `data/evaluation/reports/` 규칙 적용; `git diff --check` 통과; 검증 직후 작업 트리 clean.
 - 설계 완료 조건: 30개 구조화 case, local 기본, 4개 check, JSON/Markdown, exit 0/1/2, 트랜잭션 보고서 교체, 민감정보 제외, runtime API 무변경, 문서화 조건을 모두 충족했다.
 - 비차단 경고: Vitest에서 Vite CJS Node API deprecation 경고가 유지된다. P2-6 의존성 정리에서 재평가한다.
-- 다음 시작점: 사용자의 브랜치 통합 방식 선택
+- 다음 시작점: 평가 실패 5건을 재현하는 집중 RAG 결함 수정 계획
 
 ### Task 6 final review — 승인
 
@@ -208,7 +210,7 @@
 - 데이터·문서·보안 집중 리뷰: exact 30 baseline, 25/30과 실패 5개 ID, report ignore·민감정보 제외, 문서의 명령·exit·브랜치·다음 작업 일관성을 재검토했고 Critical/Important/Minor 없이 Approved.
 - 이전 Task 1~5의 명세·품질 리뷰 지적은 모두 수정 후 재승인됐다.
 - 구현 범위 완료 판정: 자동 평가 도구와 운영 문서는 완료. 실제 RAG 품질은 25/30으로 별도 후속 작업이며 완료가 아니다.
-- 통합 상태: 사용자가 Draft PR 진행을 승인했으며, origin/main 동기화 회귀 수정·재검증 뒤 push한다.
+- 통합 상태: PR #2를 ready로 전환한 뒤 `6334bdc`로 main에 병합했고, main에서 전체 회귀를 다시 통과했다.
 
 ### PR preflight — origin/main 통합 회귀 수정
 
@@ -218,13 +220,25 @@
 - GREEN: package 초기화의 eager import를 제거했다. 기존 `from backend.scripts import evaluate`는 Python의 submodule import로 유지된다.
 - 검증: backend 57 passed, Ruff 통과, CLI help exit 0·RuntimeWarning 없음, 실제 평가는 기존과 같은 quality exit 1과 25/30.
 - frontend 재검증: Vitest 9 passed, TypeScript·ESLint exit 0, Next.js build 정적 페이지 4개 생성. 자동 변경된 `next-env.d.ts`는 저장소 버전으로 복원했다.
-- 다음 시작점: Draft PR #2 검토와 main 병합 결정
+- 다음 시작점: PR #2 main 병합 후 회귀 검증
 
-### Draft PR 게시
+### PR 게시 및 main 통합
 
 - 원격 브랜치: `origin/codex/rag-evaluation`
 - 대상 브랜치: `main`
-- Draft PR: `https://github.com/SeongHuni/Kumoh_SE_Mentoring_Bot/pull/2`
+- PR: `https://github.com/SeongHuni/Kumoh_SE_Mentoring_Bot/pull/2`
 - GitHub 앱은 PR 생성 권한 부족으로 403을 반환해, 인증된 `gh pr create` fallback으로 생성했다.
 - PR 본문에는 변경 이유·사용자/개발자 영향·25/30 품질 결과·실패 5건·전체 검증 명령을 기록했다.
-- 다음 시작점: PR mergeability·검토 상태 확인 후 ready 전환 또는 수정
+- 2026-07-13에 `MERGEABLE/CLEAN`, 리뷰 요청 없음, 등록된 CI check 없음 상태를 확인하고 Draft를 해제했다.
+- 일반 merge 방식으로 병합했으며 merge commit은 `6334bdc534b424f6cb7dca9ba38453d1c0ed84a7`이다.
+
+### PR #2 병합 후 main 검증
+
+- backend: pytest 57개 통과, Ruff 통과.
+- frontend: Vitest 3 files·9 tests, TypeScript, ESLint, Next.js production build 모두 통과; 정적 페이지 4개 생성.
+- CLI 회귀: `python -m backend.scripts.evaluate --help` exit 0, `RuntimeWarning` 없음.
+- 실제 local 평가: quality exit 1, 30건 중 25건 통과·5건 실패; topic 30/30, grounded 25/30, latest-only 28/30, source-title 10/11.
+- 실패 ID: `registration-period`, `capstone-second-semester`, `career-recruitment`, `scholarship-apply`, `general-recent-department`.
+- TypeScript 최초 검증에서 `npm --prefix frontend exec`가 저장소 루트에서 실행되어 설정을 찾지 못했으며, `-p frontend/tsconfig.json`을 명시해 코드 문제가 아님을 확인하고 통과했다.
+- production build가 자동 변경한 `frontend/next-env.d.ts`는 저장소 기준 내용으로 복원했다.
+- 다음 시작점: 위 5개 실패를 테스트로 고정하는 RAG 품질 개선 계획과 P0-2 공식 데이터 재수집.
