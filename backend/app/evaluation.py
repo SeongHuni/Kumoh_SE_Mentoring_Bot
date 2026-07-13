@@ -13,6 +13,7 @@ from backend.app.schemas import ChatResponse
 from backend.app.topic_rules import TopicCatalog
 
 CASE_ID_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+MARKDOWN_CONTROL_PATTERN = re.compile(r"([\\`*_{}\[\]()<>#+!|~])")
 
 
 class EvaluationCase(BaseModel):
@@ -147,13 +148,15 @@ def evaluate_cases(
     posts: Iterable[BoardPost],
     ask: Callable[[str], ChatResponse],
 ) -> list[EvaluationResult]:
-    latest_by_topic, all_latest_urls = _latest_urls(posts)
-    results: list[EvaluationResult] = []
-
-    for case in cases:
+    case_list = list(cases)
+    for case in case_list:
         if catalog.rule_for(case.expected_topic_key) is None:
             raise ValueError(f"존재하지 않는 topic입니다: {case.expected_topic_key}")
 
+    latest_by_topic, all_latest_urls = _latest_urls(posts)
+    results: list[EvaluationResult] = []
+
+    for case in case_list:
         actual_topic_key = catalog.classify(case.question).key
         actual = ask(case.question)
         failures: list[str] = []
@@ -271,6 +274,11 @@ def build_evaluation_report(
     )
 
 
+def _markdown_inline(value: object) -> str:
+    normalized = " ".join(str(value).split())
+    return MARKDOWN_CONTROL_PATTERN.sub(r"\\\1", normalized)
+
+
 def render_markdown(report: EvaluationReport) -> str:
     def format_rate(metric: EvaluationMetric) -> str:
         return "N/A" if metric.rate is None else f"{metric.rate * 100:.1f}%"
@@ -279,11 +287,11 @@ def render_markdown(report: EvaluationReport) -> str:
     lines = [
         "# RAG Evaluation Report",
         "",
-        f"- Generated at: {report.generated_at.isoformat()}",
-        f"- Provider: {report.provider}",
-        f"- Chat model: {report.chat_model}",
-        f"- Embedding model: {report.embedding_model}",
-        f"- Indexed chunks: {report.indexed_chunks}",
+        f"- Generated at: {_markdown_inline(report.generated_at.isoformat())}",
+        f"- Provider: {_markdown_inline(report.provider)}",
+        f"- Chat model: {_markdown_inline(report.chat_model)}",
+        f"- Embedding model: {_markdown_inline(report.embedding_model)}",
+        f"- Indexed chunks: {_markdown_inline(report.indexed_chunks)}",
         "",
         "## Summary",
         "",
@@ -308,14 +316,15 @@ def render_markdown(report: EvaluationReport) -> str:
         lines.extend(
             [
                 "",
-                f"### [{status}] {result.case_id}",
+                f"### [{status}] {_markdown_inline(result.case_id)}",
                 "",
-                f"- Question: {result.question}",
+                f"- Question: {_markdown_inline(result.question)}",
                 "- Topic: "
-                f"expected={result.expected_topic_key}, actual={result.actual_topic_key}",
+                f"expected={_markdown_inline(result.expected_topic_key)}, "
+                f"actual={_markdown_inline(result.actual_topic_key)}",
                 "- Grounded: "
-                f"expected={str(result.expected_grounded).lower()}, "
-                f"actual={str(result.actual_grounded).lower()}",
+                f"expected={_markdown_inline(str(result.expected_grounded).lower())}, "
+                f"actual={_markdown_inline(str(result.actual_grounded).lower())}",
                 "",
                 "#### Sources",
                 "",
@@ -323,14 +332,17 @@ def render_markdown(report: EvaluationReport) -> str:
         )
         if result.sources:
             for source in result.sources:
-                published_at = source.published_at or "날짜 없음"
-                lines.append(f"- {source.title} · {published_at} · {source.url}")
+                published_at = _markdown_inline(source.published_at or "날짜 없음")
+                lines.append(
+                    f"- {_markdown_inline(source.title)} · {published_at} · "
+                    f"{_markdown_inline(source.url)}"
+                )
         else:
             lines.append("- 없음")
 
         lines.extend(["", "#### Failures", ""])
         if result.failures:
-            lines.extend(f"- {failure}" for failure in result.failures)
+            lines.extend(f"- {_markdown_inline(failure)}" for failure in result.failures)
         else:
             lines.append("- 없음")
 

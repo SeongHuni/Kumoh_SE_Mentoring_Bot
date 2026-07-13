@@ -88,3 +88,13 @@
 - GREEN: topic·grounded·latest-only·source-title·metric·Markdown 테스트 통과
 - 전체 회귀: backend pytest 42 passed, Ruff `All checks passed!`
 - 다음 시작점: CLI 성공 0·평가 실패 1·실행 오류 2 테스트
+
+### Task 2 review fix — 실행 preflight와 Markdown hardening
+
+- RED A: valid case 뒤 unknown topic에서 `ask_calls == 1`로 선검증 부작용 재현
+- GREEN A: case iterable materialize 후 전체 topic preflight, generator 입력과 callback 0회 보장
+- RED B: newline 뒤 `# injected-question`이 raw Markdown heading으로 렌더링됨
+- GREEN B: 동적 metadata·case·source·failure whitespace 정규화와 Markdown inline escape 적용
+- Characterization C: general은 다른 topic의 latest URL 허용, course_openings는 동일 URL 거부(첫 실행 통과)
+- 전체 회귀: evaluation pytest 19 passed, backend pytest 45 passed, Ruff `All checks passed!`, `git diff --check` 통과
+- 다음 시작점: CLI 성공 0·평가 실패 1·실행 오류 2 테스트

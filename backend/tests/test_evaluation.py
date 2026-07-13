@@ -231,6 +231,59 @@ def test_evaluate_cases_rejects_unknown_expected_topic() -> None:
         )
 
 
+def test_evaluate_cases_preflights_all_topics_before_asking() -> None:
+    valid_payload = valid_case("valid-first")
+    invalid_payload = valid_case("invalid-second")
+    invalid_payload["expected_topic_key"] = "missing"
+    cases = (
+        EvaluationCase.model_validate(payload)
+        for payload in (valid_payload, invalid_payload)
+    )
+    ask_calls = 0
+
+    def ask(_: str) -> ChatResponse:
+        nonlocal ask_calls
+        ask_calls += 1
+        return response(True)
+
+    with pytest.raises(ValueError, match="존재하지 않는 topic"):
+        evaluate_cases(
+            cases,
+            catalog=catalog(),
+            posts=[],
+            ask=ask,
+        )
+
+    assert ask_calls == 0
+
+
+def test_evaluate_cases_scopes_latest_urls_for_general_and_specific_topics() -> None:
+    general_payload = valid_case("general-latest")
+    general_payload.update(
+        question="학과 소식을 알려줘",
+        expected_topic_key="general",
+        expected_source_title_contains=[],
+    )
+    course_payload = valid_case("course-specific-latest")
+    course_payload["expected_source_title_contains"] = []
+    other_latest = post("other-latest", "other_topic", True)
+
+    results = evaluate_cases(
+        [
+            EvaluationCase.model_validate(general_payload),
+            EvaluationCase.model_validate(course_payload),
+        ],
+        catalog=catalog(),
+        posts=[other_latest],
+        ask=lambda _: response(True, other_latest.url, other_latest.title),
+    )
+
+    assert results[0].checks.latest_only_match is True
+    assert results[0].passed is True
+    assert results[1].checks.latest_only_match is False
+    assert "최신 주제 source가 아닌 URL이 포함됐습니다." in results[1].failures
+
+
 def test_build_evaluation_report_excludes_inapplicable_checks() -> None:
     results = [
         EvaluationResult(
@@ -328,6 +381,58 @@ def test_render_markdown_lists_summary_case_and_failure_reason() -> None:
 
     assert "총 1건 · 통과 0건 · 실패 1건" in markdown
     assert "### [FAIL] topic-mismatch" in markdown
-    assert failure_reason in markdown
+    assert (
+        "topic 기대값 불일치: expected=course\\_openings, actual=general" in markdown
+    )
     assert markdown.endswith("\n")
     assert not markdown.endswith("\n\n")
+
+
+def test_render_markdown_sanitizes_dynamic_content() -> None:
+    result = EvaluationResult(
+        case_id="case\n## injected-case *id*",
+        question="질문\n# injected-question [link](https://evil.example)",
+        category="일반",
+        expected_topic_key="general",
+        actual_topic_key="general",
+        expected_grounded=True,
+        actual_grounded=True,
+        sources=[
+            AnswerSource(
+                title="공지\n# injected-source *title*",
+                url="https://example.com/[unsafe](path)",
+                source="학과 공지",
+                published_at="2026-03-20\n| injected-date |",
+                score=0.9,
+            )
+        ],
+        checks=EvaluationChecks(
+            topic_match=True,
+            grounded_match=True,
+            latest_only_match=None,
+            source_title_match=None,
+        ),
+        failures=["실패\n## injected-failure *reason*"],
+        passed=False,
+    )
+    report = build_evaluation_report(
+        [result],
+        provider="local\n## injected-provider *unsafe*",
+        chat_model="chat_[model]",
+        embedding_model="embed|model",
+        indexed_chunks=1,
+        generated_at=datetime(2026, 3, 20, tzinfo=UTC),
+    )
+
+    markdown = render_markdown(report)
+
+    assert "\n# injected-" not in markdown
+    assert "\n## injected-" not in markdown
+    assert "\n| injected-date |" not in markdown
+    assert "case \\#\\# injected-case \\*id\\*" in markdown
+    assert "질문 \\# injected-question \\[link\\]\\(https://evil.example\\)" in markdown
+    assert "local \\#\\# injected-provider \\*unsafe\\*" in markdown
+    assert "공지 \\# injected-source \\*title\\*" in markdown
+    assert "2026-03-20 \\| injected-date \\|" in markdown
+    assert "https://example.com/\\[unsafe\\]\\(path\\)" in markdown
+    assert "실패 \\#\\# injected-failure \\*reason\\*" in markdown
