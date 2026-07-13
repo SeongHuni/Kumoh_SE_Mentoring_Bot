@@ -1,22 +1,302 @@
 [
-  {"question": "최근 수강신청 일정과 유의사항을 알려줘", "category": "수업"},
-  {"question": "캡스톤디자인은 누가 신청할 수 있어?", "category": "학사"},
-  {"question": "취업 관련 특강이나 프로그램이 있어?", "category": "취업"},
-  {"question": "수강지도 상담은 어떻게 신청해?", "category": "상담"},
-  {"question": "장학금 신청 공지를 찾아줘", "category": "장학"},
-  {"question": "오늘 학생식당 메뉴를 알려줘", "category": "범위 밖"},
   {
+    "id": "course-openings-current",
     "question": "이번 학기 개설강좌를 알려줘",
-    "category": "수업",
+    "category": "개설강좌",
     "expected_topic_key": "course_openings",
+    "expected_grounded": true,
     "expected_latest_only": true,
-    "expected_grounded": true
+    "expected_source_title_contains": ["수강신청 안내"],
+    "notes": "현재 저장 데이터의 최신 개설강좌 baseline"
   },
   {
+    "id": "course-openings-lookup",
+    "question": "개설강좌 조회 방법은?",
+    "category": "개설강좌",
+    "expected_topic_key": "course_openings",
+    "expected_grounded": true,
+    "expected_latest_only": true,
+    "expected_source_title_contains": ["수강신청 안내"],
+    "notes": "최신 공지에 조회 경로가 있음"
+  },
+  {
+    "id": "course-openings-available",
+    "question": "수강 가능 과목은 어디서 확인해?",
+    "category": "개설강좌",
+    "expected_topic_key": "course_openings",
+    "expected_grounded": true,
+    "expected_latest_only": true,
+    "expected_source_title_contains": ["수강신청 안내"],
+    "notes": "개설강좌 조회 동의어 검증"
+  },
+  {
+    "id": "course-openings-2026-first",
+    "question": "2026학년도 1학기 개설 과목을 알려줘",
+    "category": "개설강좌",
+    "expected_topic_key": "course_openings",
+    "expected_grounded": false,
+    "expected_latest_only": true,
+    "expected_source_title_contains": [],
+    "notes": "현재 baseline은 2025학년도 2학기라 거절해야 함"
+  },
+  {
+    "id": "registration-recent",
+    "question": "최근 수강신청 일정과 유의사항을 알려줘",
+    "category": "수강신청",
+    "expected_topic_key": "registration",
+    "expected_grounded": false,
+    "expected_latest_only": true,
+    "expected_source_title_contains": [],
+    "notes": "최신 registration 글이 일반 수강신청 일정 공지가 아님"
+  },
+  {
+    "id": "registration-change",
+    "question": "수강신청 변경 방법을 알려줘",
+    "category": "수강신청",
+    "expected_topic_key": "registration",
+    "expected_grounded": false,
+    "expected_latest_only": true,
+    "expected_source_title_contains": [],
+    "notes": "최신 글에 수강 변경 근거가 없음"
+  },
+  {
+    "id": "registration-early-employment",
+    "question": "수강신청 후 여름계절수업 조기취업자 출석인정신청 안내를 찾아줘",
+    "category": "수강신청",
+    "expected_topic_key": "registration",
+    "expected_grounded": true,
+    "expected_latest_only": true,
+    "expected_source_title_contains": ["조기취업자 출석인정신청"],
+    "notes": "최신 registration source 직접 조회"
+  },
+  {
+    "id": "registration-period",
+    "question": "수강 신청 기간은 언제야?",
+    "category": "수강신청",
+    "expected_topic_key": "registration",
+    "expected_grounded": false,
+    "expected_latest_only": true,
+    "expected_source_title_contains": [],
+    "notes": "최신 글에 일반 수강신청 기간 근거가 없음"
+  },
+  {
+    "id": "registration-course-change",
+    "question": "최근 수강변경 공지를 알려줘",
+    "category": "수강신청",
+    "expected_topic_key": "registration",
+    "expected_grounded": false,
+    "expected_latest_only": true,
+    "expected_source_title_contains": [],
+    "notes": "최신 글에 수강변경 근거가 없음"
+  },
+  {
+    "id": "capstone-plan",
+    "question": "캡스톤디자인 운영 계획을 알려줘",
+    "category": "캡스톤",
+    "expected_topic_key": "capstone",
+    "expected_grounded": true,
+    "expected_latest_only": true,
+    "expected_source_title_contains": ["캡스톤 디자인 운영 계획"],
+    "notes": "최신 캡스톤 운영계획 직접 조회"
+  },
+  {
+    "id": "capstone-apply",
+    "question": "캡스톤디자인 신청 방법이 뭐야?",
+    "category": "캡스톤",
+    "expected_topic_key": "capstone",
+    "expected_grounded": true,
+    "expected_latest_only": true,
+    "expected_source_title_contains": ["캡스톤 디자인 운영 계획"],
+    "notes": "운영계획 내 신청 안내 검증"
+  },
+  {
+    "id": "capstone-schedule",
+    "question": "캡스톤 디자인 일정은 언제야?",
+    "category": "캡스톤",
+    "expected_topic_key": "capstone",
+    "expected_grounded": true,
+    "expected_latest_only": true,
+    "expected_source_title_contains": ["캡스톤 디자인 운영 계획"],
+    "notes": "운영계획 내 일정 검증"
+  },
+  {
+    "id": "capstone-second-semester",
+    "question": "2026학년도 2학기 캡스톤디자인 공지를 알려줘",
+    "category": "캡스톤",
+    "expected_topic_key": "capstone",
+    "expected_grounded": false,
+    "expected_latest_only": true,
+    "expected_source_title_contains": [],
+    "notes": "현재 baseline은 1학기라 거절해야 함"
+  },
+  {
+    "id": "career-faculty-lecture",
+    "question": "진로 관련 전임교원 초빙 공개강의 심사 공고를 찾아줘",
+    "category": "진로·취업",
+    "expected_topic_key": "career",
+    "expected_grounded": true,
+    "expected_latest_only": true,
+    "expected_source_title_contains": ["전임교원 초빙 공개강의"],
+    "notes": "현재 최신 career source 직접 조회"
+  },
+  {
+    "id": "career-program",
+    "question": "최근 취업 프로그램을 알려줘",
+    "category": "진로·취업",
+    "expected_topic_key": "career",
+    "expected_grounded": false,
+    "expected_latest_only": true,
+    "expected_source_title_contains": [],
+    "notes": "최신 career 글은 학생 취업 프로그램이 아님"
+  },
+  {
+    "id": "career-internship",
+    "question": "인턴 관련 공지가 있어?",
+    "category": "진로·취업",
+    "expected_topic_key": "career",
+    "expected_grounded": false,
+    "expected_latest_only": true,
+    "expected_source_title_contains": [],
+    "notes": "최신 career 글에 인턴 근거가 없음"
+  },
+  {
+    "id": "career-recruitment",
+    "question": "최근 채용 공지를 찾아줘",
+    "category": "진로·취업",
+    "expected_topic_key": "career",
+    "expected_grounded": true,
+    "expected_latest_only": true,
+    "expected_source_title_contains": ["전임교원 초빙"],
+    "notes": "최신 source의 채용 성격 검증"
+  },
+  {
+    "id": "scholarship-bootcamp",
+    "question": "장학 관련 방산AI인재양성부트캠프 설명회 공지를 찾아줘",
+    "category": "장학금",
+    "expected_topic_key": "scholarship",
+    "expected_grounded": true,
+    "expected_latest_only": true,
+    "expected_source_title_contains": ["방산AI인재양성부트캠프"],
+    "notes": "현재 최신 scholarship source 직접 조회"
+  },
+  {
+    "id": "scholarship-apply",
+    "question": "장학금 신청 공지를 알려줘",
+    "category": "장학금",
+    "expected_topic_key": "scholarship",
+    "expected_grounded": false,
+    "expected_latest_only": true,
+    "expected_source_title_contains": [],
+    "notes": "최신 글에 장학금 신청 근거가 없음"
+  },
+  {
+    "id": "scholarship-selection",
+    "question": "장학생 선발 기준은?",
+    "category": "장학금",
+    "expected_topic_key": "scholarship",
+    "expected_grounded": false,
+    "expected_latest_only": true,
+    "expected_source_title_contains": [],
+    "notes": "최신 글에 장학생 선발 기준이 없음"
+  },
+  {
+    "id": "scholarship-recent",
+    "question": "최근 장학 공지를 알려줘",
+    "category": "장학금",
+    "expected_topic_key": "scholarship",
+    "expected_grounded": false,
+    "expected_latest_only": true,
+    "expected_source_title_contains": [],
+    "notes": "현재 최신 글의 scholarship 분류 정확성 감사용"
+  },
+  {
+    "id": "graduation-requirements",
+    "question": "졸업요건을 확인해줘",
+    "category": "졸업요건",
+    "expected_topic_key": "graduation",
+    "expected_grounded": false,
+    "expected_latest_only": true,
+    "expected_source_title_contains": [],
+    "notes": "graduation 분류 게시글이 없음"
+  },
+  {
+    "id": "graduation-certification",
+    "question": "졸업인증 기준은?",
+    "category": "졸업요건",
+    "expected_topic_key": "graduation",
+    "expected_grounded": false,
+    "expected_latest_only": true,
+    "expected_source_title_contains": [],
+    "notes": "졸업인증 근거 데이터가 없음"
+  },
+  {
+    "id": "graduation-credits",
+    "question": "졸업 요건 이수학점을 알려줘",
+    "category": "졸업요건",
+    "expected_topic_key": "graduation",
+    "expected_grounded": false,
+    "expected_latest_only": true,
+    "expected_source_title_contains": [],
+    "notes": "졸업 이수학점 근거 데이터가 없음"
+  },
+  {
+    "id": "general-ax-project",
+    "question": "AX 기반 역량 강화 프로젝트 공모 기간 연장 안내를 찾아줘",
+    "category": "일반 공지",
+    "expected_topic_key": "general",
+    "expected_grounded": true,
+    "expected_latest_only": true,
+    "expected_source_title_contains": ["AX 기반 역량 강화 프로젝트"],
+    "notes": "최신 general source 직접 조회"
+  },
+  {
+    "id": "general-recent-department",
+    "question": "최근 학과 공지를 알려줘",
+    "category": "일반 공지",
+    "expected_topic_key": "general",
+    "expected_grounded": true,
+    "expected_latest_only": true,
+    "expected_source_title_contains": [],
+    "notes": "모든 주제 최신 글 대상 일반 검색"
+  },
+  {
+    "id": "general-software-notice",
+    "question": "소프트웨어전공 공지를 알려줘",
+    "category": "일반 공지",
+    "expected_topic_key": "general",
+    "expected_grounded": true,
+    "expected_latest_only": true,
+    "expected_source_title_contains": [],
+    "notes": "default topic 일반 공지 검색"
+  },
+  {
+    "id": "out-of-scope-cafeteria",
+    "question": "오늘 학생식당 메뉴를 알려줘",
+    "category": "범위 밖",
+    "expected_topic_key": "general",
+    "expected_grounded": false,
+    "expected_latest_only": true,
+    "expected_source_title_contains": [],
+    "notes": "수집 범위 밖 식단 질문"
+  },
+  {
+    "id": "out-of-scope-dormitory",
     "question": "데이터에 없는 기숙사 식단을 알려줘",
     "category": "범위 밖",
     "expected_topic_key": "general",
+    "expected_grounded": false,
     "expected_latest_only": true,
-    "expected_grounded": false
+    "expected_source_title_contains": [],
+    "notes": "수집 범위 밖 기숙사 식단 질문"
+  },
+  {
+    "id": "out-of-scope-weather",
+    "question": "오늘 학교 날씨를 알려줘",
+    "category": "범위 밖",
+    "expected_topic_key": "general",
+    "expected_grounded": false,
+    "expected_latest_only": true,
+    "expected_source_title_contains": [],
+    "notes": "수집 범위 밖 실시간 날씨 질문"
   }
 ]
