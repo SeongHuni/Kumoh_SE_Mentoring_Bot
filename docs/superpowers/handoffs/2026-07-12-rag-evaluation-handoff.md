@@ -1,6 +1,6 @@
 # SE Mentor Bot 자동 평가 작업 인수인계
 
-> 갱신 시점: 2026-07-13, Task 1~5 구현·문서화 완료, Task 6 전체 검증 전
+> 갱신 시점: 2026-07-13, Task 1~6 구현·전체 검증·최종 리뷰 완료
 
 ## 작업 목표
 
@@ -12,8 +12,8 @@
 - 작업 브랜치: `codex/rag-evaluation`
 - 로컬 `main` 기준 HEAD: `98b5791 docs: plan automated rag evaluation`; `origin/main`은 `8a3fe15 docs: record main integration status`다.
 - 이번 자동 평가 변경은 아직 `main`에 병합하거나 원격에 푸시하지 않았다.
-- Task 4 품질 보강 기준 HEAD: `230ef9d test: lock rag evaluation baseline contract`
-- Task 5 문서 변경은 현재 작업 트리에 있으며 검증 뒤 `docs: document automated rag evaluation`로 커밋한다.
+- Task 5 문서화까지의 최신 완료 커밋: `ce2119f docs: document automated rag evaluation`.
+- Task 6 검증·리뷰 기록은 이 문서를 포함하는 `docs: finalize rag evaluation handoff` 커밋으로 마무리한다.
 - 생성된 `chroma_db`와 `data/evaluation/reports/`는 Git 제외 상태다.
 
 ## 확정된 설계
@@ -44,9 +44,10 @@
 | Task 1~3 평가 계층·CLI | 완료 | strict schema, 4개 check, JSON/Markdown, exit 0/1/2, 보고서 트랜잭션 검증 |
 | Task 4 30개 baseline | 완료 | exact ID·분포·기대값 회귀 계약, 실제 평가 25/30 |
 | Task 5 운영 문서 | 완료 | README·operations·PROJECT_STATUS·handoff에 실행법과 측정 결과 반영 |
-| Task 6 전체 검증·최종 리뷰 | 대기 | backend/frontend/실평가/보안·Git hygiene 전체 확인 필요 |
+| Task 6 전체 검증 | 완료 | backend/frontend/실평가/보안·Git hygiene 통과, quality exit 1 재현 |
+| 전체 구현 독립 리뷰 | 완료 | 백엔드와 데이터·문서·보안 분리 리뷰 모두 Critical/Important/Minor 없음, Approved |
 
-## 완료된 구현 커밋
+## 커밋 목록
 
 1. `3124680 feat: validate rag evaluation cases`
 2. `c0ce5bd fix: enforce strict evaluation case schema`
@@ -59,15 +60,15 @@
 9. `c63b2ae test: add structured rag evaluation baseline`
 10. `230ef9d test: lock rag evaluation baseline contract`
 11. `f372101 test: pin exact evaluation questions and categories`
+12. `ce2119f docs: document automated rag evaluation`
+13. `(이 문서를 포함하는 현재 커밋) docs: finalize rag evaluation handoff`
 
 ## 다음 작업자 즉시 수행 항목
 
-1. `backend/.venv/Scripts/python -m pytest backend/tests -q`와 Ruff를 실행한다.
-2. frontend Vitest·TypeScript·ESLint·Next production build를 모두 실행한다.
-3. `backend/.venv/Scripts/python -m backend.scripts.evaluate`를 실행한다. 현재 baseline은 quality exit 1이 정상이며 exit 2면 입력·설정·인덱스 또는 실행 오류를 해결해야 한다.
-4. `latest.json`, `latest.md`에 API key·환경 덤프·게시글 전체 본문이 없는지 확인한다.
-5. `git diff --check`, status, report ignore를 확인하고 전체 구현 독립 리뷰를 받는다.
-6. 완료 뒤 사용자가 선택할 수 있도록 로컬 병합·push/PR·브랜치 유지·폐기 4개 통합 옵션을 제시한다.
+1. 사용자에게 로컬 병합·push/PR·브랜치 유지·폐기 4개 통합 옵션을 제시하고 선택을 기다린다.
+2. 사용자가 선택하기 전에는 `main` 병합, 원격 push, PR 생성, worktree 삭제를 수행하지 않는다.
+3. 통합 후 다음 구현은 평가 실패 5건을 재현하는 집중 RAG 결함 수정 계획부터 시작한다.
+4. 그다음 P0-2 공식 데이터 재수집과 30개 baseline 원문 재검토를 진행한다.
 
 ## TDD 진행 기록 형식
 
@@ -176,3 +177,26 @@
 - 알려진 실패: `registration-period`, `capstone-second-semester`, `scholarship-apply` false-positive; `career-recruitment`, `general-recent-department` false-negative.
 - 문서 검증: `git diff --check` exit 0.
 - 다음 시작점: Task 6 전체 backend/frontend 회귀, 실제 평가·민감정보 점검, 전체 구현 독립 리뷰
+
+### Task 6 — 전체 회귀와 실제 평가 검증
+
+- backend: `backend/.venv/Scripts/python -m pytest backend/tests -q` → 56 passed; `backend/.venv/Scripts/python -m ruff check backend` → `All checks passed!`.
+- frontend: Vitest 3 files·9 tests passed, TypeScript `--noEmit --incremental false` exit 0, ESLint exit 0.
+- production build: Next.js 15.5.20 compile 성공, 정적 페이지 4개 생성. build가 자동 변경한 `frontend/next-env.d.ts`는 저장소 버전으로 복원했다.
+- 실제 평가: `backend/.venv/Scripts/python -m backend.scripts.evaluate` → quality exit 1, `total=30`, `passed=25`, `failed=5`.
+- metric: topic `30/30`, grounded `25/30`, latest-only `28/30`, source-title `10/11`.
+- 실패 ID: `registration-period`, `capstone-second-semester`, `career-recruitment`, `scholarship-apply`, `general-recent-department`.
+- 보고서 구조: result에는 case/question/category/topic/grounded/source/check/failure/pass만, source에는 title/url/source/published_at/score만 존재하며 answer·body·content·post body 필드는 없다.
+- 보안 검사: API key·password·secret·bearer·OpenAI key·provider/path 환경값 패턴 0건.
+- Git hygiene: `latest.json`, `latest.md` 모두 `.gitignore`의 `data/evaluation/reports/` 규칙 적용; `git diff --check` 통과; 검증 직후 작업 트리 clean.
+- 설계 완료 조건: 30개 구조화 case, local 기본, 4개 check, JSON/Markdown, exit 0/1/2, 트랜잭션 보고서 교체, 민감정보 제외, runtime API 무변경, 문서화 조건을 모두 충족했다.
+- 비차단 경고: Vitest에서 Vite CJS Node API deprecation 경고가 유지된다. P2-6 의존성 정리에서 재평가한다.
+- 다음 시작점: 사용자의 브랜치 통합 방식 선택
+
+### Task 6 final review — 승인
+
+- 백엔드 집중 리뷰: `backend/app/evaluation.py`, `backend/scripts/evaluate.py`의 4개 check, local/minimum/limit/exit 계약, 보고서 쌍 트랜잭션·rollback·backup 보존을 재검토했고 Critical/Important/Minor 없이 Approved.
+- 데이터·문서·보안 집중 리뷰: exact 30 baseline, 25/30과 실패 5개 ID, report ignore·민감정보 제외, 문서의 명령·exit·브랜치·다음 작업 일관성을 재검토했고 Critical/Important/Minor 없이 Approved.
+- 이전 Task 1~5의 명세·품질 리뷰 지적은 모두 수정 후 재승인됐다.
+- 구현 범위 완료 판정: 자동 평가 도구와 운영 문서는 완료. 실제 RAG 품질은 25/30으로 별도 후속 작업이며 완료가 아니다.
+- 통합 상태: `codex/rag-evaluation`은 검증·리뷰 완료 상태지만 `main` 병합·push·PR은 사용자 선택 전까지 수행하지 않는다.
