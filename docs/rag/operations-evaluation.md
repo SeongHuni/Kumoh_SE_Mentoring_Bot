@@ -56,6 +56,27 @@ backend/.venv/Scripts/python -m ruff check backend
 backend/.venv/Scripts/python -m pytest backend/tests
 ```
 
+### 자동 평가
+
+```powershell
+backend/.venv/Scripts/python -m backend.scripts.index --reset
+backend/.venv/Scripts/python -m backend.scripts.evaluate
+```
+
+- 기본 provider는 `local`이다.
+- `--provider configured`는 현재 `.env` provider를 사용한다.
+- `latest.json`, `latest.md`는 `data/evaluation/reports/`에 생성된다.
+- exit 0은 전체 통과, exit 1은 품질 assertion 실패, exit 2는 실행 오류다.
+- 데이터 재수집 후 30개 baseline 기대값을 공식 원문과 재검토한다.
+
+| 인자 | 기본값 | 용도 |
+| --- | --- | --- |
+| `--questions` | `data/evaluation/questions.json` | 평가 입력 파일 |
+| `--output-dir` | `data/evaluation/reports` | JSON·Markdown 보고서 위치 |
+| `--provider` | `local` | `local` 또는 현재 환경의 `configured` provider 선택 |
+| `--minimum-cases` | `30` | 전체 입력 파일의 최소 케이스 수 |
+| `--limit` | 없음 | schema·최소 수 검증 후 첫 N개만 smoke 실행 |
+
 검색 품질 변경 시 `data/evaluation/questions.json`을 확장해 다음을 기록한다.
 
 - 기대 문서가 Top-1/Top-3/Top-5에 포함되는지

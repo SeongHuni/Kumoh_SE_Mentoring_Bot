@@ -88,8 +88,12 @@ docker compose up --build
 ```powershell
 backend/.venv/Scripts/python -m pytest backend/tests
 backend/.venv/Scripts/python -m ruff check backend
+backend/.venv/Scripts/python -m backend.scripts.index --reset
+backend/.venv/Scripts/python -m backend.scripts.evaluate
 npm --prefix frontend run lint
 npm --prefix frontend run build
 ```
+
+자동 평가는 외부 API 비용이 없는 local provider를 기본으로 사용하고 결과를 `data/evaluation/reports/latest.json`, `latest.md`에 저장합니다. 종료 코드 1은 측정된 품질 assertion 실패이며 보고서를 검토해야 한다는 뜻이고, 종료 코드 2는 입력·설정·인덱스 오류로 평가를 완료하지 못했다는 뜻입니다.
 
 평가 시 `data/evaluation/questions.json`을 바탕으로 검색 Top-5 적중 여부, 출처 정확성, 주제 분류, 최신 게시글만 사용했는지, 데이터에 없는 질문의 답변 거절 여부를 기록합니다. 중요한 학사 결정은 항상 원문 공지를 재확인해야 합니다.
