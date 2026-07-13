@@ -4,6 +4,7 @@ import argparse
 import sys
 from dataclasses import replace
 from pathlib import Path
+from shutil import copyfile
 from tempfile import NamedTemporaryFile
 
 from backend.app.config import REPOSITORY_ROOT, get_settings
@@ -75,25 +76,141 @@ def validate_indexed_chunks(indexed_chunks: int) -> None:
         raise ValueError("벡터 인덱스가 비어 있습니다. 재인덱싱을 먼저 실행하세요.")
 
 
-def _atomic_write(target: Path, content: str) -> None:
+def _cleanup_artifacts(paths: list[Path | None]) -> OSError | None:
+    first_error: OSError | None = None
+    for path in paths:
+        if path is None:
+            continue
+        try:
+            path.unlink(missing_ok=True)
+        except OSError as exc:
+            if first_error is None:
+                first_error = exc
+    return first_error
+
+
+def _stage_text(target: Path, content: str) -> Path:
     target.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path: Path | None = None
+    try:
+        with NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            delete=False,
+            dir=str(target.parent),
+            suffix=".tmp",
+        ) as handle:
+            temporary_path = Path(handle.name)
+            handle.write(content)
+    except OSError as exc:
+        cleanup_error = _cleanup_artifacts([temporary_path])
+        if cleanup_error is not None:
+            raise RuntimeError(
+                f"평가 보고서 임시 파일 정리에 실패했습니다: {cleanup_error}"
+            ) from exc
+        raise
+    if temporary_path is None:
+        raise RuntimeError("평가 보고서 임시 파일을 만들지 못했습니다.")
+    return temporary_path
+
+
+def _atomic_write(target: Path, content: str) -> None:
+    temporary_path = _stage_text(target, content)
+    try:
+        temporary_path.replace(target)
+    except OSError as exc:
+        cleanup_error = _cleanup_artifacts([temporary_path])
+        if cleanup_error is not None:
+            raise RuntimeError(
+                f"평가 보고서 임시 파일 정리에 실패했습니다: {cleanup_error}"
+            ) from exc
+        raise
+
+
+def _backup_target(target: Path) -> Path | None:
+    if not target.exists():
+        return None
     with NamedTemporaryFile(
-        mode="w",
-        encoding="utf-8",
+        mode="wb",
         delete=False,
         dir=str(target.parent),
-        suffix=".tmp",
+        suffix=".bak",
     ) as handle:
-        handle.write(content)
-        temporary_path = Path(handle.name)
-    temporary_path.replace(target)
+        backup_path = Path(handle.name)
+    try:
+        copyfile(target, backup_path)
+    except OSError as exc:
+        cleanup_error = _cleanup_artifacts([backup_path])
+        if cleanup_error is not None:
+            raise RuntimeError(
+                f"평가 보고서 백업 파일 정리에 실패했습니다: {cleanup_error}"
+            ) from exc
+        raise
+    return backup_path
+
+
+def _rollback_reports(
+    targets: tuple[Path, ...], backups: tuple[Path | None, ...]
+) -> None:
+    first_error: OSError | None = None
+    failed_targets: list[str] = []
+    for target, backup in zip(targets, backups, strict=True):
+        try:
+            if backup is None:
+                target.unlink(missing_ok=True)
+            else:
+                backup.replace(target)
+        except OSError as exc:
+            failed_targets.append(target.name)
+            if first_error is None:
+                first_error = exc
+    if first_error is not None:
+        names = ", ".join(failed_targets)
+        raise OSError(f"{names} 복구 실패: {first_error}") from first_error
 
 
 def write_reports(report: EvaluationReport, output_dir: Path) -> None:
     json_path = output_dir / "latest.json"
     markdown_path = output_dir / "latest.md"
-    _atomic_write(json_path, report.model_dump_json(indent=2) + "\n")
-    _atomic_write(markdown_path, render_markdown(report))
+    reports = (
+        (json_path, report.model_dump_json(indent=2) + "\n"),
+        (markdown_path, render_markdown(report)),
+    )
+    targets = tuple(target for target, _content in reports)
+    staged: list[Path] = []
+    backups: list[Path | None] = []
+    commit_started = False
+
+    try:
+        staged.extend(_stage_text(target, content) for target, content in reports)
+        backups.extend(_backup_target(target) for target in targets)
+        commit_started = True
+        for target, temporary_path in zip(targets, staged, strict=True):
+            temporary_path.replace(target)
+    except Exception as original_error:
+        rollback_error: Exception | None = None
+        if commit_started:
+            try:
+                _rollback_reports(targets, tuple(backups))
+            except Exception as exc:
+                rollback_error = exc
+        cleanup_error = _cleanup_artifacts([*staged, *backups])
+        if rollback_error is not None:
+            message = f"평가 보고서 롤백에 실패했습니다: {rollback_error}"
+            if cleanup_error is not None:
+                message += f"; 임시 파일 정리 실패: {cleanup_error}"
+            raise RuntimeError(message) from original_error
+        if cleanup_error is not None:
+            raise RuntimeError(
+                f"평가 보고서 임시 파일 정리에 실패했습니다: {cleanup_error}"
+            ) from original_error
+        raise
+
+    cleanup_error = _cleanup_artifacts([*staged, *backups])
+    if cleanup_error is not None:
+        raise RuntimeError(
+            f"평가 보고서 임시 파일 정리에 실패했습니다: {cleanup_error}"
+        ) from cleanup_error
 
 
 def print_summary(report: EvaluationReport) -> None:
@@ -151,7 +268,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         report = run_evaluation(args)
         write_reports(report, args.output_dir)
-    except (FileNotFoundError, ValueError, RuntimeError) as exc:
+    except (FileNotFoundError, OSError, ValueError, RuntimeError) as exc:
         print(f"평가 실행 오류: {exc}", file=sys.stderr)
         return 2
 

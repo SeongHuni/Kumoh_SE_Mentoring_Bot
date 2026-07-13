@@ -106,3 +106,11 @@
 - atomic latest.json/latest.md and ignore confirmation: `NamedTemporaryFile` 기반 원자적 기록과 `data/evaluation/reports/` ignore 확인 완료
 - exact full backend count: 50 passed
 - next: committed dataset 30 cases/category distribution RED
+
+### Task 3 quality fix — 보고서 쌍 트랜잭션
+
+- RED A: `write_reports`의 `OSError("disk full")`가 `main` 밖으로 전파되어 exit 2 계약 실패
+- RED B: 두 번째 보고서 replace 실패 시 새 JSON·이전 Markdown 혼합 상태와 `.tmp` 잔존 위험 재현
+- GREEN: 두 내용을 먼저 staging하고 기존 쌍을 백업한 뒤 함께 commit하며, 실패 시 두 파일 rollback·임시/백업 정리·`OSError`/롤백 `RuntimeError` exit 2 처리 완료
+- 검증: evaluate CLI 8 passed, 전체 backend 53 passed, Ruff `All checks passed!`
+- next: committed dataset 30 cases/category distribution RED
