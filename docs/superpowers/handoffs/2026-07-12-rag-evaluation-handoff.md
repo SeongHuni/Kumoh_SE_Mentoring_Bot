@@ -14,7 +14,7 @@
 - `origin/main`은 `2a0b447` merge commit으로 기능 브랜치에 통합했다.
 - 이번 자동 평가 변경은 아직 `main`에 병합하거나 원격에 푸시하지 않았다.
 - Task 6 검증·리뷰 기록 커밋: `742436b docs: finalize rag evaluation handoff`.
-- 원격 통합 회귀 수정은 검증 뒤 별도 fix 커밋으로 묶는다.
+- 원격 통합 회귀 수정 커밋: `f4a6898 fix: avoid eager evaluation script import`.
 - 생성된 `chroma_db`와 `data/evaluation/reports/`는 Git 제외 상태다.
 
 ## 확정된 설계
@@ -65,11 +65,11 @@
 12. `ce2119f docs: document automated rag evaluation`
 13. `742436b docs: finalize rag evaluation handoff`
 14. `2a0b447 Merge remote-tracking branch 'origin/main' into codex/rag-evaluation`
-15. `(현재 수정 커밋) fix: avoid eager evaluation script import`
+15. `f4a6898 fix: avoid eager evaluation script import`
 
 ## 다음 작업자 즉시 수행 항목
 
-1. 현재 수정 커밋을 만든 뒤 `codex/rag-evaluation`을 원격에 push한다.
+1. `codex/rag-evaluation`을 원격에 push한다.
 2. `main` 대상 Draft PR을 생성하고 URL·검증 결과를 기록한다.
 3. PR 검토·병합 전까지 worktree를 삭제하지 않는다.
 4. 통합 후 다음 구현은 평가 실패 5건을 재현하는 집중 RAG 결함 수정 계획부터 시작한다.
@@ -214,4 +214,4 @@
 - GREEN: package 초기화의 eager import를 제거했다. 기존 `from backend.scripts import evaluate`는 Python의 submodule import로 유지된다.
 - 검증: backend 57 passed, Ruff 통과, CLI help exit 0·RuntimeWarning 없음, 실제 평가는 기존과 같은 quality exit 1과 25/30.
 - frontend 재검증: Vitest 9 passed, TypeScript·ESLint exit 0, Next.js build 정적 페이지 4개 생성. 자동 변경된 `next-env.d.ts`는 저장소 버전으로 복원했다.
-- 다음 시작점: fix 커밋 후 원격 push와 Draft PR 생성
+- 다음 시작점: 원격 push와 Draft PR 생성

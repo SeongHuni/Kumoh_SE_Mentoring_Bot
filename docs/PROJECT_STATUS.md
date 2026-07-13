@@ -30,7 +30,7 @@
 | 요구사항·설계 | 완료 | 최신성·추천 UX와 자동 평가 Task 1~6 설계·계획 존재 | 정책 변경 시 설계와 이 문서 동시 갱신 |
 | 백엔드 RAG | 완료 | 주제 분류, 최신성 계산, Chroma filter, 추천 질문·최근 공지 구현 | 실데이터 평가와 미검증 provider 보강 |
 | 프론트엔드 | 완료 | A 집중형 채팅, 출처·추천 chip·최근 공지, 모바일 대응 | 페이지 통합/E2E 및 접근성 자동화 |
-| 단위·컴포넌트 테스트 | 통과 | backend 56개, frontend 9개 | 커버리지 사각지대 해소 |
+| 단위·컴포넌트 테스트 | 통과 | backend 57개, frontend 9개 | 커버리지 사각지대 해소 |
 | 자동 평가 도구 | 완료 | 30개 case, 4개 check, JSON·Markdown 보고서, exit 0/1/2 검증 | 실패 5건 수정 후 품질 재측정 |
 | 문서·운영 절차 | 완료 | README와 RAG 운영 문서에 재인덱싱·자동 평가 절차 존재 | 데이터/환경 변경 때 현행화 |
 | 데이터 준비 | 부분 완료 | 학과 게시글 46건, 79청크 인덱싱 확인 | 양쪽 공식 소스 재수집과 최신성 감사 |
@@ -111,7 +111,7 @@
 
 | 검증 | 결과 | 해석 |
 | --- | --- | --- |
-| backend pytest | 56개 통과 | 평가 schema·evaluator·CLI·dataset 계약 포함 |
+| backend pytest | 57개 통과 | 평가 schema·evaluator·CLI·dataset·module 실행 계약 포함 |
 | backend Ruff | 통과 | 현재 Python 정적 검사 오류 없음 |
 | backend line coverage | 이전 측정 68% | Task 6 이후 coverage를 별도 재측정해야 함 |
 | frontend Vitest | 3 files, 9 tests 통과 | 컴포넌트 계약 검증 |
