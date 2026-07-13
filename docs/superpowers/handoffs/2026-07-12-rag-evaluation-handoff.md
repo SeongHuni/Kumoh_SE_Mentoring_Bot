@@ -121,3 +121,20 @@
 - GREEN: `RollbackFailure`로 실패한 복구 대상의 backup 경로를 보존 목록에 실어 cleanup에서 제외하고, RuntimeError/stderr에 보존된 backup 경로를 노출
 - 검증: focused `backend/tests/test_evaluate_script.py` 9 passed, 전체 `backend/tests` 54 passed, Ruff `All checks passed!`, `backend.scripts.evaluate --help` 정상 출력, `git diff --check` 통과
 - 작업 중단점: rollback-backup fix 완료, 다음 작업은 Task 4 dataset RED
+
+### Task 4 — 30개 baseline
+
+- RED reason: `backend/tests/test_evaluation_dataset.py`가 현재 8개짜리 `data/evaluation/questions.json`을 읽는 순간 `EvaluationCase` 필수 필드(`id`, `expected_topic_key`, `expected_grounded`, `expected_latest_only`) 누락으로 `ValidationError`를 발생시켜야 했고, 실제로 그렇게 실패했다.
+- exact case count and category counts: 총 30개, `개설강좌` 4, `수강신청` 5, `캡스톤` 4, `진로·취업` 4, `장학금` 4, `졸업요건` 3, `일반 공지` 3, `범위 밖` 3.
+- dataset/full test and Ruff results: `backend/tests/test_evaluation_dataset.py` 1 passed, `backend/tests` 55 passed, `backend/.venv/Scripts/python -m ruff check backend` → `All checks passed!`
+- exact index output: `게시글 46건, 청크 79개 인덱싱 완료 (provider=local, embedding=local-hash-embedding-v1)`
+- exact evaluation process exit code: `backend/.venv/Scripts/python -m backend.scripts.evaluate` → exit code `1`
+- report summary total/passed/failed and metrics:
+  - summary: `total=30`, `passed=25`, `failed=5`
+  - topic: `{"passed": 30, "total": 30, "rate": 1.0}`
+  - grounded: `{"passed": 25, "total": 30, "rate": 0.8333}`
+  - latest_only: `{"passed": 28, "total": 30, "rate": 0.9333}`
+  - source_title: `{"passed": 10, "total": 11, "rate": 0.9091}`
+- every failed case_id: `registration-period`, `capstone-second-semester`, `career-recruitment`, `scholarship-apply`, `general-recent-department`
+- generated report paths and ignored status: `data/evaluation/reports/latest.json`, `data/evaluation/reports/latest.md` 생성됨; 둘 다 Git 제외 대상이라 커밋하지 않음.
+- 다음 시작점: README·operations·PROJECT_STATUS에 이번 baseline/평가 결과 반영
