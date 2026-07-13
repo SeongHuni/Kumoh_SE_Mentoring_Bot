@@ -98,3 +98,11 @@
 - Characterization C: general은 다른 topic의 latest URL 허용, course_openings는 동일 URL 거부(첫 실행 통과)
 - 전체 회귀: evaluation pytest 19 passed, backend pytest 45 passed, Ruff `All checks passed!`, `git diff --check` 통과
 - 다음 시작점: CLI 성공 0·평가 실패 1·실행 오류 2 테스트
+
+### Task 3 — 평가 CLI와 원자적 보고서
+
+- RED import failure: `backend.scripts.evaluate` 미노출로 collection import 실패
+- GREEN exit 0/1/2, minimum cases, empty index: CLI 종료코드/사전검증/빈 인덱스 처리 구현 중
+- atomic latest.json/latest.md and ignore confirmation: `NamedTemporaryFile` 기반 원자적 기록과 `data/evaluation/reports/` ignore 추가
+- exact full backend count: 전체 backend 회귀와 Ruff 검증 예정
+- next: committed dataset 30 cases/category distribution RED

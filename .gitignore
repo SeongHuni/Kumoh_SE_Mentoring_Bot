@@ -16,6 +16,7 @@ frontend/out/
 chroma_db/
 data/processed/*
 !data/processed/.gitkeep
+data/evaluation/reports/
 
 .DS_Store
 Thumbs.db
