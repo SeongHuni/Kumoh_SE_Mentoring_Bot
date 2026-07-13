@@ -2,7 +2,7 @@
 
 > 기준일: 2026-07-13
 > 기준 브랜치: `codex/rag-evaluation`
-> 로컬 `main` 기준: `98b5791 docs: plan automated rag evaluation`
+> 로컬·원격 `main` 기준: `8473c78 Ignore evaluation reports and export script entrypoint`
 > 기존 기능 통합 커밋: `8dc3078 Merge branch 'codex/topic-latest'`
 
 이 문서는 프로젝트의 현재 진행도, 남은 위험, 개선 TODO, 단계별 검증 기준을 한곳에서 관리하는 운영 기준 문서다. 자동 평가 구현 이력은 [`superpowers/handoffs/2026-07-12-rag-evaluation-handoff.md`](superpowers/handoffs/2026-07-12-rag-evaluation-handoff.md), RAG 설계는 [`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md)를 참고한다.

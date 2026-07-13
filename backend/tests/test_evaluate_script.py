@@ -1,8 +1,11 @@
+import subprocess
+import sys
 from argparse import Namespace
 from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
+from backend.app.config import REPOSITORY_ROOT
 from backend.app.evaluation import (
     EvaluationChecks,
     EvaluationMetric,
@@ -11,6 +14,18 @@ from backend.app.evaluation import (
     EvaluationSummary,
 )
 from backend.scripts import evaluate
+
+
+def test_module_help_does_not_emit_runtime_warning() -> None:
+    result = subprocess.run(
+        [sys.executable, "-m", "backend.scripts.evaluate", "--help"],
+        cwd=REPOSITORY_ROOT,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert b"RuntimeWarning" not in result.stderr
 
 
 def report(failed: int) -> EvaluationReport:
