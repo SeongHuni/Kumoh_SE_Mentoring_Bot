@@ -73,3 +73,11 @@
 - RED: evaluation module 부재로 test collection 실패
 - GREEN: 유효 입력, 중복 id, kebab-case, grounded/source 모순 테스트 통과
 - 다음 시작점: topic·grounded·latest source 평가 실패 테스트
+
+### Task 1 review fix — strict schema
+
+- RED: unknown field 1건과 non-boolean `expected_grounded` 2건이 permissive Pydantic 동작으로 실패(총 3 failures)
+- GREEN: strict schema 적용 후 evaluation 테스트 10개 통과
+- 커밋: `fix: enforce strict evaluation case schema`
+- 작업 중단점: Task 1 strict-schema review fix 완료, Task 2 미시작
+- 다음 작업자 시작점: Task 2 evaluator/result/report symbol import RED 테스트

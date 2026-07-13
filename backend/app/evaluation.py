@@ -4,12 +4,14 @@ import json
 import re
 from pathlib import Path
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 CASE_ID_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 
 class EvaluationCase(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
     id: str
     question: str = Field(min_length=2, max_length=500)
     category: str

@@ -45,6 +45,30 @@ def test_case_rejects_source_expectation_when_grounded_is_false() -> None:
         EvaluationCase.model_validate(payload)
 
 
+def test_case_rejects_unknown_fields() -> None:
+    payload = valid_case()
+    payload["expected_source_title_contians"] = ["수강신청 안내"]
+
+    with pytest.raises(ValueError, match="expected_source_title_contians"):
+        EvaluationCase.model_validate(payload)
+
+
+@pytest.mark.parametrize(
+    "invalid_value",
+    [
+        pytest.param("false", id="string-false"),
+        pytest.param(1, id="integer-one"),
+    ],
+)
+def test_case_rejects_non_boolean_expected_grounded(invalid_value: object) -> None:
+    payload = valid_case()
+    payload["expected_grounded"] = invalid_value
+    payload["expected_source_title_contains"] = []
+
+    with pytest.raises(ValueError, match="expected_grounded"):
+        EvaluationCase.model_validate(payload)
+
+
 @pytest.mark.parametrize("case_id", ["Upper-Case", "space id", "한글-id", ""])
 def test_case_requires_kebab_case_id(case_id: str) -> None:
     payload = valid_case(case_id)
