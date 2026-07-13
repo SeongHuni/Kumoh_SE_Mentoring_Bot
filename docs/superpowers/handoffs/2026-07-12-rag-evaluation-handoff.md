@@ -81,3 +81,10 @@
 - 커밋: `fix: enforce strict evaluation case schema`
 - 작업 중단점: Task 1 strict-schema review fix 완료, Task 2 미시작
 - 다음 작업자 시작점: Task 2 evaluator/result/report symbol import RED 테스트
+
+### Task 2 — 순수 evaluator와 보고서
+
+- RED: evaluator/result/report symbol import 실패
+- GREEN: topic·grounded·latest-only·source-title·metric·Markdown 테스트 통과
+- 전체 회귀: backend pytest 42 passed, Ruff `All checks passed!`
+- 다음 시작점: CLI 성공 0·평가 실패 1·실행 오류 2 테스트
