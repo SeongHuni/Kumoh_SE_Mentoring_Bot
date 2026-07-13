@@ -138,3 +138,10 @@
 - every failed case_id: `registration-period`, `capstone-second-semester`, `career-recruitment`, `scholarship-apply`, `general-recent-department`
 - generated report paths and ignored status: `data/evaluation/reports/latest.json`, `data/evaluation/reports/latest.md` 생성됨; 둘 다 Git 제외 대상이라 커밋하지 않음.
 - 다음 시작점: README·operations·PROJECT_STATUS에 이번 baseline/평가 결과 반영
+
+### Task 4 quality fix — baseline 계약 고정
+
+- 리뷰 위험: 기존 테스트의 `>= 30`과 카테고리별 최소 건수만으로는 canonical ID 교체·순서 변경·추가 케이스와 grounded/source-title 기대값 약화를 감지하지 못할 수 있었다.
+- 보강: 정확한 30개 ID와 순서, 카테고리별 정확한 건수, 카테고리별 topic, grounded=true ID 집합, source-title fragment를 회귀 계약으로 고정했다. 질문 문구와 운영 메모는 데이터 갱신 시 합리적으로 수정할 수 있도록 중복 고정하지 않았다.
+- 검증: `backend/tests/test_evaluation_dataset.py` 2 passed, 전체 `backend/tests` 56 passed, Ruff `All checks passed!`.
+- 다음 시작점: Task 5 README·operations·PROJECT_STATUS·handoff 문서화
