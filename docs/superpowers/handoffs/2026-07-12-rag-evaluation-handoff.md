@@ -114,3 +114,10 @@
 - GREEN: 두 내용을 먼저 staging하고 기존 쌍을 백업한 뒤 함께 commit하며, 실패 시 두 파일 rollback·임시/백업 정리·`OSError`/롤백 `RuntimeError` exit 2 처리 완료
 - 검증: evaluate CLI 8 passed, 전체 backend 53 passed, Ruff `All checks passed!`
 - next: committed dataset 30 cases/category distribution RED
+
+### Task 3 quality fix — rollback-backup preservation
+
+- RED: 두 번째 report commit 실패 + JSON backup restore 실패 시, 기존 cleanup이 실패한 `.bak`까지 삭제하는 회귀를 `test_main_preserves_failed_rollback_backup_for_manual_recovery`로 재현
+- GREEN: `RollbackFailure`로 실패한 복구 대상의 backup 경로를 보존 목록에 실어 cleanup에서 제외하고, RuntimeError/stderr에 보존된 backup 경로를 노출
+- 검증: focused `backend/tests/test_evaluate_script.py` 9 passed, 전체 `backend/tests` 54 passed, Ruff `All checks passed!`, `backend.scripts.evaluate --help` 정상 출력, `git diff --check` 통과
+- 작업 중단점: rollback-backup fix 완료, 다음 작업은 Task 4 dataset RED

@@ -76,10 +76,33 @@ def validate_indexed_chunks(indexed_chunks: int) -> None:
         raise ValueError("벡터 인덱스가 비어 있습니다. 재인덱싱을 먼저 실행하세요.")
 
 
-def _cleanup_artifacts(paths: list[Path | None]) -> OSError | None:
+class RollbackFailure(RuntimeError):
+    def __init__(
+        self,
+        failed_target_names: tuple[str, ...],
+        failed_backup_paths: tuple[Path, ...],
+        cause: OSError,
+    ) -> None:
+        self.failed_target_names = failed_target_names
+        self.failed_backup_paths = failed_backup_paths
+        target_names = ", ".join(failed_target_names)
+        backup_paths = ", ".join(str(path) for path in failed_backup_paths)
+        message = f"{target_names} 복구 실패"
+        if backup_paths:
+            message += f"; 보존된 백업: {backup_paths}"
+        super().__init__(message)
+        self.__cause__ = cause
+
+
+def _cleanup_artifacts(
+    paths: list[Path | None], preserve: set[Path] | None = None
+) -> OSError | None:
     first_error: OSError | None = None
+    preserve = preserve or set()
     for path in paths:
         if path is None:
+            continue
+        if path in preserve:
             continue
         try:
             path.unlink(missing_ok=True)
@@ -154,6 +177,7 @@ def _rollback_reports(
 ) -> None:
     first_error: OSError | None = None
     failed_targets: list[str] = []
+    failed_backup_paths: list[Path] = []
     for target, backup in zip(targets, backups, strict=True):
         try:
             if backup is None:
@@ -162,11 +186,14 @@ def _rollback_reports(
                 backup.replace(target)
         except OSError as exc:
             failed_targets.append(target.name)
+            if backup is not None:
+                failed_backup_paths.append(backup)
             if first_error is None:
                 first_error = exc
     if first_error is not None:
-        names = ", ".join(failed_targets)
-        raise OSError(f"{names} 복구 실패: {first_error}") from first_error
+        raise RollbackFailure(
+            tuple(failed_targets), tuple(failed_backup_paths), first_error
+        ) from first_error
 
 
 def write_reports(report: EvaluationReport, output_dir: Path) -> None:
@@ -189,12 +216,18 @@ def write_reports(report: EvaluationReport, output_dir: Path) -> None:
             temporary_path.replace(target)
     except Exception as original_error:
         rollback_error: Exception | None = None
+        preserved_backups: set[Path] = set()
         if commit_started:
             try:
                 _rollback_reports(targets, tuple(backups))
+            except RollbackFailure as exc:
+                rollback_error = exc
+                preserved_backups = set(exc.failed_backup_paths)
             except Exception as exc:
                 rollback_error = exc
-        cleanup_error = _cleanup_artifacts([*staged, *backups])
+        cleanup_error = _cleanup_artifacts(
+            [*staged, *backups], preserve=preserved_backups
+        )
         if rollback_error is not None:
             message = f"평가 보고서 롤백에 실패했습니다: {rollback_error}"
             if cleanup_error is not None:

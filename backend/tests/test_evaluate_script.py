@@ -173,10 +173,93 @@ def test_main_returns_two_with_clear_error_when_report_rollback_fails(
     assert caught_error is not None
     assert isinstance(caught_error.__cause__, OSError)
     assert str(caught_error.__cause__) == "commit failed"
-    assert "평가 실행 오류: 평가 보고서 롤백에 실패했습니다" in capsys.readouterr().err
+    stderr = capsys.readouterr().err
+    preserved_backups = sorted(tmp_path.glob("*.bak"))
+    assert len(preserved_backups) == 1
+    preserved_backup = preserved_backups[0]
+    assert preserved_backup.read_text(encoding="utf-8") == "old json"
+    assert str(preserved_backup) in str(caught_error)
+    assert str(preserved_backup) in stderr
+    assert "평가 실행 오류: 평가 보고서 롤백에 실패했습니다" in stderr
     assert sorted(path.name for path in tmp_path.iterdir()) == [
         "latest.json",
         "latest.md",
+        preserved_backup.name,
+    ]
+
+
+def test_main_preserves_failed_rollback_backup_for_manual_recovery(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    json_path = tmp_path / "latest.json"
+    markdown_path = tmp_path / "latest.md"
+    json_path.write_text("old json", encoding="utf-8")
+    markdown_path.write_text("old markdown", encoding="utf-8")
+    original_replace = Path.replace
+    failed_second_commit = False
+
+    def fail_second_commit_and_json_restore(
+        self: Path, target: Path
+    ) -> Path:
+        nonlocal failed_second_commit
+        target_path = Path(target)
+        if (
+            not failed_second_commit
+            and self.suffix == ".tmp"
+            and target_path.name == "latest.md"
+        ):
+            failed_second_commit = True
+            raise OSError("commit failed")
+        if self.suffix == ".bak" and target_path.name == "latest.json":
+            raise OSError("restore failed")
+        return original_replace(self, target)
+
+    monkeypatch.setattr(Path, "replace", fail_second_commit_and_json_restore)
+    original_write_reports = evaluate.write_reports
+    caught_error: RuntimeError | None = None
+
+    def capture_rollback_error(
+        evaluation_report: EvaluationReport, output_dir: Path
+    ) -> None:
+        nonlocal caught_error
+        try:
+            original_write_reports(evaluation_report, output_dir)
+        except RuntimeError as exc:
+            caught_error = exc
+            raise
+
+    monkeypatch.setattr(
+        evaluate,
+        "run_evaluation",
+        lambda _args: report(failed=0),
+    )
+    monkeypatch.setattr(evaluate, "write_reports", capture_rollback_error)
+
+    exit_code = evaluate.main(
+        ["--output-dir", str(tmp_path), "--minimum-cases", "1"]
+    )
+
+    stderr = capsys.readouterr().err
+
+    assert exit_code == 2
+    assert caught_error is not None
+    assert isinstance(caught_error.__cause__, OSError)
+    assert str(caught_error.__cause__) == "commit failed"
+    preserved_backups = sorted(tmp_path.glob("*.bak"))
+    assert len(preserved_backups) == 1
+    preserved_backup = preserved_backups[0]
+    assert preserved_backup.read_text(encoding="utf-8") == "old json"
+    assert markdown_path.read_text(encoding="utf-8") == "old markdown"
+    assert not list(tmp_path.glob("*.tmp"))
+    assert str(preserved_backup) in str(caught_error)
+    assert str(preserved_backup) in stderr
+    assert "평가 실행 오류: 평가 보고서 롤백에 실패했습니다" in stderr
+    assert sorted(path.name for path in tmp_path.iterdir()) == [
+        "latest.json",
+        "latest.md",
+        preserved_backup.name,
     ]
 
 
