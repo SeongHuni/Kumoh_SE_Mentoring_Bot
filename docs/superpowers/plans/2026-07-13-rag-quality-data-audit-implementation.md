@@ -36,7 +36,7 @@
 - Modify: `backend/app/topic_rules.py`
 - Modify: `backend/tests/test_topic_rules.py`
 
-- [ ] **Step 1: 정책 로딩 RED 테스트 작성**
+- [x] **Step 1: 정책 로딩 RED 테스트 작성**
 
 `backend/tests/test_topic_rules.py`에 다음 테스트를 추가한다.
 
@@ -113,7 +113,7 @@ def test_catalog_rejects_invalid_policy(tmp_path, payload, message) -> None:
         load_topic_catalog(path)
 ```
 
-- [ ] **Step 2: RED 확인**
+- [x] **Step 2: RED 확인**
 
 Run:
 
@@ -123,7 +123,7 @@ backend/.venv/Scripts/python -m pytest backend/tests/test_topic_rules.py -q
 
 Expected: `TopicRule`에 `evidence_markers`가 없거나 `TopicCatalog`에 `retrieval_policy`가 없어 FAIL.
 
-- [ ] **Step 3: 최소 설정 모델 구현**
+- [x] **Step 3: 최소 설정 모델 구현**
 
 `backend/app/topic_rules.py`의 dataclass와 loader를 다음 계약으로 갱신한다. 기존 `rule_for()`와 `classify()`의 동작은 유지한다.
 
@@ -242,7 +242,7 @@ def load_topic_catalog(path: Path) -> TopicCatalog:
     return catalog
 ```
 
-- [ ] **Step 4: GREEN과 전체 관련 테스트 확인**
+- [x] **Step 4: GREEN과 전체 관련 테스트 확인**
 
 Run:
 
@@ -253,12 +253,14 @@ backend/.venv/Scripts/python -m ruff check backend/app/topic_rules.py backend/te
 
 Expected: 모든 테스트와 Ruff exit 0.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add backend/app/topic_rules.py backend/tests/test_topic_rules.py
 git commit -m "feat: validate retrieval evidence policy"
 ```
+
+> 2026-07-13 중단 기록: Task 1 구현 커밋 `4093c94`, 관련 9개와 전체 backend 60개 테스트, Ruff, 명세 리뷰를 통과했다. 코드 품질 리뷰는 사용자 요청으로 실행 중 종료했으므로 재개 시 새 검토자로 다시 수행한다. 상세 진입점은 `docs/superpowers/handoffs/2026-07-13-rag-quality-data-audit-handoff.md`를 따른다.
 
 ### Task 2: 질문 의도 분석
 

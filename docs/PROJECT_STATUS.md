@@ -229,3 +229,19 @@ Invoke-RestMethod http://localhost:8000/api/health
 - 세션별 작업 상세와 커밋 목록은 handoff 문서에 남기고, 이 문서에는 현재 유효한 결론만 유지한다.
 - 완료한 TODO는 삭제하지 말고 상태와 검증 근거를 기록한 뒤 완료 이력으로 이동한다.
 - 수치가 없는 “완료” 표현을 피하고 명령, exit code, 건수, 날짜, source URL로 근거를 남긴다.
+
+## 10. 현재 중단점과 재개 진입점 (2026-07-13)
+
+RAG 품질·데이터 감사 후속 작업은 `codex/rag-quality-hardening` 브랜치의 전용 worktree에서 진행 중이며 사용자 요청으로 Task 1 이후 중단했다.
+
+- 재개 문서: [`superpowers/handoffs/2026-07-13-rag-quality-data-audit-handoff.md`](superpowers/handoffs/2026-07-13-rag-quality-data-audit-handoff.md)
+- 설계 커밋: `5bfd23b`
+- 구현 계획 커밋: `93dd6d7`
+- 현재 기능 HEAD: `4093c94 feat: validate retrieval evidence policy`
+- Task 1: TDD 구현·60개 backend 회귀·명세 리뷰 통과
+- 미완료 게이트: Task 1 코드 품질 리뷰가 중단되어 재실행 필요
+- 다음 구현: Task 2 질문 의도 분석부터 Task 9 전체 검증까지 순차 진행
+- 현재 품질 기준선: local 평가 25/30, 실패 5건, quality exit 1
+- 원격 상태: 기능 브랜치 push/PR 미수행
+
+다음 작업자는 인수인계 문서의 `1. 재개 진입점` 명령으로 시작하고, Task 1 품질 리뷰를 통과시키기 전에는 Task 2를 완료 처리하지 않는다.
