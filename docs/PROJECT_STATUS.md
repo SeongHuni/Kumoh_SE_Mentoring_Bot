@@ -2,7 +2,7 @@
 
 > 기준일: 2026-07-14
 > 기준 브랜치: `main`
-> RAG 품질 결함 수정 작업: `backend/app/rag.py` 재랭킹·최신성 로직 (커밋 전, 작업 트리)
+> RAG 품질 결함 수정 커밋: `a2a0bdf fix: resolve 5 RAG evaluation quality gaps in local rerank/grounding`
 > 자동 평가 통합 커밋: `6334bdc Merge pull request #2 from SeongHuni/codex/rag-evaluation`
 > 기존 기능 통합 커밋: `8dc3078 Merge branch 'codex/topic-latest'`
 
@@ -13,18 +13,20 @@
 - 계획된 **주제별 최신 RAG와 추천 UX 기능은 구현·검증 완료** 상태다.
 - 자동 평가 CLI와 30개 구조화 baseline은 PR #2로 `main`에 통합됐고, JSON·Markdown 보고서와 exit 0/1/2 계약도 병합 후 재검증됐다.
 - 2026-07-14 기준, 이전에 측정된 5개 RAG 품질 실패(false-positive 3건, false-negative 2건)를 **모두 수정**했다. `backend/app/rag.py`의 재랭킹·최신성 로직을 고쳐 30개 중 30개 통과(exit 0)로 재현했다. 자세한 수정 내용은 4절을 참고한다.
-- **평가 도구 완료와 RAG 품질 완료는 별개**라는 원칙은 유지한다. 이번 수정은 46건 baseline·30개 평가셋 기준으로만 검증됐고, 실데이터 최신성·SE 게시판 실수집(P0-2)은 아직 이뤄지지 않았다.
-- 로컬 프로토타입은 실행 가능하지만, **실데이터 최신성·SE 게시판 수집·운영 안전성은 여전히 추가 검증이 필요**하다.
-- 따라서 현재 단계는 `측정된 RAG 결함 개선 완료 → P0-2 공식 데이터 재수집`이며, 파일럿 또는 운영 완료로 판단하지 않는다.
+- 2026-07-14 P0-2를 부분 수행했다. **학과 게시판 50건을 재수집**해(`published_at` 누락 0건, 게시일 범위 2024-09-04~2026-06-30) `--reset` 재인덱싱(84청크)했고, 새 데이터에서 30개 평가 전부 통과(exit 0)를 재확인했다.
+- **SE 게시판(seboard.site)은 수집하지 않았다.** 2026-07-14 확인 결과 `https://seboard.site/robots.txt`가 `User-agent: * / Disallow: /`로 전체 크롤링을 금지하고 Cloudflare 콘텐츠 신호도 `ai-train=no`를 선언한다. README의 수집 정책(robots.txt 준수)에 따라 자동 수집을 중단했으며, 운영자 서면 허가 또는 공식 API(`SEBOARD_API_URL`) 확보 전에는 재시도하지 않는다.
+- **평가 도구 완료와 RAG 품질 완료는 별개**라는 원칙은 유지한다. 이번 수정·재수집 검증은 학과 게시판 50건·30개 평가셋 기준이며, SE 게시판 데이터는 아직 포함되지 않았다.
+- 로컬 프로토타입은 실행 가능하지만, **SE 게시판 수집 권한·주제 세분화·운영 안전성은 여전히 추가 검증이 필요**하다.
+- 따라서 현재 단계는 `P0-2 학과 소스 완료 → SE 게시판 수집 권한 확보(차단) + P0-3/P0-4`이며, 파일럿 또는 운영 완료로 판단하지 않는다.
 
 현재 활성 품질 작업:
 
 - P1-1 자동 평가 CLI와 30개 평가셋: 구현 완료
 - 설계: `docs/superpowers/specs/2026-07-12-rag-evaluation-design.md`
 - 진행 인수인계: `docs/superpowers/handoffs/2026-07-12-rag-evaluation-handoff.md`
-- 측정 결과(2026-07-14, 수정 후): `total=30`, `passed=30`, `failed=0`; topic 100%, grounded 100%, latest-only 100%, source-title 100%
-- 이전 측정 결과(2026-07-13, 수정 전): `total=30`, `passed=25`, `failed=5`; topic 100%, grounded 83.33%, latest-only 93.33%, source-title 90.91%
-- 다음 권장 작업: P0-2 공식 데이터 재수집으로 46건 baseline의 실데이터 최신성을 확보하고, 재수집된 데이터로 30개 baseline과 이번 수정 로직(신학기·동의어·최신성 fallback)이 여전히 유효한지 재검증
+- 측정 결과(2026-07-14, 50건 재수집 데이터): `total=30`, `passed=30`, `failed=0`; topic 100%, grounded 100%, latest-only 100%, source-title 100%
+- 이전 측정 결과(2026-07-13, 수정 전 46건): `total=30`, `passed=25`, `failed=5`; topic 100%, grounded 83.33%, latest-only 93.33%, source-title 90.91%
+- 다음 권장 작업: SE 게시판 운영자에게 수집 허가 또는 공식 API 주소를 요청하고, 그동안 P0-3(최신성 범위 정책)·P0-4(주제 규칙 감사) 진행
 
 ## 2. 단계별 진행도
 
@@ -33,13 +35,13 @@
 | 요구사항·설계 | 완료 | 최신성·추천 UX와 자동 평가 Task 1~6 설계·계획 존재 | 정책 변경 시 설계와 이 문서 동시 갱신 |
 | 백엔드 RAG | 완료 | 주제 분류, 최신성 계산, Chroma filter, 추천 질문·최근 공지 구현 | 실데이터 평가와 미검증 provider 보강 |
 | 프론트엔드 | 완료 | A 집중형 채팅, 출처·추천 chip·최근 공지, 모바일 대응 | 페이지 통합/E2E 및 접근성 자동화 |
-| 단위·컴포넌트 테스트 | 통과 | backend 57개, frontend 9개 | 커버리지 사각지대 해소 |
+| 단위·컴포넌트 테스트 | 통과 | backend 60개, frontend 9개 | 커버리지 사각지대 해소 |
 | 자동 평가 도구 | 완료 | 30개 case, 4개 check, JSON·Markdown 보고서, exit 0/1/2 검증 | 실패 0건, exit 0 재현(2026-07-14) |
 | 문서·운영 절차 | 완료 | README와 RAG 운영 문서에 재인덱싱·자동 평가 절차 존재 | 데이터/환경 변경 때 현행화 |
-| 데이터 준비 | 부분 완료 | 학과 게시글 46건, 79청크 인덱싱 확인 | 양쪽 공식 소스 재수집과 최신성 감사 |
+| 데이터 준비 | 부분 완료 | 학과 게시글 50건 재수집(2026-07-14), 84청크 인덱싱, 원문 표본 대조 통과 | SE 게시판 수집 권한 확보 후 두 소스 통합 |
 | 브랜치 통합 | 완료 | PR #2 ready 전환·`6334bdc`로 main 병합·병합 후 전체 회귀 | 후속 기능은 새 브랜치와 PR로 통합 |
-| RAG 품질 결함 수정 | 완료 | false-positive 3건·false-negative 2건 모두 수정, 30/30 통과 | 새 커밋·PR로 병합 후 재검증 |
-| 파일럿 준비 | 차단 | 실수집(P0-2)·주제 세분화(P0-3/P0-4) 미완료 | P0-2~P0-4 TODO 완료 |
+| RAG 품질 결함 수정 | 완료 | `a2a0bdf`로 main 병합, false-positive 3건·false-negative 2건 수정, 50건 신규 데이터에서도 30/30 통과 | 데이터 소스 추가 시 재검증 |
+| 파일럿 준비 | 차단 | SE 게시판 수집 권한 미확보·주제 세분화(P0-3/P0-4) 미완료 | SE 수집 권한 + P0-3~P0-4 TODO 완료 |
 | 운영 준비 | 미착수 | CI, 관측성, rate limit, backup 기준 미완성 | 운영 검증 매트릭스 충족 |
 
 현재 실행·브랜치 스냅샷:
@@ -49,12 +51,12 @@
 | 기능 통합 커밋 | `8dc3078 Merge branch 'codex/topic-latest'` |
 | 기능 구현 기준 HEAD | `8a02351 docs: finalize topic latest handoff` |
 | 자동 평가 통합 | PR #2, merge commit `6334bdc` |
-| RAG 품질 결함 수정 | 작업 트리(커밋 전), `backend/app/rag.py`·`backend/tests/test_rag.py`·`backend/tests/test_config.py`·`.env(.example)`·`backend/app/config.py` |
+| RAG 품질 결함 수정 | commit `a2a0bdf`(main, 원격 push 완료) |
 | provider | `local` |
 | embedding | `local-hash-embedding-v1`, 1,536차원 |
 | answer | `local-extractive-answer-v1` |
 | retrieval | `top_k=5`, `min_score=0.10`(2026-07-14, 0.09에서 재조정) |
-| 데이터·인덱스 | 게시글 46건, 청크 79개 |
+| 데이터·인덱스 | 게시글 50건(kumoh, 2026-07-14 재수집), 청크 84개 |
 | 자동 평가 | 30건 중 30건 통과, quality exit 0(2026-07-14) |
 | 평가 보고서 | `data/evaluation/reports/latest.json`, `latest.md`(Git 제외) |
 
@@ -86,26 +88,27 @@
 
 ## 4. 데이터 상태와 품질 위험
 
-현재 `data/raw/posts.json` 46건을 규칙으로 분류한 결과다.
+현재 `data/raw/posts.json` 50건(2026-07-14 재수집, kumoh 단일 소스)을 규칙으로 분류한 결과다.
 
 | 주제 | 게시글 수 | 현재 최신 게시일 | 현재 최신 제목 |
 | --- | ---: | --- | --- |
-| `general` | 14 | 2026-06-17 | 2026학년도 AX 기반 역량 강화 프로젝트 공모 기간 연장 |
-| `career` | 13 | 2026-06-30 | 소프트웨어전공 전임교원 초빙 공개강의 심사 공고 |
+| `general` | 15 | 2026-06-17 | 2026학년도 AX 기반 역량 강화 프로젝트 공모 기간 연장 |
+| `career` | 14 | 2026-06-30 | 소프트웨어전공 전임교원 초빙 공개강의 심사 공고 |
 | `registration` | 12 | 2026-06-16 | 여름계절수업 조기취업자 출석인정신청 안내 |
-| `scholarship` | 5 | 2026-06-17 | 방산AI인재양성부트캠프 설명회 안내 |
-| `capstone` | 1 | 2026-03-19 | 2026학년도 1학기 캡스톤 디자인 운영 계획 |
+| `scholarship` | 6 | 2026-06-17 | 방산AI인재양성부트캠프 설명회 안내 |
+| `capstone` | 2 | 2026-03-19 | 2026학년도 1학기 캡스톤 디자인 운영 계획 |
 | `course_openings` | 1 | 2025-08-07 | 2025학년도 2학기 수강신청 안내 |
 | `graduation` | 0 | 없음 | 검색 가능한 자료 없음 |
 
+게시일 범위는 2024-09-04~2026-06-30이고 `published_at` 누락은 0건이다. 주제별 최신 게시글이 이전 46건 baseline과 동일한데, 이는 수집 결함이 아니라 게시판의 실제 최신 글이 2026-06-30(방학 기간)이기 때문임을 재수집으로 확인했다.
+
 주의할 점:
 
-1. 최신성 로직은 정상이어도 원본 데이터가 오래되면 최신 답변이 아니다. `course_openings`는 현재 데이터 기준 최신 자료가 2025-08-07이다.
-2. `general`, `career`, `registration`처럼 넓은 주제에서 최신 1건만 남기면 동시에 유효한 다른 공지가 제외될 수 있다.
-3. “같은 주제”를 단순 `topic_key`로 볼지, 학기·공고 종류·문서 시리즈 단위로 볼지 운영 정책 결정이 필요하다.
-4. SE 게시판 크롤러는 구현됐지만 현재 저장 데이터와 테스트가 학과 게시판 중심이다.
+1. `course_openings` 최신 자료가 2025-08-07인 것은 재수집으로도 확인된 실제 데이터 상태다. 게시판에서 해당 글이 고정글로 유지 중이며, 2026-2학기 수강신청 안내는 아직 게시되지 않았다(통상 8월 초 게시). 신규 학기 공지가 올라오면 재수집해야 한다.
+2. **SE 게시판(seboard.site)은 robots.txt(`User-agent: * / Disallow: /`)가 전체 크롤링을 금지해 수집을 중단했다(2026-07-14 확인).** Cloudflare 콘텐츠 신호도 `ai-train=no`다. 운영자 서면 허가를 받거나 공식 API 주소를 `SEBOARD_API_URL`로 받기 전에는 자동 수집을 재시도하지 않는다. SE 게시판 크롤러 코드는 유지하되 실행하지 않는다.
+3. `general`, `career`, `registration`처럼 넓은 주제에서 최신 1건만 남기면 동시에 유효한 다른 공지가 제외될 수 있다.
+4. “같은 주제”를 단순 `topic_key`로 볼지, 학기·공고 종류·문서 시리즈 단위로 볼지 운영 정책 결정이 필요하다(P0-3).
 5. 자동 평가가 실제 품질 간극 5건을 드러냈고, 2026-07-14에 근본 원인을 고쳐 모두 해결했다(기대값을 낮춰 exit 0을 만드는 방식은 사용하지 않았다). 상세 원인·수정 내용은 아래를 참고한다.
-6. `course_openings` 원본 최신일이 2025-08-07인 데이터 최신성 문제는 로직 결함이 아니라 데이터 문제이므로 여전히 P0-2 재수집으로 해결해야 한다.
 
 해결된 품질 간극(2026-07-14, `backend/app/rag.py`):
 
@@ -128,8 +131,10 @@
 | frontend TypeScript | 2026-07-14 재확인, 통과 | 타입 오류 없음 |
 | frontend ESLint | 2026-07-14 재확인, 통과 | 현재 lint 오류 없음 |
 | Next.js production build | 2026-07-14 재확인, 통과, 정적 페이지 4개 | production 빌드 가능 |
-| 재인덱싱 | 게시글 46건, 청크 79개 | local provider 인덱스 생성 가능 |
-| 자동 평가 | 2026-07-14, 30건 중 30건 통과, exit 0 | RAG 품질 실패 5건(false-positive 3·false-negative 2) 모두 수정 완료 |
+| 공식 데이터 재수집 | 2026-07-14, kumoh 50건 수집(exit 0, `--allow-partial` 미사용), `published_at` 누락 0건 | 표본 3건 원문 제목·작성일 대조 통과(articleNo 525560 등) |
+| SE 게시판 수집 | 미수행 — robots.txt `Disallow: /` 확인(2026-07-14) | 운영자 허가 또는 공식 API 확보 전 수집 금지 |
+| 재인덱싱 | 게시글 50건, 청크 84개 | local provider 인덱스 생성 가능 |
+| 자동 평가 | 2026-07-14, 재수집 50건 기준 30건 중 30건 통과, exit 0 | RAG 품질 실패 5건 수정이 신규 데이터에서도 유효 |
 | 평가 metric | topic 30/30, grounded 30/30, latest-only 30/30, source-title 11/11 | 4개 지표 모두 100% |
 | 실제 API | 2026-07-14, `/api/chat`으로 career-recruitment(grounded=true, 전임교원 초빙 소스)·capstone-second-semester(grounded=false)·general-recent-department(grounded=true)·scholarship-apply(grounded=false) 라이브 확인 | 수정된 5개 케이스 중 대표 4건을 실제 서버로 재확인 |
 | 브라우저 확인 | 추천 클릭·최근 공지·390px 모바일·console error 0(이전 기록, 프론트 변경 없어 재확인 불필요) | 주요 사용자 흐름 수동 확인 |
@@ -150,7 +155,8 @@
 | ID | 작업 | 완료 조건 | 필수 검증 |
 | --- | --- | --- | --- |
 | P0-1 | 브랜치 통합 — **완료** | 기존 기능 `8dc3078`, 자동 평가 PR #2 `6334bdc`로 `main` 통합 | 병합 후 backend 57·frontend 9, Ruff·TypeScript·ESLint·build·CLI 경고 회귀 통과 |
-| P0-2 | 공식 데이터 재수집 | 학과·SE 두 소스 수집 성공, 소스별 건수·최신 게시일 기록, `--reset` 재인덱싱 | `--allow-partial` 없이 수집 성공, 샘플 원문 URL·날짜 대조 |
+| P0-2 | 공식 데이터 재수집 — **부분 완료(2026-07-14)** | 학과 소스 50건 수집·감사·재인덱싱 완료. SE 소스는 robots.txt 금지로 차단 — 운영자 허가/공식 API 확보가 새 완료 조건 | 학과: `--allow-partial` 없이 exit 0, 표본 원문 대조 통과. SE: 허가 확보 후 동일 기준 재검증 |
+| P0-2a | SE 게시판 수집 권한 확보 | seboard.site 운영자에게 수집 허가 또는 공식 API(`SEBOARD_API_URL`) 요청·회신 기록 | 허가 문서 또는 API 주소 확보, robots.txt 재확인 |
 | P0-3 | 최신성 범위 정책 확정 | `topic_key` 1건 정책 유지 또는 `freshness_scope_key` 같은 문서 시리즈 단위 도입 결정 | 동시 유효 공지 2건, 학기 변경, 날짜 누락 fixture 테스트 |
 | P0-4 | 주제 규칙 데이터 감사 | 잘못 분류된 최신 공지 수정, `graduation` 자료 부재 처리 결정 | 주제별 표본 5건 수동 라벨링, confusion 기록 |
 
@@ -228,7 +234,7 @@ Invoke-RestMethod http://localhost:8000/api/health
 ## 8. 권장 실행 순서
 
 1. ~~자동 평가 실패 5건을 재현하는 집중 RAG 결함 수정 계획 수립·구현~~ — **완료(2026-07-14)**, 4절 참고
-2. P0-2 실제 양쪽 데이터 소스를 재수집해 데이터 최신성 확보하고, 재수집 데이터로 30개 baseline과 이번 수정 로직(신학기·동의어·최신성 fallback)을 함께 재검토
+2. ~~P0-2 학과 소스 재수집·감사·재인덱싱·평가 재검증~~ — **완료(2026-07-14)**: 50건 수집, 84청크, 30/30 통과. **SE 소스는 robots.txt 금지로 차단** — P0-2a(수집 권한 확보)는 사람이 진행해야 하는 항목
 3. P0-3/P0-4로 최신성 범위와 주제 규칙을 데이터에 맞게 조정
 4. P1-2/P1-3으로 외부 연동·API·페이지 통합 테스트 보강
 5. P1-4/P1-5로 잘못된 인덱스 차단과 CI 품질 게이트 구축

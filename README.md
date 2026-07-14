@@ -49,7 +49,9 @@ backend/.venv/Scripts/python -m backend.scripts.index --reset
 
 SE 게시판은 JavaScript 기반이므로 기본적으로 Selenium을 사용합니다. 공개 JSON API를 확인한 경우 `.env`의 `SEBOARD_API_URL`에 주소를 지정하면 API 수집을 우선합니다. 한 소스가 일시적으로 실패해도 성공한 데이터를 점검하려면 `--allow-partial`을 추가합니다.
 
-저장소의 `data/raw/posts.json`에는 크롤러 실사이트 검증을 위해 수집한 학과 게시글 46건이 포함되어 있습니다. 약 100건의 최종 데이터셋은 위 명령으로 두 소스를 다시 수집해 생성합니다.
+저장소의 `data/raw/posts.json`에는 학과 게시글 50건(2026-07-14 재수집)이 포함되어 있습니다.
+
+> **SE 게시판 수집 중단(2026-07-14)**: `seboard.site/robots.txt`가 `User-agent: * / Disallow: /`로 전체 크롤링을 금지하고 있어 SE 게시판 자동 수집을 중단했습니다. 운영자 허가 또는 공식 API 주소(`SEBOARD_API_URL`)를 확보하기 전에는 `--seboard-limit 0`으로 실행하세요.
 
 수집 대상은 로그인 없는 공개 글로 제한합니다. 요청 간 기본 1초 간격을 유지하며, 운영 전 각 사이트의 이용정책과 `robots.txt`를 다시 확인하세요. 첨부파일은 이름과 링크만 저장하고 파일 본문은 분석하지 않습니다.
 
