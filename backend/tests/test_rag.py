@@ -215,3 +215,107 @@ def test_rag_no_answer_keeps_followups_without_calling_generation() -> None:
     ]
     assert result.recent_notices[0].title == "개설강좌 안내"
     assert provider.answer_called is False
+
+
+def retrieved_semester(semester: str, score: float) -> RetrievedChunk:
+    return RetrievedChunk(
+        chunk=TextChunk(
+            id=f"kumoh:capstone-{semester}:0",
+            post_id=f"capstone-{semester}",
+            source="kumoh",
+            title=f"2026학년도 {semester}학기 캡스톤 디자인 운영 계획 안내",
+            text="신청은 학과 사무실에서 접수합니다.",
+            url=f"https://example.com/capstone-{semester}",
+            published_at="2026-03-19",
+            chunk_index=0,
+            topic_key="capstone",
+            topic_label="캡스톤디자인",
+            is_latest_topic=True,
+        ),
+        score=score,
+    )
+
+
+def test_rag_rejects_conflicting_semester_even_with_high_lexical_score() -> None:
+    provider = FakeProvider()
+    catalog = TopicCatalog(
+        default_topic_key="general",
+        rules=(
+            TopicRule("capstone", "캡스톤디자인", ("캡스톤디자인", "캡스톤 디자인"), ()),
+            TopicRule("general", "전체 공지", (), ()),
+        ),
+    )
+    service = RAGService(
+        provider=provider,
+        vector_store=FakeStore([retrieved_semester("1", score=0.6)]),  # type: ignore[arg-type]
+        topic_catalog=catalog,
+        min_score=0.1,
+    )
+
+    result = service.ask("2026학년도 2학기 캡스톤디자인 공지를 알려줘")
+
+    assert result.grounded is False
+    assert result.answer == NO_ANSWER
+    assert provider.answer_called is False
+
+
+def retrieved_faculty(score: float) -> RetrievedChunk:
+    return RetrievedChunk(
+        chunk=TextChunk(
+            id="kumoh:faculty:0",
+            post_id="faculty",
+            source="kumoh",
+            title="전임교원 초빙 공개강의 심사 공고",
+            text="심사 절차와 제출 서류 안내",
+            url="https://example.com/faculty",
+            published_at="2026-06-30",
+            chunk_index=0,
+            topic_key="career",
+            topic_label="진로·취업",
+            is_latest_topic=True,
+        ),
+        score=score,
+    )
+
+
+def test_rag_grounds_synonym_query_via_title_boost() -> None:
+    provider = FakeProvider()
+    catalog = TopicCatalog(
+        default_topic_key="general",
+        rules=(
+            TopicRule("career", "진로·취업", ("채용",), ()),
+            TopicRule("general", "전체 공지", (), ()),
+        ),
+    )
+    service = RAGService(
+        provider=provider,
+        vector_store=FakeStore([retrieved_faculty(score=0.03)]),  # type: ignore[arg-type]
+        topic_catalog=catalog,
+        min_score=0.1,
+    )
+
+    result = service.ask("최근 채용 공지를 찾아줘")
+
+    assert result.grounded is True
+    assert result.sources[0].title == "전임교원 초빙 공개강의 심사 공고"
+
+
+def test_rag_falls_back_to_newest_for_generic_default_topic_query() -> None:
+    provider = FakeProvider()
+    catalog = TopicCatalog(
+        default_topic_key="general",
+        rules=(TopicRule("general", "전체 공지", (), ()),),
+    )
+    weak_old = retrieved_post("old", "2026-03-10", score=0.02)
+    weak_new = retrieved_post("new", "2026-06-01", score=0.01)
+    service = RAGService(
+        provider=provider,
+        vector_store=FakeStore([weak_old, weak_new]),  # type: ignore[arg-type]
+        topic_catalog=catalog,
+        min_score=0.2,
+    )
+
+    result = service.ask("최근 학과 공지를 알려줘")
+
+    assert result.grounded is True
+    assert result.sources[0].url == "https://example.com/new"
