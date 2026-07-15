@@ -3,7 +3,7 @@
 > 기준일: 2026-07-15
 > 기준 브랜치: `codex/backend-quality-gates`
 > 통합 범위: `main` 병합점(`3c016de`) + backend coverage·인덱스 manifest·CI 로컬 구현
-> 상세 이력: [`superpowers/handoffs/2026-07-13-rag-quality-data-audit-handoff.md`](superpowers/handoffs/2026-07-13-rag-quality-data-audit-handoff.md)
+> 상세 이력: [`superpowers/handoffs/2026-07-15-backend-quality-gates-handoff.md`](superpowers/handoffs/2026-07-15-backend-quality-gates-handoff.md)
 
 이 문서는 현재 유효한 구현 수준, 검증 근거, 외부 확인이 필요한 위험과 다음 우선순위를 관리한다. 과거 세션별 RED/GREEN 및 커밋 기록은 인수인계 문서에 유지한다.
 
@@ -16,10 +16,10 @@
 - 부분 수집 결과는 운영 원본이 아닌 `data/raw/candidates/`에 격리한다.
 - 데이터 감사는 현재 게시글 50건에서 실제 데이터 경고 3건을 탐지한다.
 - 임베딩·청킹·원본·주제 규칙 fingerprint와 청크 수를 strict manifest로 검증하며, 불일치한 인덱스로는 채팅하지 않는다.
-- 백엔드 153개 테스트와 product-code line coverage 91.12%, 프론트엔드 9개 테스트, Ruff·TypeScript·ESLint·Next.js production build가 기능 브랜치에서 통과했다.
+- 백엔드 154개 테스트와 product-code line coverage 91.42%, 프론트엔드 9개 테스트, Ruff·TypeScript·ESLint·Next.js production build가 기능 브랜치에서 통과했다.
 - GitHub Actions 품질 workflow를 추가했고 동일 명령의 로컬 검증은 통과했지만, 원격 workflow 실행은 push 후 확인해야 한다.
 - SE 게시판은 `robots.txt`가 전체 자동 수집을 금지하므로 운영자 서면 허가 또는 승인된 공식 API 확보 전까지 자동 크롤링하지 않는다.
-- 따라서 이번 backend 품질 gate의 로컬 구현은 완료 단계지만 SE 데이터 권한, 오래된 개설강좌 자료, 졸업 자료, frontend E2E와 운영 안전성 때문에 파일럿·운영 준비는 진행 중이다.
+- 따라서 이번 backend 품질 gate의 로컬 구현과 실제 인덱스 회귀는 완료됐지만 SE 데이터 권한, 오래된 개설강좌 자료, 졸업 자료, frontend E2E와 운영 안전성 때문에 파일럿·운영 준비는 진행 중이다.
 
 핵심 결정 3개:
 
@@ -37,7 +37,7 @@
 | 데이터 감사 | 로컬 완료 | JSON·Markdown, exit 0/1/2, 원자적 저장, 본문 제외 | 현재 경고 3건 해결·승인 |
 | 자동 평가 | 완료 | 고정 30문항 전체 통과, exit 0 | 데이터 변경 시 공식 원문 재검토 |
 | 프론트엔드 | 완료 | 답변·출처·추천 질문·최근 공지, 9 tests, build | 페이지 fetch E2E·접근성 자동화 |
-| 전체 회귀 | 로컬 통과 | backend 153·coverage 91.12%, Ruff, frontend test/type/lint/build | 원격 CI 실행 확인 |
+| 전체 회귀 | 로컬 통과 | backend 154·coverage 91.42%, Ruff, frontend test/type/lint/build | 원격 CI 실행 확인 |
 | CI 품질 gate | 로컬 완료 | PR·main workflow와 동일 명령 통과 | branch push 후 GitHub Actions 확인·필수 검사 지정 |
 | main 통합 | 이전 범위 완료 | `3c016de`까지 main 통합 | 현재 기능 브랜치 최종 검증 후 병합·push |
 | 파일럿 준비 | 부분 완료 | 로컬 기능·평가 통과 | P0 데이터 검증과 P1 안전장치 |
@@ -53,8 +53,9 @@
 | retrieval | `top_k=5`, `min_score=0.10` |
 | 저장 데이터 | 게시글 50건, `kumoh=50`, `seboard=0` |
 | 게시일 범위 | 2024-09-04 ~ 2026-06-30 |
-| 로컬 인덱스 | 청크 84개인 구 인덱스, 새 manifest 기준 재생성 필요 |
-| API index 상태 | `needs_reindex` 예상, Task 7에서 실제 재생성·확인 예정 |
+| 로컬 인덱스 | 청크 84개, strict manifest 생성 완료 |
+| manifest fingerprint | `9fe1fee46fbf` (전체 SHA-256은 로컬 manifest 참조) |
+| API index 상태 | `ready`, `compatible`, 84 chunks |
 | 자동 평가 | 30/30, exit 0 |
 | 평가 세부 | topic 30/30, grounded 30/30, latest-only 30/30, source-title 11/11 |
 | 데이터 감사 | 경고 3건, exit 1 |
@@ -86,6 +87,7 @@
 - manifest 누락·손상, 설정·내용·청크 수 불일치는 `/api/health`의 `needs_reindex`로 드러나며 `/api/chat`은 `409`로 차단한다.
 - 비어 있는 인덱스는 `needs_index`, provider 설정 문제는 `needs_configuration`, 저장소 문제는 `unavailable`로 구분한다.
 - 전체 인덱싱은 임베딩 계산을 먼저 검증한 뒤 기존 컬렉션을 교체하고, 성공한 경우에만 manifest를 기록한다.
+- 동일 입력을 다시 인덱싱해 semantic fingerprint가 같아도 manifest 생성 시각을 내부 세대 키로 사용해 Chroma handle과 RAG service를 교체한다.
 
 ## 5. 데이터 상태와 감사 경고
 
@@ -124,15 +126,20 @@
 | --- | --- |
 | 기준점 | `main`의 `3c016de`에서 격리 worktree 생성 |
 | normative 평가 데이터 | 기능 브랜치에서 변경 없음 |
-| backend pytest | 153 tests 통과 |
-| backend product coverage | 91.12%, 85% gate 통과 |
+| backend pytest | 154 tests 통과 |
+| backend product coverage | 91.42%, 85% gate 통과 |
 | backend Ruff | `All checks passed!` |
 | frontend Vitest | 3 files, 9 tests 통과 |
 | frontend TypeScript | exit 0 |
 | frontend ESLint | exit 0 |
 | Next.js production build | exit 0, 정적 페이지 4개 |
 | GitHub Actions 구성 | workflow 구조와 로컬 대응 명령 통과, 원격 실행 대기 |
-| 재인덱싱·평가·감사 | 새 manifest 기준 최종 실행 예정 |
+| 실제 재인덱싱 | 50 posts, 84 chunks, fingerprint `9fe1fee46fbf`, exit 0 |
+| manifest/API smoke | health `ready compatible`, 차단 reason matrix 16 tests 통과 |
+| 독립 코드 리뷰 | stale Chroma handle·typecheck 경로 지적을 수정하고 동일 fingerprint 재인덱싱 회귀까지 재검토 |
+| 실제 local 평가 | 30 passed, 0 failed, exit 0 |
+| 데이터 감사 | 50 posts, 3 issues, exit 1(의도된 품질 경고) |
+| 생성물 ignore | Chroma·coverage·평가·감사·부분 후보 모두 제외 |
 
 비차단 경고:
 
@@ -154,7 +161,7 @@
 
 | ID | 작업 | 완료 조건 |
 | --- | --- | --- |
-| P1-1 | backend line coverage 85%+ | 로컬 완료: 153 tests, 91.12%; 사용자 요청에 따라 SE crawler 제외 |
+| P1-1 | backend line coverage 85%+ | 로컬 완료: 154 tests, 91.42%; 사용자 요청에 따라 SE crawler 제외 |
 | P1-2 | 임베딩 fingerprint | 로컬 완료: strict manifest와 health/chat 차단 회귀 테스트 |
 | P1-3 | frontend 통합/E2E | 미진행: fetch 성공·오류·추천 재질문과 390px/1280px 흐름 자동화 |
 | P1-4 | GitHub CI | workflow·로컬 검증 완료; 원격 실행과 branch protection 확인 필요 |
@@ -176,7 +183,7 @@ backend/.venv/Scripts/python.exe -m backend.scripts.index --reset
 backend/.venv/Scripts/python.exe -m backend.scripts.evaluate
 backend/.venv/Scripts/python.exe -m backend.scripts.audit_data
 npm --prefix frontend test
-npm --prefix frontend exec -- tsc --project frontend/tsconfig.json --noEmit
+npm --prefix frontend run typecheck
 npm --prefix frontend run lint
 npm --prefix frontend run build
 ```
