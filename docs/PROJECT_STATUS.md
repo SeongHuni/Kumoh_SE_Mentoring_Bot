@@ -9,8 +9,8 @@
 
 ## 1. 현재 결론
 
-- 백엔드 전체 pytest는 `170 passed`, 총 coverage는 `92.53%`로 85% gate를 넘었고 Ruff도 통과했다.
-- 프론트엔드는 Vitest `5 files / 76 tests` 통과, TypeScript·ESLint·Next production build 통과, production/development 의존성 audit 모두 `0 vulnerabilities`다.
+- 백엔드 전체 pytest는 `171 passed`, 총 coverage는 `92.59%`로 85% gate를 넘었고 Ruff도 통과했다.
+- 프론트엔드는 Vitest `5 files / 83 tests` 통과, TypeScript·ESLint·Next production build 통과, production/development 의존성 audit 모두 `0 vulnerabilities`다.
 - strict index manifest는 평가에서 provider를 만들거나 첫 질문을 처리하기 전에 확인된다. provider·모델·차원·원본·주제 규칙·청크 수가 맞지 않으면 fail-closed로 중단한다.
 - `audit_data`는 기본적으로 설정된 `RAW_POSTS_PATH`와 `TOPIC_RULES_PATH`를 사용하며, `--posts`·`--topic-rules` 명시값이 있으면 각각의 override가 우선한다.
 - SE public crawl은 기본값이 `0`이고 양수 limit에는 acknowledgement가 필요하다. 이 기술적 guard는 실제 운영자 허가나 API 사용 권한 자체를 검증하지 않는다.
@@ -30,23 +30,23 @@
 
 | 영역 | 상태 | 현재 근거 | 남은 조건 |
 | --- | --- | --- | --- |
-| 백엔드 RAG·manifest | 로컬 검증 통과 | 170 tests, 92.53% coverage, Ruff, strict manifest 회귀 | provider-matched 실제 평가 재실행과 threshold calibration |
+| 백엔드 RAG·manifest | 로컬 검증 통과 | 171 tests, 92.59% coverage, Ruff, strict manifest 회귀 | provider-matched 실제 평가 재실행과 threshold calibration |
 | 데이터 수집 안전성 | 로컬 guard 완료 | SE default 0, positive acknowledgement gate, partial 후보 격리 | SE permission/approved API, 최신성·소스 검증 |
 | 데이터 감사 | 로컬 동작 검증 완료 | configured path defaults와 explicit overrides 테스트 | stale course_openings, empty graduation, 실제 snapshot 재검증 |
-| frontend | 로컬 gate 통과 | 5 files/76 tests, typecheck, lint, build | 390px/1280px browser E2E와 visual regression |
+| frontend | 로컬 gate 통과 | 5 files/83 tests, typecheck, lint, build | 390px/1280px browser E2E와 visual regression |
 | 배포 계약 | static 검증 완료 | focused deployment pytest 7 tests, liveness health contracts | Docker-enabled host의 config/build/start/healthy transitions |
 | 의존성 | 로컬 audit 통과 | `npm audit --omit=dev`와 full `npm audit` 모두 0 | 정기 review 및 remote CI 확인 |
 | CI·branch protection | 미확인 | 로컬 명령만 실행 | push 후 GitHub Actions와 required checks/branch protection |
-| branch handoff | 문서 기록 완료 | Task 10 verification target before status/handoff documentation: `55cb283`; first status/handoff record commit: `34d1270`; current HEAD/count는 `git rev-parse HEAD`와 `git rev-list --count b99f997..HEAD`로 확인 | 사용자의 push/merge 절차에서 원격 상태 확인 |
+| branch handoff | 문서 기록 완료 | Task 10 initial target `55cb283`, final review-fix verification target `f5ccdb2`; current HEAD/count는 `git rev-parse HEAD`와 `git rev-list --count b99f997..HEAD`로 확인 | 사용자의 push/merge 절차에서 원격 상태 확인 |
 | 운영 안정성 | 미착수 | 계획과 정적 계약만 존재 | observability, rate limit, backup/restore, incremental ingestion |
 
 ## 3. Task 10 code gate 측정값
 
 | 검증 | 정확한 결과 |
 | --- | --- |
-| backend pytest + coverage | `170 passed in 9.24s`; TOTAL `1659` statements, `124` missed, `93%` table coverage; final `92.53%`; required `85.0%` reached |
+| backend pytest + coverage | `171 passed in 20.32s`; TOTAL `1659` statements, `123` missed, `93%` table coverage; final `92.59%`; required `85.0%` reached |
 | backend Ruff | `All checks passed!` |
-| frontend Vitest | `Test Files 5 passed (5)`; `Tests 76 passed (76)`; duration `3.34s` |
+| frontend Vitest | `Test Files 5 passed (5)`; `Tests 83 passed (83)`; duration `4.46s` |
 | frontend typecheck | exit 0 |
 | frontend lint | exit 0 |
 | frontend production build | exit 0; Next `15.5.20`; static routes `/`와 `/_not-found`, 4 pages generated |

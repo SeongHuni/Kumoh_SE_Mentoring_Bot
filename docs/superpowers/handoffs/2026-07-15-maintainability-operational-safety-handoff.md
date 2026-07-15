@@ -2,7 +2,7 @@
 
 ## Outcome
 
-This handoff filename and the implementation plan began on 2026-07-15. The full Task 10 gate, status, and handoff recording commits completed on 2026-07-16. Task 10 ran the requested local backend, frontend, invariant, focused deployment, dependency, and Docker availability gates on branch `codex/maintainability-audit`. The verification target before this handoff documentation was `55cb283`, using base `b99f997`; the first status/handoff record commit was `34d1270`. The code gates passed with the exact results below. This is a local verification handoff only: the branch was not pushed or merged, Docker runtime was not available, browser E2E was not run, and raw data/index/evaluation/audit numbers were not re-executed. Current HEAD and commit count are intentionally not fixed here; query them with `git rev-parse HEAD` and `git rev-list --count b99f997..HEAD`.
+This handoff filename and the implementation plan began on 2026-07-15. The full Task 10 gate, status, and handoff recording commits completed on 2026-07-16. Task 10 first verified target `55cb283`; after the final independent review fixes, the complete local gate was rerun at target `f5ccdb2`, using base `b99f997`. The latest exact results are recorded below. This is a local verification handoff only: the branch was not pushed or merged, Docker runtime was not available, browser E2E was not run, and raw data/index/evaluation/audit numbers were not re-executed. Current HEAD and commit count are intentionally not fixed here; query them with `git rev-parse HEAD` and `git rev-list --count b99f997..HEAD`.
 
 Locally completed before this handoff:
 
@@ -48,7 +48,17 @@ cc85a9f fix: disable unapproved seboard collection
 29ccd12 docs: define maintainability improvement design
 ```
 
-The list includes the review-fix and hardening commits for frontend HTTP/error safety, public endpoint filtering, Compose parsing/health contracts, audit path handling, evaluation ordering, and SE crawl permission boundaries. The two documentation files in this handoff are the only intended changes for Task 10.
+The captured list includes the main implementation and review-hardening history through `55cb283`. Follow-up commits made after that immutable capture and before this final evidence update are:
+
+```text
+34d1270 docs: record maintainability verification
+b50747b docs: correct task 10 status metadata
+cdae57d docs: finalize verification handoff accuracy
+84f3f4e fix: preserve audit configuration exit semantics
+f5ccdb2 fix: reject exposed tokens and credential URLs
+```
+
+Use `git log --oneline b99f997..HEAD` for the complete dynamic list, including later evidence-only commits.
 
 ## Verification Evidence
 
@@ -63,9 +73,9 @@ backend/.venv/Scripts/python.exe -m pytest -c backend/pyproject.toml backend/tes
 Exact measured result:
 
 ```text
-TOTAL                              1659    124    93%
-Required test coverage of 85.0% reached. Total coverage: 92.53%
-170 passed in 9.24s
+TOTAL                              1659    123    93%
+Required test coverage of 85.0% reached. Total coverage: 92.59%
+171 passed in 20.32s
 ```
 
 Command:
@@ -82,7 +92,7 @@ Exact result: `All checks passed!` (exit 0).
 npm --prefix frontend test
 ```
 
-Exact measured result: `Test Files 5 passed (5)` and `Tests 76 passed (76)`; Vitest duration `3.34s`.
+Exact measured result: `Test Files 5 passed (5)` and `Tests 83 passed (83)`; Vitest duration `4.46s`.
 
 ```powershell
 npm --prefix frontend run typecheck
@@ -95,6 +105,12 @@ All three exited 0. The build reported Next `15.5.20`, compiled successfully, ge
 Next build changed the generated `frontend/next-env.d.ts`. The pre-build SHA-256 was `A3EA130D80CDE31C5180AF37457E5D1318A1E30888C14BA4624F117E382987C`; the post-build SHA-256 was `85AE5AEE75F011967CF2D25CBC342F62D69314E9D925F7F4AA3456FC2CFFCCA6`. The generated change was reverted, and the final hash returned to the pre-build value.
 
 ### Dependency and invariant gates
+
+```powershell
+npm --prefix frontend ci
+```
+
+The clean install exited 0 after adding 486 packages and auditing 487 packages, with `found 0 vulnerabilities`.
 
 ```powershell
 npm --prefix frontend audit --omit=dev
