@@ -2,7 +2,7 @@
 
 ## Outcome
 
-Task 10 ran the requested local backend, frontend, invariant, focused deployment, dependency, and Docker availability gates on branch `codex/maintainability-audit` at HEAD `55cb283`, using base `b99f997`. The code gates passed with the exact results below. This is a local verification handoff only: the branch was not pushed or merged, Docker runtime was not available, browser E2E was not run, and raw data/index/evaluation/audit numbers were not re-executed.
+Task 10 ran the requested local backend, frontend, invariant, focused deployment, dependency, and Docker availability gates on branch `codex/maintainability-audit`. The verification target before this handoff documentation was `55cb283`, using base `b99f997`; the first status/handoff record commit was `34d1270`. The code gates passed with the exact results below. This is a local verification handoff only: the branch was not pushed or merged, Docker runtime was not available, browser E2E was not run, and raw data/index/evaluation/audit numbers were not re-executed. Current HEAD and commit count are intentionally not fixed here; query them with `git rev-parse HEAD` and `git rev-list --count b99f997..HEAD`.
 
 Locally completed before this handoff:
 
@@ -14,7 +14,7 @@ Operational boundary decisions remain explicit: SE public crawl defaults to 0, a
 
 ## Commits
 
-The immutable list is the exact output of `git log --oneline b99f997..HEAD` captured before the documentation commit:
+The immutable list below is the exact pre-documentation output of `git log --oneline b99f997..HEAD`, captured while the verification target was `55cb283`. It intentionally excludes the first status/handoff record commit `34d1270` and this follow-up documentation commit; it is not a current branch commit count.
 
 ```text
 55cb283 docs: clarify operational enforcement boundaries
@@ -109,13 +109,13 @@ git diff --check
 
 Exited 0.
 
-Canonical stale search over `README.md`, `AGENTS.md`, `.env.example`, `docs/PROJECT_STATUS.md`, `docs/RAG_ARCHITECTURE.md`, and `docs/rag` returned exact output:
+Task10 canonical obsolete search over `README.md`, `AGENTS.md`, `.env.example`, `docs/PROJECT_STATUS.md`, `docs/RAG_ARCHITECTURE.md`, and `docs/rag` did not include `46건` and returned exact output `canonical obsolete search: no matches`.
 
 ```text
-stale canonical search: no matches
+canonical obsolete search: no matches
 ```
 
-A broader repository search found matches only in historical plan/spec text that documents the old-state checks; those historical records were not treated as canonical claims.
+Separate targeted search found exactly one `46건` occurrence at `docs/rag/operations-evaluation.md:117`. It is an allowed historical local threshold-calibration context, not a current count. A broader repository/historical-docs search retains this intentional threshold occurrence, alongside historical plan/spec text that documents old-state checks; none are canonical current-count claims.
 
 ### Focused deployment and Docker
 
@@ -145,19 +145,20 @@ Therefore `docker compose config`, `docker compose build`, `docker compose up`, 
 
 The prior measured snapshot remains 50 posts, 84 chunks, 30/30 evaluation, and 3 audit warnings, sourced from the previous `PROJECT_STATUS.md` snapshot dated 2026-07-15. Task 10 did not rerun raw data counts, topic dates, indexing, evaluation, or audit, so these numbers are not current gate measurements.
 
-### Documentation verification after edits
+### Documentation verification before and after this follow-up
 
-The post-document verification to run before commit is:
+Before this follow-up edit, at the first status/handoff record commit `34d1270`, the following commands were run:
 
 ```powershell
 git diff --check -- docs/PROJECT_STATUS.md docs/superpowers/handoffs/2026-07-15-maintainability-operational-safety-handoff.md
 Test-Path docs/PROJECT_STATUS.md
 Test-Path docs/superpowers/handoffs/2026-07-15-maintainability-operational-safety-handoff.md
-git status --short
-git log --oneline b99f997..HEAD
+if (-not (git status --porcelain)) { 'status clean' }
 ```
 
-The final status must show only the two documentation files before the documentation commit, with no `frontend/next-env.d.ts` change.
+Observed result before editing: `links exist`, `status clean`; diff check exited 0.
+
+After this follow-up commit, the same diff check and link checks were run again, together with `git status --short --branch`, `git rev-parse HEAD`, and `git rev-list --count b99f997..HEAD`. Observed result: diff check exited 0, `links exist`, and status was clean after commit. The dynamic commands, rather than a fixed HEAD or count, are the status authority for the current branch.
 
 ## Explicitly Unverified
 

@@ -37,7 +37,7 @@
 | 배포 계약 | static 검증 완료 | focused deployment pytest 7 tests, liveness health contracts | Docker-enabled host의 config/build/start/healthy transitions |
 | 의존성 | 로컬 audit 통과 | `npm audit --omit=dev`와 full `npm audit` 모두 0 | 정기 review 및 remote CI 확인 |
 | CI·branch protection | 미확인 | 로컬 명령만 실행 | push 후 GitHub Actions와 required checks/branch protection |
-| branch handoff | 미완료 | 현재 HEAD `55cb283`, base `b99f997` 이후 29 commits | 사용자의 push/merge 절차에서 원격 상태 확인 |
+| branch handoff | 문서 기록 완료 | Task 10 verification target before status/handoff documentation: `55cb283`; first status/handoff record commit: `34d1270`; current HEAD/count는 `git rev-parse HEAD`와 `git rev-list --count b99f997..HEAD`로 확인 | 사용자의 push/merge 절차에서 원격 상태 확인 |
 | 운영 안정성 | 미착수 | 계획과 정적 계약만 존재 | observability, rate limit, backup/restore, incremental ingestion |
 
 ## 3. Task 10 code gate 측정값
@@ -54,7 +54,7 @@
 | frontend full audit | `found 0 vulnerabilities` |
 | focused deployment pytest | `....... [100%]` — 7 static Compose/Docker contract tests |
 | `git diff --check` | exit 0 |
-| canonical stale search | `stale canonical search: no matches` |
+| canonical stale search | Task10 canonical obsolete search over `README.md`, `AGENTS.md`, `.env.example`, `docs/PROJECT_STATUS.md`, `docs/RAG_ARCHITECTURE.md`, and `docs/rag` did not include `46건` and returned exact output `canonical obsolete search: no matches`. Separate targeted search found exactly one `46건` occurrence at `docs/rag/operations-evaluation.md:117`. It is an allowed historical local threshold-calibration context, not a current count. A broader repository/historical-docs search retains this intentional threshold occurrence, alongside historical plan/spec text that documents old-state checks; none are canonical current-count claims. |
 | Docker | executable unavailable; `docker compose config`, build, ps, start, and health transition not run |
 
 Next build가 `frontend/next-env.d.ts`를 생성 변경했다. pre-build SHA-256 `A3EA130D80CDE31C5180AF37457E5D1318A1E30888C14BA4624F117E382987C4`, post-build `85AE5AEE75F011967CF2D25CBC342F62D69314E9D925F7F4AA3456FC2CFFCCA6`를 확인했고, 생성 변경은 원복했다. 최종 worktree에서 tracked 변경은 이 문서와 handoff만 남긴다.
