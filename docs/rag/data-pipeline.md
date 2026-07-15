@@ -8,6 +8,8 @@ SE 게시판은 `seboard.site/robots.txt`의 전체 `Disallow: /` 정책처럼 r
 
 공용 CLI의 기본값은 `--seboard-limit 0`이다. 양수를 지정하려면 `--seboard-permission-confirmed`가 필요하지만, 이 flag는 운영자가 권한을 확인했다는 의사를 기록할 뿐 실제 허가나 API 이용 권한을 대신하지 않는다.
 
+public CLI가 positive limit에 대해 기술적으로 검증하는 것은 `--seboard-permission-confirmed` acknowledgement뿐이다. CLI는 실행 시 `robots.txt`를 다시 조회하거나, 서면 허가의 진위·범위 또는 `SEBOARD_API_URL`의 allowlist 등록을 자동 검증하지 않는다. 따라서 flag만으로 권한이 생기지 않으며, 실제 permission·API 문서화와 사용 범위 확인은 operator governance 책임이다. crawler internals에 자동 allowlist가 있다고 가정하지 않는다.
+
 권한과 사용 범위가 문서화된 뒤에는 승인된 JSON API를 먼저 사용한다. `SEBOARD_API_URL`이 승인된 API 주소를 가리킬 때 crawler는 JSON 응답을 사용하고, API 경로가 승인되지 않았거나 제공되지 않는 경우에만 허용 범위 안에서 Selenium을 두 번째 선택지로 사용한다. 로그인·인증 우회, CAPTCHA 무력화, 접근제어 회피는 하지 않는다.
 
 부분 수집은 운영 원본으로 바로 승격하지 않는다. `--allow-partial` 결과는 `data/raw/candidates/posts-partial.json` 후보에만 저장하고, 사람이 각 후보의 source·canonical URL·게시일·본문 범위를 검토한 뒤 승인된 것만 `data/raw/posts.json`에 반영한다. 후보 승격이나 원본 변경 후에는 전체 재인덱싱과 평가·감사를 다시 실행한다.

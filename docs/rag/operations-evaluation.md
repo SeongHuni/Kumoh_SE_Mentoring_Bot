@@ -4,31 +4,31 @@
 
 ## 주요 환경변수
 
-`.env.example`은 비밀값이 없는 검증된 안전한 local sample이다. 애플리케이션 `config.py`는 환경변수가 없을 때 `AI_PROVIDER=auto`를 fallback으로 사용하며, `auto`는 key가 있으면 OpenAI, 없으면 local을 선택한다. 따라서 sample의 `AI_PROVIDER=local`과 application fallback `auto`를 같은 의미의 기본값으로 읽지 않는다.
+`.env.example`은 비밀값이 없는 검증된 안전한 local sample이다. 애플리케이션 `config.py`는 환경변수가 없을 때 `AI_PROVIDER=auto`를 실행 기본값으로 사용하며, `auto`는 key가 있으면 OpenAI, 없으면 local을 선택한다. 따라서 sample의 `AI_PROVIDER=local`과 `config.py`의 실행 기본값 `auto`를 같은 의미의 기본값으로 읽지 않는다.
 
-| 환경변수 | `.env.example` sample | application fallback | 역할 |
+| 환경변수 | `.env.example` sample | 실행 기본값 출처 | 역할 |
 | --- | --- | --- | --- |
-| `AI_PROVIDER` | `local` | `auto` | `local`, `openai`, `auto` provider 선택 |
-| `OPENAI_API_KEY` | 빈 값 | 없음 | OpenAI Embeddings/Responses 인증 |
-| `OPENAI_CHAT_MODEL` | `gpt-5.6-luna` | `gpt-5.6-luna` | OpenAI 답변 모델; embedding signature와 무관 |
-| `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small` | `text-embedding-3-small` | OpenAI 임베딩 모델 |
-| `EMBEDDING_DIMENSIONS` | `1536` | `1536` | 임베딩 벡터 차원 |
-| `CHUNK_SIZE` | `900` | `900` | 문자 기준 청크 최대 크기 |
-| `CHUNK_OVERLAP` | `150` | `150` | 인접 청크 중복 크기 |
-| `CHROMA_PATH` | `./chroma_db` | `./chroma_db` | Chroma와 manifest 저장 위치 |
-| `CHROMA_COLLECTION` | `se_mentor_posts` | `se_mentor_posts` | Chroma collection 이름 |
-| `RAW_POSTS_PATH` | `./data/raw/posts.json` | `./data/raw/posts.json` | 원본 JSON snapshot |
-| `TOPIC_RULES_PATH` | `./data/topic_rules.json` | `./data/topic_rules.json` | topic·keyword·evidence 규칙 |
-| `RAG_TOP_K` | `5` | `5` | 초기 vector 검색 수 |
-| `RAG_MIN_SCORE` | `0.10` | `0.10` | 최종 검색 절대 threshold |
-| `CRAWLER_DELAY_SECONDS` | `1.0` | `1.0` | 요청 간격 |
-| `CRAWLER_TIMEOUT_SECONDS` | `20.0` | `20.0` | crawler 요청 timeout |
-| `SEBOARD_API_URL` | 빈 값 | 없음 | 승인된 SE JSON API 주소 |
-| `SEBOARD_HEADLESS` | `true` | `true` | 허용된 Selenium 경로의 headless 실행 |
-| `CORS_ORIGINS` | `http://localhost:3000` | `http://localhost:3000` | API 허용 frontend origin 목록 |
-| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | Compose build arg 기본값 | frontend가 호출할 API 주소 |
-| `BACKEND_PORT` | `8000` | Compose mapping 기본값 | host의 backend port |
-| `FRONTEND_PORT` | `3000` | Compose mapping 기본값 | host의 frontend port |
+| `AI_PROVIDER` | `local` | `backend/app/config.py` `get_settings() -> auto` | `local`, `openai`, `auto` provider 선택 |
+| `OPENAI_API_KEY` | 빈 값 | `backend/app/config.py` -> `None` | OpenAI Embeddings/Responses 인증 |
+| `OPENAI_CHAT_MODEL` | `gpt-5.6-luna` | `backend/app/config.py` -> `gpt-5.6-luna` | OpenAI 답변 모델; embedding signature와 무관 |
+| `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small` | `backend/app/config.py` -> `text-embedding-3-small` | OpenAI 임베딩 모델 |
+| `EMBEDDING_DIMENSIONS` | `1536` | `backend/app/config.py` -> `1536` | 임베딩 벡터 차원 |
+| `CHUNK_SIZE` | `900` | `backend/app/config.py` -> `900` | 문자 기준 청크 최대 크기 |
+| `CHUNK_OVERLAP` | `150` | `backend/app/config.py` -> `150` | 인접 청크 중복 크기 |
+| `CHROMA_PATH` | `./chroma_db` | `backend/app/config.py` -> `./chroma_db` | Chroma와 manifest 저장 위치 |
+| `CHROMA_COLLECTION` | `se_mentor_posts` | `backend/app/config.py` -> `se_mentor_posts` | Chroma collection 이름 |
+| `RAW_POSTS_PATH` | `./data/raw/posts.json` | `backend/app/config.py` -> `./data/raw/posts.json` | 원본 JSON snapshot |
+| `TOPIC_RULES_PATH` | `./data/topic_rules.json` | `backend/app/config.py` -> `./data/topic_rules.json` | topic·keyword·evidence 규칙 |
+| `RAG_TOP_K` | `5` | `backend/app/config.py` -> `5` | 초기 vector 검색 수 |
+| `RAG_MIN_SCORE` | `0.10` | `backend/app/config.py` -> `0.10` | 최종 검색 절대 threshold |
+| `CRAWLER_DELAY_SECONDS` | `1.0` | `backend/app/config.py` -> `1.0` | 요청 간격 |
+| `CRAWLER_TIMEOUT_SECONDS` | `20.0` | `backend/app/config.py` -> `20.0` | crawler 요청 timeout |
+| `SEBOARD_API_URL` | 빈 값 | `backend/app/config.py` -> `None` | 승인된 SE JSON API 주소 |
+| `SEBOARD_HEADLESS` | `true` | `backend/app/config.py` -> `true` | 허용된 Selenium 경로의 headless 실행 |
+| `CORS_ORIGINS` | `http://localhost:3000` | `backend/app/config.py` -> `http://localhost:3000` | API 허용 frontend origin 목록 |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | `compose.yaml` frontend build arg -> `http://localhost:8000` | frontend가 호출할 API 주소 |
+| `BACKEND_PORT` | `8000` | `compose.yaml` host mapping -> `8000` | host의 backend port |
+| `FRONTEND_PORT` | `3000` | `compose.yaml` host mapping -> `3000` | host의 frontend port |
 
 `NEXT_PUBLIC_API_URL`은 Next.js frontend 이미지 빌드 시 삽입되는 build-time 값이다. 값을 바꾸면 frontend 이미지를 반드시 rebuild해야 하며, 실행 중 컨테이너 환경변수만 바꾸어 이미 빌드된 UI의 API 주소를 변경할 수 없다.
 
@@ -65,6 +65,8 @@ backend/.venv/Scripts/python.exe -m backend.scripts.index --reset
 Docker Desktop 또는 Docker Engine과 Compose plugin이 필요하다. 검증 명령은 다음과 같다.
 
 ```powershell
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+# .env의 secret은 사용자가 로컬에서 채우며, 문서·평가 보고서·로그에 기록하지 않는다.
 docker compose config
 docker compose up -d --build
 docker compose ps
@@ -114,6 +116,8 @@ backend/.venv/Scripts/python.exe -m backend.scripts.evaluate --provider configur
 
 `RAG_MIN_SCORE=0.10`은 local hash embedding의 과거 46건 historical tuning snapshot에서만 조정된 값이며 OpenAI embedding에 검증되지 않았다. 이 숫자를 OpenAI의 기본 threshold나 현재 status로 해석하지 않는다.
 
-provider 또는 데이터가 바뀌면 최소 30문항에서 positive/negative retrieval score distribution을 따로 수집한다. threshold를 정할 때 false-positive 최고 점수와 true-positive 최저 점수, 두 값 사이의 margin을 기록하고 그 근거로 선택한다. 평가 pass count만으로 calibration이 끝났다고 하지 않는다. OpenAI로 전환할 때는 provider-matched reindex/evaluation과 별도 threshold 기록을 남긴다.
+현재 evaluate report는 threshold를 통과해 최종 답변의 `sources`가 된 score만 `EvaluationResult.sources`에 기록하며, threshold에서 탈락한 raw candidate와 rejected score distribution은 기록하지 않는다. 따라서 현재 evaluate CLI의 30문항 pass만으로 false-positive 최고점·true-positive 최저점 기반 threshold 재보정을 했다고 주장할 수 없다.
+
+provider 또는 데이터가 바뀌면 우선 provider-matched 30문항 회귀평가를 실행한다. threshold를 실제로 변경하려면 별도의 retrieval diagnostic/raw candidate score instrumentation으로 positive/negative 분포를 수집해야 한다. 이 instrumentation과 diagnostic 도구는 현재 미구현 open item이다. 구현되기 전에는 운영자가 `0.20` 등 추정값을 production validated threshold로 사용하거나 기록하지 않는다. OpenAI로 전환할 때도 provider-matched reindex/evaluation 후 별도 분포 수집과 calibration을 거쳐야 한다.
 
 평가 질문은 기대 topic, Top-K 문서 포함 여부, latest-only, grounded 거절, source metadata와 날짜·대상·신청 경로 일치 여부를 확인해야 한다. 세부 수치와 현재 snapshot은 [`../PROJECT_STATUS.md`](../PROJECT_STATUS.md) 및 생성 report를 참조한다.
