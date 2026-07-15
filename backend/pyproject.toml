@@ -8,3 +8,16 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.coverage.run]
+source = ["backend.app", "backend.scripts"]
+omit = [
+    "*/__init__.py",
+    # 사용자 요청에 따라 SE 게시판 수집 구현은 이번 품질 gate에서 제외한다.
+    "backend/app/crawling/seboard.py",
+]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+skip_covered = true
