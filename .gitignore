@@ -17,6 +17,8 @@ chroma_db/
 data/processed/*
 !data/processed/.gitkeep
 data/evaluation/reports/
+data/raw/candidates/
+data/audit/reports/
 
 .DS_Store
 Thumbs.db

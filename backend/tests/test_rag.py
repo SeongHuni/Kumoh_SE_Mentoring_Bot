@@ -1,9 +1,10 @@
 from collections.abc import Sequence
 from datetime import UTC, datetime
 
+import pytest
 from backend.app.domain import BoardPost, RetrievedChunk, TextChunk
 from backend.app.rag import NO_ANSWER, RAGService
-from backend.app.topic_rules import TopicCatalog, TopicRule
+from backend.app.topic_rules import RetrievalPolicy, TopicCatalog, TopicRule
 
 
 def retrieved(score: float = 0.9) -> RetrievedChunk:
@@ -60,6 +61,98 @@ def course_catalog() -> TopicCatalog:
             ),
             TopicRule("general", "전체 공지", (), ("최근 학과 공지를 알려줘",)),
         ),
+    )
+
+
+def hardening_catalog() -> TopicCatalog:
+    return TopicCatalog(
+        default_topic_key="general",
+        retrieval_policy=RetrievalPolicy(
+            recency_terms=("최근", "최신"),
+            generic_terms=("공지", "알려줘", "찾아줘", "언제"),
+            alias_groups=(
+                ("개설강좌", "개설 과목", "수강 가능 과목", "수강신청 안내"),
+                ("채용", "초빙"),
+            ),
+        ),
+        rules=(
+            TopicRule(
+                "course_openings",
+                "개설",
+                ("개설강좌", "개설 과목"),
+                (),
+                ("수강신청 안내",),
+            ),
+            TopicRule(
+                "registration",
+                "수강",
+                ("수강신청", "수강 신청", "수강변경"),
+                (),
+                ("수강신청", "수강변경"),
+            ),
+            TopicRule(
+                "capstone",
+                "캡스톤",
+                ("캡스톤디자인", "캡스톤 디자인"),
+                (),
+                ("캡스톤디자인", "캡스톤 디자인"),
+            ),
+            TopicRule(
+                "career",
+                "진로",
+                ("취업", "채용", "인턴", "진로"),
+                (),
+                ("취업", "채용", "초빙", "인턴", "진로"),
+            ),
+            TopicRule(
+                "scholarship",
+                "장학",
+                ("장학금", "장학생", "장학"),
+                (),
+                ("장학금", "장학생", "장학"),
+            ),
+            TopicRule("general", "전체", (), ()),
+        ),
+    )
+
+
+def policy_result(
+    *,
+    title: str,
+    topic_key: str,
+    published_at: str,
+    score: float,
+) -> RetrievedChunk:
+    return RetrievedChunk(
+        chunk=TextChunk(
+            id="kumoh:policy:0",
+            post_id="policy",
+            source="kumoh",
+            title=title,
+            text=f"제목: {title}\n본문: 테스트 내용",
+            url="https://example.com/policy",
+            published_at=published_at,
+            chunk_index=0,
+            topic_key=topic_key,
+            topic_label=topic_key,
+            is_latest_topic=True,
+        ),
+        score=score,
+    )
+
+
+def policy_post(title: str, topic_key: str, published_at: str) -> BoardPost:
+    return BoardPost(
+        id="policy",
+        source="kumoh",
+        title=title,
+        content="테스트 내용",
+        url="https://example.com/policy",
+        published_at=published_at,
+        crawled_at=datetime(2026, 7, 1, tzinfo=UTC),
+        topic_key=topic_key,
+        topic_label=topic_key,
+        is_latest_topic=True,
     )
 
 
@@ -216,6 +309,120 @@ def test_rag_no_answer_keeps_followups_without_calling_generation() -> None:
     assert result.recent_notices[0].title == "개설강좌 안내"
     assert provider.answer_called is False
 
+
+@pytest.mark.parametrize(
+    ("question", "topic_key", "title", "published_at"),
+    [
+        (
+            "수강 신청 기간은 언제야?",
+            "registration",
+            "[수업] 2026학년도 여름계절수업 조기취업자 출석인정신청 안내",
+            "2026-06-16",
+        ),
+        (
+            "2026학년도 2학기 캡스톤디자인 공지를 알려줘",
+            "capstone",
+            "2026학년도 1학기 캡스톤 디자인 운영 계획 안내",
+            "2026-03-19",
+        ),
+        (
+            "장학금 신청 공지를 알려줘",
+            "scholarship",
+            "방산AI인재양성부트캠프사업단 소개 및 설명회 안내",
+            "2026-06-17",
+        ),
+    ],
+)
+def test_rag_rejects_latest_document_that_does_not_answer_question(
+    question: str,
+    topic_key: str,
+    title: str,
+    published_at: str,
+) -> None:
+    provider = FakeProvider()
+    store = FakeStore(
+        [
+            policy_result(
+                title=title,
+                topic_key=topic_key,
+                published_at=published_at,
+                score=0.8,
+            )
+        ]
+    )
+    service = RAGService(
+        provider=provider,
+        vector_store=store,  # type: ignore[arg-type]
+        topic_catalog=hardening_catalog(),
+        posts=[policy_post(title, topic_key, published_at)],
+        min_score=0.09,
+    )
+
+    result = service.ask(question)
+
+    assert result.grounded is False
+    assert result.sources == []
+    assert provider.answer_called is False
+
+
+def test_rag_uses_alias_to_recover_latest_recruitment_notice() -> None:
+    title = "2026년 하반기 소프트웨어전공 전임교원 초빙 공개강의 심사 공고"
+    provider = FakeProvider()
+    store = FakeStore(
+        [
+            policy_result(
+                title=title,
+                topic_key="career",
+                published_at="2026-06-30",
+                score=0.0,
+            )
+        ]
+    )
+    service = RAGService(
+        provider=provider,
+        vector_store=store,  # type: ignore[arg-type]
+        topic_catalog=hardening_catalog(),
+        posts=[policy_post(title, "career", "2026-06-30")],
+        min_score=0.09,
+    )
+
+    result = service.ask("최근 채용 공지를 찾아줘")
+
+    assert result.grounded is True
+    assert result.sources[0].title == title
+
+
+def test_rag_prefers_date_for_general_latest_notice_even_with_zero_score() -> None:
+    title = "2026년 하반기 소프트웨어전공 전임교원 초빙 공개강의 심사 공고"
+    provider = FakeProvider()
+    store = FakeStore(
+        [
+            policy_result(
+                title=title,
+                topic_key="career",
+                published_at="2026-06-30",
+                score=0.0,
+            )
+        ]
+    )
+    service = RAGService(
+        provider=provider,
+        vector_store=store,  # type: ignore[arg-type]
+        topic_catalog=hardening_catalog(),
+        posts=[policy_post(title, "career", "2026-06-30")],
+        min_score=0.09,
+    )
+
+    result = service.ask("최근 학과 공지를 알려줘")
+
+    assert result.grounded is True
+    assert result.sources[0].published_at == "2026-06-30"
+    assert store.last_where == {
+        "$and": [
+            {"is_latest_topic": True},
+            {"url": "https://example.com/policy"},
+        ]
+    }
 
 def retrieved_semester(semester: str, score: float) -> RetrievedChunk:
     return RetrievedChunk(

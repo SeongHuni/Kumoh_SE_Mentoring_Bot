@@ -1,47 +1,101 @@
 {
   "default_topic_key": "general",
+  "retrieval_policy": {
+    "recency_terms": ["최근", "최신"],
+    "generic_terms": [
+      "공지",
+      "안내",
+      "알려줘",
+      "찾아줘",
+      "관련",
+      "방법",
+      "뭐야",
+      "무엇",
+      "어디서",
+      "확인",
+      "있어",
+      "있나요",
+      "언제",
+      "이번",
+      "학기"
+    ],
+    "alias_groups": [
+      ["개설강좌", "개설 과목", "수강 가능 과목", "수강신청 안내"],
+      ["채용", "초빙"],
+      ["수강변경", "수강 변경"],
+      ["캡스톤디자인", "캡스톤 디자인"]
+    ]
+  },
   "topics": [
     {
       "key": "course_openings",
       "label": "개설강좌조회",
       "keywords": ["개설강좌", "개설 과목", "수강 가능 과목"],
-      "suggested_questions": ["이번 학기 개설강좌를 알려줘", "개설강좌 조회 방법은?"]
+      "evidence_markers": ["수강신청 안내"],
+      "suggested_questions": [
+        "이번 학기 개설강좌를 알려줘",
+        "개설강좌 조회 방법은?"
+      ]
     },
     {
       "key": "registration",
       "label": "수강신청",
       "keywords": ["수강신청", "수강 신청", "수강변경"],
-      "suggested_questions": ["수강신청 기간은 언제야?", "수강신청 변경 방법은?"]
+      "evidence_markers": ["수강신청", "수강변경"],
+      "suggested_questions": [
+        "수강신청 기간은 언제야?",
+        "수강신청 변경 방법은?"
+      ]
     },
     {
       "key": "capstone",
       "label": "캡스톤디자인",
       "keywords": ["캡스톤디자인", "캡스톤 디자인"],
-      "suggested_questions": ["캡스톤디자인 신청 방법은?", "캡스톤디자인 일정은?"]
+      "evidence_markers": ["캡스톤디자인", "캡스톤 디자인"],
+      "suggested_questions": [
+        "캡스톤디자인 신청 방법은?",
+        "캡스톤디자인 일정은?"
+      ]
     },
     {
       "key": "career",
       "label": "진로·취업",
       "keywords": ["취업", "채용", "인턴", "진로"],
-      "suggested_questions": ["최근 취업 프로그램을 알려줘", "인턴 관련 공지가 있어?"]
+      "evidence_markers": ["취업", "채용", "초빙", "인턴", "진로"],
+      "suggested_questions": [
+        "최근 취업 프로그램을 알려줘",
+        "인턴 관련 공지가 있어?"
+      ]
     },
     {
       "key": "scholarship",
       "label": "장학금",
       "keywords": ["장학금", "장학생", "장학"],
-      "suggested_questions": ["장학금 신청 공지를 알려줘", "장학생 선발 기준은?"]
+      "evidence_markers": ["장학금", "장학생", "장학"],
+      "suggested_questions": [
+        "장학금 신청 공지를 알려줘",
+        "장학생 선발 기준은?"
+      ]
     },
     {
       "key": "graduation",
       "label": "졸업요건",
       "keywords": ["졸업요건", "졸업 요건", "졸업인증"],
-      "suggested_questions": ["졸업요건을 확인해줘", "졸업인증 기준은?"]
+      "evidence_markers": ["졸업요건", "졸업 요건", "졸업인증"],
+      "suggested_questions": [
+        "졸업요건을 확인해줘",
+        "졸업인증 기준은?"
+      ]
     },
     {
       "key": "general",
       "label": "전체 공지",
       "keywords": [],
-      "suggested_questions": ["최근 학과 공지를 알려줘", "소프트웨어전공 공지를 알려줘"]
+      "evidence_markers": [],
+      "suggested_questions": [
+        "최근 학과 공지를 알려줘",
+        "소프트웨어전공 공지를 알려줘"
+      ]
     }
   ]
 }

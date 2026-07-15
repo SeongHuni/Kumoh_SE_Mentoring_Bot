@@ -23,8 +23,8 @@
 일반 작업 순서:
 
 ```powershell
-# 1. 데이터 수집; SE 실패를 허용하려면 --allow-partial
-backend/.venv/Scripts/python -m backend.scripts.crawl --kumoh-limit 50 --seboard-limit 50 --allow-partial
+# 1. 현재 허용된 학과 소스 수집
+backend/.venv/Scripts/python -m backend.scripts.crawl --kumoh-limit 50 --seboard-limit 0
 
 # 2. provider 또는 데이터 변경 후 전체 인덱싱
 backend/.venv/Scripts/python -m backend.scripts.index --reset
@@ -38,7 +38,13 @@ Invoke-RestMethod http://localhost:8000/api/health
 
 `/api/health`에서 provider, 모델명, 인덱싱 청크 수를 확인한다. 인덱스가 비어 있으면 채팅 API는 `409`, OpenAI 호출 실패는 `502`를 반환한다.
 
-`data/topic_rules.json`은 주제 관리의 단일 유지보수 지점이다. 주제 키·표시명·키워드·추천 질문 또는 원본 게시글을 변경하면 반드시 `--reset`으로 전체 재인덱싱한다. 최신성은 유효한 `published_at`을 우선하고, 누락되거나 파싱할 수 없을 때 `crawled_at`을 사용한다. 온라인 검색은 `is_latest_topic=true`를 적용해 같은 주제의 이전 게시글을 제외한다.
+`--allow-partial` 실행에서 일부 소스가 실패하면 결과는 `data/raw/candidates/posts-partial.json`에 저장된다. 이 후보 파일은 Git에서 제외되며, 운영 원본 `data/raw/posts.json`은 변경하지 않는다. 두 소스 성공 또는 사람이 수행한 원문 URL·게시일 검증 없이 후보를 운영 원본으로 자동 승격하지 않는다.
+
+SE 게시판은 `robots.txt`가 전체 자동 수집을 금지하므로 운영자 서면 허가 또는 승인된 공식 API를 확보하기 전까지 `--seboard-limit 0`을 유지한다. 권한 확보 후에도 부분 결과는 위 후보 경로에서 먼저 검토한다.
+
+`data/topic_rules.json`은 주제 관리의 단일 유지보수 지점이다. 주제 키·표시명·키워드·추천 질문·근거 marker·동의어 또는 원본 게시글을 변경하면 반드시 `--reset`으로 전체 재인덱싱한다. 최신성은 유효한 `published_at`을 우선하고, 누락되거나 파싱할 수 없을 때 `crawled_at`을 사용한다. 온라인 검색은 `is_latest_topic=true`를 적용해 같은 주제의 이전 게시글을 제외한다.
+
+검색된 최신 문서라도 질문과 문서의 연도·학기가 충돌하면 근거로 인정하지 않는다. 제목 marker나 동의어는 질문 표현과 연결될 때만 유효하며, 일반적인 “최근 학과 공지” 질문은 주제 점수보다 게시일이 가장 최신인 문서를 우선한다. 이 근거 게이트를 통과하지 못하면 provider 답변을 호출하지 않고 `grounded=false`를 반환한다.
 
 규칙 변경 후에는 `/api/chat` 응답에서 다음을 함께 점검한다.
 
@@ -88,3 +94,21 @@ backend/.venv/Scripts/python -m backend.scripts.evaluate
 - provider별 지연시간, API 비용, 실패율
 
 임계값은 소수의 성공 예시가 아니라 최소 30개 이상의 대표 질문으로 결정한다.
+
+현재 로컬 검증 스냅샷(2026-07-15)은 게시글 50건·청크 84개, 평가 30/30(exit 0)이다. 세부 지표는 topic 30/30, grounded 30/30, latest-only 30/30, source-title 11/11이다. 이 수치는 현재 저장 데이터에 대한 회귀 기준이며 공식 사이트의 실제 최신성을 보증하지 않는다.
+
+## 데이터 품질 감사
+
+```powershell
+backend/.venv/Scripts/python -m backend.scripts.audit_data
+```
+
+감사 보고서는 `data/audit/reports/latest.json`, `latest.md`에 원자적으로 저장되고 Git에서 제외된다. 게시글 본문, 비밀값, 로컬 절대 경로는 보고서에 포함하지 않는다.
+
+| exit | 의미 | 운영 조치 |
+| ---: | --- | --- |
+| 0 | 품질 경고 없음 | 재인덱싱·평가 진행 |
+| 1 | 품질 경고 있음 | 경고 코드를 검토하고 공식 원문과 대조 |
+| 2 | 입력·설정 오류 | 원본 JSON·주제 규칙·출력 권한 복구 후 재실행 |
+
+현재 데이터에서는 `missing_source=seboard`, `stale_topic=course_openings`, `empty_topic=graduation`이 각 1건이다. 따라서 감사는 exit 1이며 의도된 운영 경고다. 특히 `course_openings`의 현재 최신 게시일 2025-08-07과 SE 소스 부재는 운영자 허가·승인 API 및 수동 URL·날짜 대조 전까지 해결 완료로 표시하지 않는다.

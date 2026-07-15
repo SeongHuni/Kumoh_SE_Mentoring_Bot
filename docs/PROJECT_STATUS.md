@@ -1,248 +1,183 @@
 # SE Mentor Bot 프로젝트 상태와 다음 작업
 
-> 기준일: 2026-07-14
+> 기준일: 2026-07-15
 > 기준 브랜치: `main`
-> RAG 품질 결함 수정 커밋: `a2a0bdf fix: resolve 5 RAG evaluation quality gaps in local rerank/grounding`
-> 자동 평가 통합 커밋: `6334bdc Merge pull request #2 from SeongHuni/codex/rag-evaluation`
-> 기존 기능 통합 커밋: `8dc3078 Merge branch 'codex/topic-latest'`
+> 통합 범위: 원격 최신 데이터·RAG 수정(`0d766a9`) + RAG 품질·데이터 감사 Task 1~9
+> 상세 이력: [`superpowers/handoffs/2026-07-13-rag-quality-data-audit-handoff.md`](superpowers/handoffs/2026-07-13-rag-quality-data-audit-handoff.md)
 
-이 문서는 프로젝트의 현재 진행도, 남은 위험, 개선 TODO, 단계별 검증 기준을 한곳에서 관리하는 운영 기준 문서다. 자동 평가 구현 이력은 [`superpowers/handoffs/2026-07-12-rag-evaluation-handoff.md`](superpowers/handoffs/2026-07-12-rag-evaluation-handoff.md), RAG 설계는 [`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md)를 참고한다.
+이 문서는 현재 유효한 구현 수준, 검증 근거, 외부 확인이 필요한 위험과 다음 우선순위를 관리한다. 과거 세션별 RED/GREEN 및 커밋 기록은 인수인계 문서에 유지한다.
 
 ## 1. 현재 결론
 
-- 계획된 **주제별 최신 RAG와 추천 UX 기능은 구현·검증 완료** 상태다.
-- 자동 평가 CLI와 30개 구조화 baseline은 PR #2로 `main`에 통합됐고, JSON·Markdown 보고서와 exit 0/1/2 계약도 병합 후 재검증됐다.
-- 2026-07-14 기준, 이전에 측정된 5개 RAG 품질 실패(false-positive 3건, false-negative 2건)를 **모두 수정**했다. `backend/app/rag.py`의 재랭킹·최신성 로직을 고쳐 30개 중 30개 통과(exit 0)로 재현했다. 자세한 수정 내용은 4절을 참고한다.
-- 2026-07-14 P0-2를 부분 수행했다. **학과 게시판 50건을 재수집**해(`published_at` 누락 0건, 게시일 범위 2024-09-04~2026-06-30) `--reset` 재인덱싱(84청크)했고, 새 데이터에서 30개 평가 전부 통과(exit 0)를 재확인했다.
-- **SE 게시판(seboard.site)은 수집하지 않았다.** 2026-07-14 확인 결과 `https://seboard.site/robots.txt`가 `User-agent: * / Disallow: /`로 전체 크롤링을 금지하고 Cloudflare 콘텐츠 신호도 `ai-train=no`를 선언한다. README의 수집 정책(robots.txt 준수)에 따라 자동 수집을 중단했으며, 운영자 서면 허가 또는 공식 API(`SEBOARD_API_URL`) 확보 전에는 재시도하지 않는다.
-- **평가 도구 완료와 RAG 품질 완료는 별개**라는 원칙은 유지한다. 이번 수정·재수집 검증은 학과 게시판 50건·30개 평가셋 기준이며, SE 게시판 데이터는 아직 포함되지 않았다.
-- 로컬 프로토타입은 실행 가능하지만, **SE 게시판 수집 권한·주제 세분화·운영 안전성은 여전히 추가 검증이 필요**하다.
-- 따라서 현재 단계는 `P0-2 학과 소스 완료 → SE 게시판 수집 권한 확보(차단) + P0-3/P0-4`이며, 파일럿 또는 운영 완료로 판단하지 않는다.
+- 주제별 최신 공지, 출처, 추천 질문, 최근 공지를 제공하는 RAG 챗봇의 로컬 기능은 구현돼 있다.
+- 원격 `main`의 5개 RAG 품질 결함 수정과 학과 게시판 50건 재수집을 보존하면서, 설정 기반 질문 의도·근거 정책과 데이터 감사를 통합했다.
+- 고정 `data/evaluation/questions.json`을 변경하지 않고 local 평가 30/30을 유지한다.
+- 최신 문서라도 질문의 연도·학기 또는 제목 marker·동의어 근거가 맞지 않으면 `grounded=false`로 거절하고 answer provider를 호출하지 않는다.
+- 부분 수집 결과는 운영 원본이 아닌 `data/raw/candidates/`에 격리한다.
+- 데이터 감사는 현재 게시글 50건에서 실제 데이터 경고 3건을 탐지한다.
+- 백엔드 94개 테스트와 프론트엔드 9개 테스트, Ruff·TypeScript·ESLint·Next.js production build가 병합 결과에서 통과했다.
+- SE 게시판은 `robots.txt`가 전체 자동 수집을 금지하므로 운영자 서면 허가 또는 승인된 공식 API 확보 전까지 자동 크롤링하지 않는다.
+- 따라서 로컬 품질 통합은 완료됐지만 SE 데이터 권한, 오래된 개설강좌 자료, 졸업 자료, CI·운영 안전성 때문에 파일럿·운영 준비는 진행 중이다.
 
-현재 활성 품질 작업:
+핵심 결정 3개:
 
-- P1-1 자동 평가 CLI와 30개 평가셋: 구현 완료
-- 설계: `docs/superpowers/specs/2026-07-12-rag-evaluation-design.md`
-- 진행 인수인계: `docs/superpowers/handoffs/2026-07-12-rag-evaluation-handoff.md`
-- 측정 결과(2026-07-14, 50건 재수집 데이터): `total=30`, `passed=30`, `failed=0`; topic 100%, grounded 100%, latest-only 100%, source-title 100%
-- 이전 측정 결과(2026-07-13, 수정 전 46건): `total=30`, `passed=25`, `failed=5`; topic 100%, grounded 83.33%, latest-only 93.33%, source-title 90.91%
-- 다음 권장 작업: SE 게시판 운영자에게 수집 허가 또는 공식 API 주소를 요청하고, 그동안 P0-3(최신성 범위 정책)·P0-4(주제 규칙 감사) 진행
+1. 평가 기대값을 낮추지 않고 검색·근거 판정을 개선한다.
+2. `topic_key`별 최신 1건 정책을 유지하되 기간 충돌과 제목 marker·동의어 적합성을 별도 검증한다.
+3. robots.txt를 준수하며 부분 수집 후보, 평가 보고서, 감사 보고서를 운영 원본·Git 추적 파일과 분리한다.
 
 ## 2. 단계별 진행도
 
-| 영역 | 상태 | 완료 근거 | 다음 조건 |
+| 영역 | 상태 | 완료 근거 | 남은 조건 |
 | --- | --- | --- | --- |
-| 요구사항·설계 | 완료 | 최신성·추천 UX와 자동 평가 Task 1~6 설계·계획 존재 | 정책 변경 시 설계와 이 문서 동시 갱신 |
-| 백엔드 RAG | 완료 | 주제 분류, 최신성 계산, Chroma filter, 추천 질문·최근 공지 구현 | 실데이터 평가와 미검증 provider 보강 |
-| 프론트엔드 | 완료 | A 집중형 채팅, 출처·추천 chip·최근 공지, 모바일 대응 | 페이지 통합/E2E 및 접근성 자동화 |
-| 단위·컴포넌트 테스트 | 통과 | backend 60개, frontend 9개 | 커버리지 사각지대 해소 |
-| 자동 평가 도구 | 완료 | 30개 case, 4개 check, JSON·Markdown 보고서, exit 0/1/2 검증 | 실패 0건, exit 0 재현(2026-07-14) |
-| 문서·운영 절차 | 완료 | README와 RAG 운영 문서에 재인덱싱·자동 평가 절차 존재 | 데이터/환경 변경 때 현행화 |
-| 데이터 준비 | 부분 완료 | 학과 게시글 50건 재수집(2026-07-14), 84청크 인덱싱, 원문 표본 대조 통과 | SE 게시판 수집 권한 확보 후 두 소스 통합 |
-| 브랜치 통합 | 완료 | PR #2 ready 전환·`6334bdc`로 main 병합·병합 후 전체 회귀 | 후속 기능은 새 브랜치와 PR로 통합 |
-| RAG 품질 결함 수정 | 완료 | `a2a0bdf`로 main 병합, false-positive 3건·false-negative 2건 수정, 50건 신규 데이터에서도 30/30 통과 | 데이터 소스 추가 시 재검증 |
-| 파일럿 준비 | 차단 | SE 게시판 수집 권한 미확보·주제 세분화(P0-3/P0-4) 미완료 | SE 수집 권한 + P0-3~P0-4 TODO 완료 |
-| 운영 준비 | 미착수 | CI, 관측성, rate limit, backup 기준 미완성 | 운영 검증 매트릭스 충족 |
+| 요구사항·설계 | 완료 | 품질·감사 설계와 Task 1~9 계획 | 정책 변경 시 문서 동시 갱신 |
+| 백엔드 RAG | 로컬 완료 | 기간 충돌, 제목 근거, 일반 최신일 우선, provider 미호출 회귀 | OpenAI 운영 provider 재평가 |
+| 데이터 수집 안전성 | 부분 완료 | 학과 50건, 부분 후보 격리, 원본 보호 테스트 | SE 운영자 허가 또는 공식 API |
+| 데이터 감사 | 로컬 완료 | JSON·Markdown, exit 0/1/2, 원자적 저장, 본문 제외 | 현재 경고 3건 해결·승인 |
+| 자동 평가 | 완료 | 고정 30문항 전체 통과, exit 0 | 데이터 변경 시 공식 원문 재검토 |
+| 프론트엔드 | 완료 | 답변·출처·추천 질문·최근 공지, 9 tests, build | 페이지 fetch E2E·접근성 자동화 |
+| 전체 회귀 | 통과 | backend 94, Ruff, frontend test/type/lint/build | CI 필수 검사 구성 |
+| main 통합 | 완료 | 원격 선행 변경과 품질 브랜치 3-way 병합 및 충돌 회귀 통합 | 원격 push 후 확인 |
+| 파일럿 준비 | 부분 완료 | 로컬 기능·평가 통과 | P0 데이터 검증과 P1 안전장치 |
+| 운영 준비 | 미착수 | 계획만 존재 | 관측성·rate limit·backup·healthcheck |
 
-현재 실행·브랜치 스냅샷:
+## 3. 실행 스냅샷
 
 | 항목 | 값 |
 | --- | --- |
-| 기능 통합 커밋 | `8dc3078 Merge branch 'codex/topic-latest'` |
-| 기능 구현 기준 HEAD | `8a02351 docs: finalize topic latest handoff` |
-| 자동 평가 통합 | PR #2, merge commit `6334bdc` |
-| RAG 품질 결함 수정 | commit `a2a0bdf`(main, 원격 push 완료) |
 | provider | `local` |
 | embedding | `local-hash-embedding-v1`, 1,536차원 |
 | answer | `local-extractive-answer-v1` |
-| retrieval | `top_k=5`, `min_score=0.10`(2026-07-14, 0.09에서 재조정) |
-| 데이터·인덱스 | 게시글 50건(kumoh, 2026-07-14 재수집), 청크 84개 |
-| 자동 평가 | 30건 중 30건 통과, quality exit 0(2026-07-14) |
-| 평가 보고서 | `data/evaluation/reports/latest.json`, `latest.md`(Git 제외) |
+| retrieval | `top_k=5`, `min_score=0.09` |
+| 저장 데이터 | 게시글 50건, `kumoh=50`, `seboard=0` |
+| 게시일 범위 | 2024-09-04 ~ 2026-06-30 |
+| 로컬 인덱스 | 청크 84개 |
+| 자동 평가 | 30/30, exit 0 |
+| 평가 세부 | topic 30/30, grounded 30/30, latest-only 30/30, source-title 11/11 |
+| 데이터 감사 | 경고 3건, exit 1 |
+| 생성 보고서 | `data/evaluation/reports/`, `data/audit/reports/`(Git 제외) |
 
-## 3. 구현된 기능
+## 4. 통합된 품질 정책
 
-### 데이터와 최신성
+### 질문·근거 판정
 
-- `data/topic_rules.json`에서 주제 키·표시명·키워드·추천 질문 관리
-- 제목과 본문을 규칙으로 분류하고 일치하지 않으면 `general` 사용
-- 유효한 `published_at` 우선, 누락·파싱 실패 시 `crawled_at` fallback
-- 같은 주제의 최신 게시글만 `is_latest_topic=true`로 표시
-- 원본 또는 규칙 변경 후 `backend/.venv/Scripts/python -m backend.scripts.index --reset` 수행
+- 질문에서 연도, 1·2학기, 계절학기, 최근성, 동의어와 특징어를 결정적으로 추출한다.
+- 질문의 기간과 문서 제목이 충돌하면 최신 문서라도 근거에서 제외한다.
+- 장학금 “신청”, 채용·초빙 등 제목 marker와 alias가 질문 표현에 연결되는지 확인한다.
+- 일반 “최근 학과 공지”는 검색 점수보다 유효 게시일이 가장 최신인 URL을 우선한다.
+- 설정 정책이 없는 기존 `TopicCatalog` 생성자에서도 기간 충돌, 채용·초빙, 일반 최신일의 기존 동작을 유지한다.
+- 근거 게이트를 통과하지 못하면 `grounded=false`이며 answer provider를 호출하지 않는다.
+- 답변은 출처 카드, 추천 질문, 최근 공지 순서로 표시한다.
 
-### 검색과 답변
+### 데이터·보고서 안전성
 
-- 구체 주제: `topic_key`와 `is_latest_topic=true`를 Chroma `where`에 함께 적용
-- 일반 질문: 모든 주제의 최신 게시글만 검색
-- 제목 일치 재정렬, 절대·상대 점수 필터, 근거 부족 시 provider 미호출
-- API 호환 필드 `answer`, `sources`, `grounded` 유지
-- 후속 필드 `suggested_questions`, `recent_notices` 추가
+- 정상 수집 결과만 `data/raw/posts.json`에 저장한다.
+- `--allow-partial` 부분 결과는 `data/raw/candidates/posts-partial.json`에 저장한다.
+- 평가와 감사의 JSON·Markdown 쌍은 공용 원자적 writer로 교체하고 실패 시 이전 보고서를 복구한다.
+- 감사 보고서에는 게시글 본문, 비밀값, 로컬 절대 경로를 포함하지 않는다.
+- 원본 게시글 또는 주제·근거 규칙 변경 후 `index --reset` → `evaluate` → `audit_data` 순서로 재검증한다.
 
-### 프론트엔드
+## 5. 데이터 상태와 감사 경고
 
-- 답변 → 출처 → 추천 질문 → 최근 공지 순서의 읽기 흐름
-- 추천 질문 클릭 시 기존 질문 전송 경로 재사용
-- 답변 줄바꿈·긴 문자열 보존, 공지 원문 링크와 주제·게시일 표시
-- 720px 이하에서 추천 chip 내부 가로 스크롤, 본문과 공지 카드 가로 넘침 방지
-- API 오류·로딩·빈 후속 정보 처리
+| 경고 코드 | 대상 | 현재 값 | 필요한 확인 |
+| --- | --- | --- | --- |
+| `missing_source` | `seboard` | 저장 게시글 0건 | 운영자 허가 또는 승인된 공식 API 확보 |
+| `stale_topic` | `course_openings` | 최신 2025-08-07 | 실제 최신 개설강좌·수강신청 공지인지 공식 원문 확인 |
+| `empty_topic` | `graduation` | 게시글 0건 | 졸업 공지의 승인된 공식 소스 또는 자료 부재 UX 결정 |
 
-## 4. 데이터 상태와 품질 위험
+현재 주제별 저장 상태:
 
-현재 `data/raw/posts.json` 50건(2026-07-14 재수집, kumoh 단일 소스)을 규칙으로 분류한 결과다.
+| 주제 | 건수 | 최신 게시일 |
+| --- | ---: | --- |
+| `general` | 15 | 2026-06-17 |
+| `career` | 14 | 2026-06-30 |
+| `registration` | 12 | 2026-06-16 |
+| `scholarship` | 6 | 2026-06-17 |
+| `capstone` | 2 | 2026-03-19 |
+| `course_openings` | 1 | 2025-08-07 |
+| `graduation` | 0 | 없음 |
 
-| 주제 | 게시글 수 | 현재 최신 게시일 | 현재 최신 제목 |
-| --- | ---: | --- | --- |
-| `general` | 15 | 2026-06-17 | 2026학년도 AX 기반 역량 강화 프로젝트 공모 기간 연장 |
-| `career` | 14 | 2026-06-30 | 소프트웨어전공 전임교원 초빙 공개강의 심사 공고 |
-| `registration` | 12 | 2026-06-16 | 여름계절수업 조기취업자 출석인정신청 안내 |
-| `scholarship` | 6 | 2026-06-17 | 방산AI인재양성부트캠프 설명회 안내 |
-| `capstone` | 2 | 2026-03-19 | 2026학년도 1학기 캡스톤 디자인 운영 계획 |
-| `course_openings` | 1 | 2025-08-07 | 2025학년도 2학기 수강신청 안내 |
-| `graduation` | 0 | 없음 | 검색 가능한 자료 없음 |
+“주제별 최신”은 저장 데이터 안에서의 최신을 뜻한다. 공식 사이트에 더 최신 자료가 있어도 수집되지 않으면 답변은 오래될 수 있으므로 날짜·원문 링크를 계속 노출하고 중요한 학사 결정은 원문 재확인을 안내한다.
 
-게시일 범위는 2024-09-04~2026-06-30이고 `published_at` 누락은 0건이다. 주제별 최신 게시글이 이전 46건 baseline과 동일한데, 이는 수집 결함이 아니라 게시판의 실제 최신 글이 2026-06-30(방학 기간)이기 때문임을 재수집으로 확인했다.
+### SE 게시판 수집 제한
 
-주의할 점:
+- 2026-07-14 확인 기준 `https://seboard.site/robots.txt`는 `User-agent: *`, `Disallow: /`로 자동 수집을 금지한다.
+- Cloudflare 콘텐츠 신호도 `ai-train=no`로 확인됐다.
+- 운영자 서면 허가 또는 공개·승인된 `SEBOARD_API_URL`을 확보하기 전에는 Selenium/API 우회 수집을 시도하지 않는다.
+- `missing_source=seboard` 경고는 허가 문제가 해결될 때까지 숨기지 않는다.
 
-1. `course_openings` 최신 자료가 2025-08-07인 것은 재수집으로도 확인된 실제 데이터 상태다. 게시판에서 해당 글이 고정글로 유지 중이며, 2026-2학기 수강신청 안내는 아직 게시되지 않았다(통상 8월 초 게시). 신규 학기 공지가 올라오면 재수집해야 한다.
-2. **SE 게시판(seboard.site)은 robots.txt(`User-agent: * / Disallow: /`)가 전체 크롤링을 금지해 수집을 중단했다(2026-07-14 확인).** Cloudflare 콘텐츠 신호도 `ai-train=no`다. 운영자 서면 허가를 받거나 공식 API 주소를 `SEBOARD_API_URL`로 받기 전에는 자동 수집을 재시도하지 않는다. SE 게시판 크롤러 코드는 유지하되 실행하지 않는다.
-3. `general`, `career`, `registration`처럼 넓은 주제에서 최신 1건만 남기면 동시에 유효한 다른 공지가 제외될 수 있다.
-4. “같은 주제”를 단순 `topic_key`로 볼지, 학기·공고 종류·문서 시리즈 단위로 볼지 운영 정책 결정이 필요하다(P0-3).
-5. 자동 평가가 실제 품질 간극 5건을 드러냈고, 2026-07-14에 근본 원인을 고쳐 모두 해결했다(기대값을 낮춰 exit 0을 만드는 방식은 사용하지 않았다). 상세 원인·수정 내용은 아래를 참고한다.
+## 6. 병합 결과 검증 기록
 
-해결된 품질 간극(2026-07-14, `backend/app/rag.py`):
+2026-07-15 `main`에서 실행한 결과:
 
-- **false-positive** `registration-period`("수강 신청 기간은 언제야?"): 재랭킹이 제목에 등장하는 범용 어휘 "신청"(전체 46건 제목의 43%에 출현)을 부분 문자열로 매칭해, 무관한 문서("조기취업자 출석인정신청 안내")에도 가짜 가산점을 줘 근거 있음으로 오판했다. "신청"·"학과"처럼 문서 대부분에 등장해 변별력이 없는 어휘를 `QUERY_STOP_WORDS`에 추가해 재랭킹 신호에서 제외했다.
-- **false-positive** `capstone-second-semester`("2026학년도 2학기 캡스톤디자인 공지를 알려줘"): 색인된 문서가 "1학기"인데도 어휘 유사도가 매우 높아(0.53) 임계값 조정만으로는 걸러낼 수 없었다. 질문과 후보 문서에서 "YYYY학년도"·"N학기"를 각각 추출해 명시적으로 충돌하면 해당 후보를 제외하는 로직(`_conflicts_with_period`)을 추가했다. 동일 로직이 `course-openings-2026-first`(2025학년도 2학기 데이터 vs 2026학년도 1학기 질문)도 더 견고하게 뒷받침한다.
-- **false-positive** `scholarship-apply`("장학금 신청 공지를 알려줘"): 재랭킹 가산점 없이도 어휘 임베딩 노이즈만으로 0.0924점이 나와 기존 임계값(0.09)을 근소하게 넘었다. 46건 baseline 전체를 스캔해 노이즈 최고점(0.0924)과 진짜 참양성 최저점(0.1161, `course-openings-lookup`)의 여유 구간을 확인한 뒤 `RAG_MIN_SCORE`를 0.09→0.10으로 재조정했다.
-- **false-negative** `career-recruitment`("최근 채용 공지를 찾아줘"): 질문의 "채용"과 문서 제목의 "초빙"이 같은 의미(교원 채용 공고)인데 문자 그대로 다르면 재랭킹 가산점을 받지 못해 0.0439점에 그쳤다. `TERM_SYNONYMS = {"채용": ("초빙",)}` 형태의 좁은 도메인 동의어 확장을 재랭킹에 추가했다.
-- **false-negative** `general-recent-department`("최근 학과 공지를 알려줘"): 기본(general) 주제에서 질문에 특정 내용어가 전혀 없어(불용어 제거 후 빈 집합) 모든 후보의 어휘 점수가 임계값 미달이었다. 기본 주제 + 내용어 없음 조건에서는 임계값을 우회해 조회된 후보 중 `published_at`이 가장 최신인 문서를 근거로 채택하는 fallback을 추가했다. `out-of-scope-*` 질문들은 "학생식당"·"기숙사"·"날씨"처럼 구체적인 내용어가 남아 이 fallback이 발동하지 않아 계속 거부된다.
+| 검증 | 결과 |
+| --- | --- |
+| 원격 동기화 | `origin/main`의 `0d766a9`까지 fast-forward 후 병합 |
+| normative 평가 데이터 | 기능 브랜치에서 변경 없음 |
+| RAG 충돌 집중 테스트 | 13 tests 통과 |
+| 재인덱싱 | 50 posts, 84 chunks, exit 0 |
+| 실제 local 평가 | 30 passed, 0 failed, exit 0 |
+| backend pytest | 94 tests 통과 |
+| backend Ruff | `All checks passed!` |
+| frontend Vitest | 3 files, 9 tests 통과 |
+| frontend TypeScript | exit 0 |
+| frontend ESLint | exit 0 |
+| Next.js production build | exit 0, 정적 페이지 4개 |
+| 데이터 감사 | 50 posts, 3 issues, exit 1(의도된 품질 경고) |
+| 생성물 ignore | Chroma·평가·감사·부분 후보 모두 제외 |
 
-회귀 방지용 단위 테스트 3건을 `backend/tests/test_rag.py`에 추가했다(학기 충돌 거부, 동의어 매칭, 기본 주제 최신성 fallback).
+비차단 경고:
 
-## 5. 현재 검증 기록
+- Vitest가 Vite CJS Node API deprecation을 출력한다.
+- 공식 SE 데이터와 OpenAI 운영 provider는 검증되지 않았다.
 
-| 검증 | 결과 | 해석 |
+## 7. 남은 우선순위 TODO
+
+### P0 — 외부 데이터 검증
+
+| ID | 작업 | 완료 조건 |
 | --- | --- | --- |
-| backend pytest | 2026-07-14, RAG 수정 후 60개 통과(기존 57 + 신규 3) | 평가 schema·evaluator·CLI·dataset·module 실행 계약 + 학기 충돌·동의어·최신성 fallback 회귀 테스트 포함 |
-| backend Ruff | 통과 | 현재 Python 정적 검사 오류 없음 |
-| backend line coverage | 이전 측정 68% | RAG 수정 이후 coverage를 별도 재측정해야 함 |
-| frontend Vitest | 2026-07-14 재확인, 3 files, 9 tests 통과 | 컴포넌트 계약 검증(프론트 변경 없음, 회귀 없음 재확인) |
-| frontend TypeScript | 2026-07-14 재확인, 통과 | 타입 오류 없음 |
-| frontend ESLint | 2026-07-14 재확인, 통과 | 현재 lint 오류 없음 |
-| Next.js production build | 2026-07-14 재확인, 통과, 정적 페이지 4개 | production 빌드 가능 |
-| 공식 데이터 재수집 | 2026-07-14, kumoh 50건 수집(exit 0, `--allow-partial` 미사용), `published_at` 누락 0건 | 표본 3건 원문 제목·작성일 대조 통과(articleNo 525560 등) |
-| SE 게시판 수집 | 미수행 — robots.txt `Disallow: /` 확인(2026-07-14) | 운영자 허가 또는 공식 API 확보 전 수집 금지 |
-| 재인덱싱 | 게시글 50건, 청크 84개 | local provider 인덱스 생성 가능 |
-| 자동 평가 | 2026-07-14, 재수집 50건 기준 30건 중 30건 통과, exit 0 | RAG 품질 실패 5건 수정이 신규 데이터에서도 유효 |
-| 평가 metric | topic 30/30, grounded 30/30, latest-only 30/30, source-title 11/11 | 4개 지표 모두 100% |
-| 실제 API | 2026-07-14, `/api/chat`으로 career-recruitment(grounded=true, 전임교원 초빙 소스)·capstone-second-semester(grounded=false)·general-recent-department(grounded=true)·scholarship-apply(grounded=false) 라이브 확인 | 수정된 5개 케이스 중 대표 4건을 실제 서버로 재확인 |
-| 브라우저 확인 | 추천 클릭·최근 공지·390px 모바일·console error 0(이전 기록, 프론트 변경 없어 재확인 불필요) | 주요 사용자 흐름 수동 확인 |
+| P0-1 | SE 데이터 사용 권한 | 운영자 허가 또는 승인된 공식 API와 사용 범위 기록 |
+| P0-2 | 원문 최신성 대조 | 주요 주제의 날짜·대상·신청 경로·canonical URL 확인 |
+| P0-3 | 감사 경고 처리 | 경고 3건을 해결하거나 승인된 예외로 문서화 |
+| P0-4 | 최신성 범위 확정 | 동시에 유효한 공지를 `topic_key` 1건 또는 문서 시리즈 단위로 처리할지 결정 |
 
-커버리지에서 확인된 주요 사각지대:
+### P1 — 다음 개발 프로젝트
 
-- `backend/app/crawling/seboard.py`: 0%
-- `backend/app/openai_service.py`: 33%
-- `backend/app/provider_factory.py`: 33%
-- `backend/app/main.py`: 61%; `/api/chat`, `/api/health` endpoint 통합 테스트 없음
-- `backend/scripts/evaluate.py`는 테스트됐지만 crawl/index CLI와 외부 연동 경로는 추가 보강 필요
-- 프론트엔드: 컴포넌트 테스트는 있으나 전체 `page.tsx` fetch 흐름의 자동 통합 테스트와 coverage 기준 없음
+| ID | 작업 | 완료 조건 |
+| --- | --- | --- |
+| P1-1 | backend line coverage 85%+ | SE fixture, OpenAI mock, provider factory, API endpoint, index/crawl CLI 보강 |
+| P1-2 | 임베딩 fingerprint | provider·모델·차원·청킹·주제 규칙 불일치 시 재인덱싱 안내 |
+| P1-3 | frontend 통합/E2E | fetch 성공·오류·추천 재질문과 390px/1280px 흐름 자동화 |
+| P1-4 | GitHub CI | backend/frontend 검사와 production build가 PR을 차단 |
 
-## 6. 우선순위 TODO
+### P2 — 운영 안정성
 
-### P0 — 통합·데이터 정책
+- Docker healthcheck와 readiness 순서
+- request ID, 선택 주제·출처·점수·지연시간을 포함한 민감정보 없는 관측성
+- rate limit, 운영 CORS, provider timeout 및 오류 응답 표준화
+- 증분 수집, 수정·삭제 감지, 인덱스 backup/restore
+- 의존성 경고와 lockfile 재현성 정기 검토
 
-| ID | 작업 | 완료 조건 | 필수 검증 |
-| --- | --- | --- | --- |
-| P0-1 | 브랜치 통합 — **완료** | 기존 기능 `8dc3078`, 자동 평가 PR #2 `6334bdc`로 `main` 통합 | 병합 후 backend 57·frontend 9, Ruff·TypeScript·ESLint·build·CLI 경고 회귀 통과 |
-| P0-2 | 공식 데이터 재수집 — **부분 완료(2026-07-14)** | 학과 소스 50건 수집·감사·재인덱싱 완료. SE 소스는 robots.txt 금지로 차단 — 운영자 허가/공식 API 확보가 새 완료 조건 | 학과: `--allow-partial` 없이 exit 0, 표본 원문 대조 통과. SE: 허가 확보 후 동일 기준 재검증 |
-| P0-2a | SE 게시판 수집 권한 확보 | seboard.site 운영자에게 수집 허가 또는 공식 API(`SEBOARD_API_URL`) 요청·회신 기록 | 허가 문서 또는 API 주소 확보, robots.txt 재확인 |
-| P0-3 | 최신성 범위 정책 확정 | `topic_key` 1건 정책 유지 또는 `freshness_scope_key` 같은 문서 시리즈 단위 도입 결정 | 동시 유효 공지 2건, 학기 변경, 날짜 누락 fixture 테스트 |
-| P0-4 | 주제 규칙 데이터 감사 | 잘못 분류된 최신 공지 수정, `graduation` 자료 부재 처리 결정 | 주제별 표본 5건 수동 라벨링, confusion 기록 |
-
-### P1 — 품질 자동화
-
-| ID | 작업 | 완료 조건 | 필수 검증 |
-| --- | --- | --- | --- |
-| P1-1 | 자동 평가 CLI — **완료** | 30개 질문의 topic·grounded·latest-only·source-title을 JSON/Markdown으로 출력 | 보고서 생성 후 전체 통과면 exit 0, 측정된 품질 실패면 exit 1; 2026-07-14 기준 30건 모두 통과, exit 0 |
-| P1-1a | RAG 품질 결함 5건 수정 — **완료** | `backend/app/rag.py` 재랭킹·최신성 로직 수정, 회귀 테스트 3건 추가 | pytest 60/60, ruff 통과, 평가 30/30·exit 0, `/api/chat` 라이브 확인 |
-| P1-2 | 백엔드 테스트 보강 | SE crawler fixture, OpenAI mock, provider factory, API endpoint, index/crawl CLI 테스트 | 전체 line coverage 목표 85% 이상, 외부 유료 API 미호출 |
-| P1-3 | 프론트 통합/E2E | `page.tsx` fetch 성공·오류·no-answer·추천 재질문과 모바일 흐름 자동화 | coverage 기준 정의, 390px/1280px E2E 통과 |
-| P1-4 | 임베딩 fingerprint | provider·모델·차원·청킹·주제 규칙 버전을 인덱스와 함께 저장·검증 | 불일치 인덱스 사용 시 명확한 오류와 재인덱싱 안내 |
-| P1-5 | CI 구축 | PR에서 backend/frontend 검사와 production build 자동 실행 | 깨진 테스트·lint·build가 PR을 차단 |
-
-### P2 — 운영 안정성·확장
-
-| ID | 작업 | 완료 조건 | 필수 검증 |
-| --- | --- | --- | --- |
-| P2-1 | Docker healthcheck | backend readiness 후 frontend 시작, 실패 상태 가시화 | 빈 인덱스·정상 인덱스 compose 시나리오 |
-| P2-2 | 관측성 | request ID, topic, 선택 source, 점수, 지연시간 기록; 민감정보 제외 | 로그 샘플과 장애 추적 시나리오 |
-| P2-3 | API 보호 | 요청 크기·빈도 제한, CORS 운영값, 오류 응답 표준화 | burst 요청, 잘못된 origin, provider timeout 테스트 |
-| P2-4 | 데이터 수명주기 | 증분 수집, 수정·삭제 감지, 인덱스 backup/restore | 삭제 게시글 제거와 복구 훈련 |
-| P2-5 | 첨부 문서 처리 | 승인된 PDF/HWP parser와 출처 metadata 보존 | 표·목록·날짜가 있는 fixture 정확성 평가 |
-| P2-6 | 의존성 정리 | Vite CJS 경고와 npm advisory 재평가, lockfile 재현성 유지 | clean `npm ci`, audit 검토, 전체 frontend 회귀 |
-
-## 7. 단계별 검증 매트릭스
-
-### 브랜치 통합 전
+## 8. 운영 검증 명령
 
 ```powershell
-backend/.venv/Scripts/python -m pytest backend/tests -q
-backend/.venv/Scripts/python -m ruff check backend
-npm --prefix frontend run test -- --run
+backend/.venv/Scripts/python.exe -m pytest backend/tests -q
+backend/.venv/Scripts/python.exe -m ruff check backend
+backend/.venv/Scripts/python.exe -m backend.scripts.index --reset
+backend/.venv/Scripts/python.exe -m backend.scripts.evaluate
+backend/.venv/Scripts/python.exe -m backend.scripts.audit_data
+npm --prefix frontend test
 frontend/node_modules/.bin/tsc.cmd -p frontend/tsconfig.json --noEmit --incremental false
 npm --prefix frontend run lint
 npm --prefix frontend run build
-git diff --check
 ```
 
-필요 증거: 모든 명령 exit 0, 추적되지 않은 build/index/secret 파일 없음, 변경 파일 목록 검토.
-
-### 데이터 또는 주제 규칙 변경 후
-
-터미널 1:
-
-```powershell
-backend/.venv/Scripts/python -m backend.scripts.index --reset
-backend/.venv/Scripts/python -m uvicorn backend.app.main:app
-```
-
-터미널 2:
-
-```powershell
-Invoke-RestMethod http://localhost:8000/api/health
-```
-
-필요 증거: source별 수집 건수, 주제별 게시글 수, 주제별 최신 제목·게시일, 인덱싱 청크 수, 대표 질문의 source URL과 날짜.
-
-### 파일럿 배포 전
-
-- 최소 30개 평가 질문에서 topic·latest-only·grounded·source 정확도 기록
-- 개설강좌·수강신청·장학·취업·캡스톤·졸업·범위 밖 질문 포함
-- 공식 원문과 답변의 날짜·대상·신청 경로를 사람이 대조
-- SE 게시판 live crawl과 DOM/API fixture를 함께 검증
-- OpenAI provider 사용 시 local과 별도로 임계값 재튜닝
-- 데스크톱·모바일·키보드 탐색·링크 접근성 확인
-
-### 운영 배포 전
-
-- CI 필수 검사와 Docker healthcheck 통과
-- `.env`·API key·Chroma DB·build output이 Git에 포함되지 않았는지 확인
-- rate limit, provider timeout, 빈/손상 인덱스, crawler 부분 실패 시나리오 확인
-- 로그 민감정보 제거, 인덱스 backup/restore, rollback 절차 검증
-
-## 8. 권장 실행 순서
-
-1. ~~자동 평가 실패 5건을 재현하는 집중 RAG 결함 수정 계획 수립·구현~~ — **완료(2026-07-14)**, 4절 참고
-2. ~~P0-2 학과 소스 재수집·감사·재인덱싱·평가 재검증~~ — **완료(2026-07-14)**: 50건 수집, 84청크, 30/30 통과. **SE 소스는 robots.txt 금지로 차단** — P0-2a(수집 권한 확보)는 사람이 진행해야 하는 항목
-3. P0-3/P0-4로 최신성 범위와 주제 규칙을 데이터에 맞게 조정
-4. P1-2/P1-3으로 외부 연동·API·페이지 통합 테스트 보강
-5. P1-4/P1-5로 잘못된 인덱스 차단과 CI 품질 게이트 구축
-6. P2 운영 안정성 항목을 완료한 뒤 파일럿·운영 여부 판단
+감사는 경고가 있으면 exit 1을 반환한다. 현재 예상값은 평가 exit 0, 감사 exit 1과 위 3개 경고다.
 
 ## 9. 문서 유지 규칙
 
-- 브랜치 통합, provider, 데이터 건수, 최신 게시일, 테스트 수, 검증 결과가 바뀌면 이 문서를 갱신한다.
-- 세션별 작업 상세와 커밋 목록은 handoff 문서에 남기고, 이 문서에는 현재 유효한 결론만 유지한다.
-- 완료한 TODO는 삭제하지 말고 상태와 검증 근거를 기록한 뒤 완료 이력으로 이동한다.
-- 수치가 없는 “완료” 표현을 피하고 명령, exit code, 건수, 날짜, source URL로 근거를 남긴다.
+- 데이터 건수·최신일·평가 지표·테스트 수·브랜치 상태가 바뀌면 이 문서를 함께 갱신한다.
+- 세션별 상세 이력은 handoff에, 현재 결론과 TODO는 이 문서에 기록한다.
+- 로컬 코드 완료와 공식 사이트·운영 환경 검증 완료를 구분한다.
+- 수치 없는 “완료” 대신 명령, exit code, 건수, 날짜로 근거를 남긴다.
+- `.env`, API key, password, bearer token은 기록하지 않고 `민감정보 제거됨`으로 대체한다.

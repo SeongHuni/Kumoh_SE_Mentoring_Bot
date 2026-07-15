@@ -45,3 +45,162 @@ def test_catalog_rejects_missing_default_topic(tmp_path) -> None:
 
     with pytest.raises(ValueError, match="default_topic_key"):
         load_topic_catalog(path)
+
+
+def test_catalog_loads_evidence_markers_and_retrieval_policy(tmp_path) -> None:
+    path = tmp_path / "topic_rules.json"
+    path.write_text(
+        json.dumps(
+            {
+                "default_topic_key": "general",
+                "retrieval_policy": {
+                    "recency_terms": ["최근", "최신"],
+                    "generic_terms": ["공지", "알려줘"],
+                    "alias_groups": [["채용", "초빙"]],
+                },
+                "topics": [
+                    {
+                        "key": "career",
+                        "label": "진로·취업",
+                        "keywords": ["채용"],
+                        "evidence_markers": ["초빙"],
+                        "suggested_questions": [],
+                    },
+                    {
+                        "key": "general",
+                        "label": "전체 공지",
+                        "keywords": [],
+                        "suggested_questions": [],
+                    },
+                ],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    catalog = load_topic_catalog(path)
+
+    assert catalog.rule_for("career").evidence_markers == ("초빙",)
+    assert catalog.retrieval_policy.recency_terms == ("최근", "최신")
+    assert catalog.retrieval_policy.alias_groups == (("채용", "초빙"),)
+
+
+@pytest.mark.parametrize(
+    ("payload", "message"),
+    [
+        (
+            {
+                "default_topic_key": "general",
+                "retrieval_policy": {"alias_groups": [["채용"]]},
+                "topics": [
+                    {"key": "general", "label": "전체", "keywords": []}
+                ],
+            },
+            "alias group",
+        ),
+        (
+            {
+                "default_topic_key": "general",
+                "topics": [
+                    {"key": "general", "label": "전체", "keywords": []},
+                    {"key": "general", "label": "중복", "keywords": []},
+                ],
+            },
+            "중복 topic key",
+        ),
+    ],
+)
+def test_catalog_rejects_invalid_policy(tmp_path, payload, message) -> None:
+    path = tmp_path / "topic_rules.json"
+    path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+    with pytest.raises(ValueError, match=message):
+        load_topic_catalog(path)
+
+
+@pytest.mark.parametrize(
+    ("payload", "message"),
+    [
+        (
+            {
+                "default_topic_key": "general",
+                "topics": [
+                    {"key": "general", "label": "전체", "keywords": None}
+                ],
+            },
+            "general.keywords",
+        ),
+        (
+            {
+                "default_topic_key": "general",
+                "topics": [
+                    {
+                        "key": "general",
+                        "label": "전체",
+                        "keywords": [],
+                        "suggested_questions": "최근 공지",
+                    }
+                ],
+            },
+            "general.suggested_questions",
+        ),
+        (
+            {
+                "default_topic_key": "general",
+                "retrieval_policy": {"recency_terms": ["최근", 1]},
+                "topics": [
+                    {"key": "general", "label": "전체", "keywords": []}
+                ],
+            },
+            "recency_terms",
+        ),
+        (
+            {
+                "default_topic_key": "general",
+                "retrieval_policy": {"alias_groups": [["채용", 1]]},
+                "topics": [
+                    {"key": "general", "label": "전체", "keywords": []}
+                ],
+            },
+            "alias group 0",
+        ),
+    ],
+)
+def test_catalog_rejects_invalid_string_array_types(
+    tmp_path,
+    payload,
+    message,
+) -> None:
+    path = tmp_path / "topic_rules.json"
+    path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+    with pytest.raises(ValueError, match=message):
+        load_topic_catalog(path)
+
+
+@pytest.mark.parametrize(
+    ("payload", "message"),
+    [
+        (
+            {
+                "default_topic_key": "1",
+                "topics": [{"key": 1, "label": "전체", "keywords": []}],
+            },
+            "topic key",
+        ),
+        (
+            {
+                "default_topic_key": 1,
+                "topics": [{"key": "1", "label": "전체", "keywords": []}],
+            },
+            "default_topic_key",
+        ),
+    ],
+)
+def test_catalog_rejects_non_string_keys(tmp_path, payload, message) -> None:
+    path = tmp_path / "topic_rules.json"
+    path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+    with pytest.raises(ValueError, match=message):
+        load_topic_catalog(path)
