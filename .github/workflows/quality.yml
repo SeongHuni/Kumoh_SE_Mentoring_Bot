@@ -68,7 +68,7 @@ jobs:
         run: npm --prefix frontend test
 
       - name: Run TypeScript check
-        run: npm --prefix frontend exec -- tsc --project frontend/tsconfig.json --noEmit
+        run: npm --prefix frontend run typecheck
 
       - name: Run ESLint
         run: npm --prefix frontend run lint

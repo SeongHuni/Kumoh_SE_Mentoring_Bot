@@ -107,7 +107,7 @@ backend/.venv/Scripts/python -m backend.scripts.index --reset
 backend/.venv/Scripts/python -m backend.scripts.evaluate
 backend/.venv/Scripts/python -m backend.scripts.audit_data
 npm --prefix frontend test
-npm --prefix frontend exec -- tsc --project frontend/tsconfig.json --noEmit
+npm --prefix frontend run typecheck
 npm --prefix frontend run lint
 npm --prefix frontend run build
 ```
