@@ -165,6 +165,34 @@ def test_module_help_does_not_emit_runtime_warning() -> None:
     assert b"RuntimeWarning" not in result.stderr
 
 
+def test_module_invalid_settings_returns_configuration_error_without_report(
+    tmp_path: Path,
+) -> None:
+    env = os.environ.copy()
+    env["AI_PROVIDER"] = "invalid"
+    output_dir = tmp_path / "reports"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "backend.scripts.audit_data",
+            "--output-dir",
+            str(output_dir),
+        ],
+        cwd=REPOSITORY_ROOT,
+        capture_output=True,
+        check=False,
+        env=env,
+        text=True,
+    )
+
+    assert result.returncode == 2
+    assert "Traceback" not in result.stderr
+    assert "데이터 감사 오류:" in result.stderr
+    assert not (output_dir / "latest.json").exists()
+    assert not (output_dir / "latest.md").exists()
+
+
 @pytest.mark.parametrize(("issues", "expected_exit"), [(0, 0), (1, 1)])
 def test_main_writes_reports_and_returns_quality_exit(
     tmp_path: Path,

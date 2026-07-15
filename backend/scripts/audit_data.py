@@ -63,8 +63,8 @@ def write_reports(report: DataAuditReport, output_dir: Path) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = parse_args(argv)
     try:
+        args = parse_args(argv)
         result = run_audit(args)
         write_reports(result, args.output_dir)
     except (FileNotFoundError, OSError, ValueError, RuntimeError) as exc:
