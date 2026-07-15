@@ -4,6 +4,7 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 from backend.app.config import REPOSITORY_ROOT
@@ -82,6 +83,44 @@ def test_parse_args_explicit_paths_do_not_load_settings(
 
     assert args.posts == explicit_posts_path
     assert args.topic_rules == explicit_topic_rules_path
+
+
+@pytest.mark.parametrize("explicit_option", ["--posts", "--topic-rules"])
+def test_parse_args_partial_paths_fill_only_missing_defaults(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    explicit_option: str,
+) -> None:
+    configured_posts_path = tmp_path / "configured-posts.json"
+    configured_topic_rules_path = tmp_path / "configured-topic-rules.json"
+    get_settings = Mock(
+        return_value=SimpleNamespace(
+            raw_posts_path=configured_posts_path,
+            topic_rules_path=configured_topic_rules_path,
+        )
+    )
+    monkeypatch.setattr(audit_data, "get_settings", get_settings)
+    explicit_posts_path = tmp_path / "explicit-posts.json"
+    explicit_topic_rules_path = tmp_path / "explicit-topic-rules.json"
+    explicit_path = (
+        explicit_posts_path
+        if explicit_option == "--posts"
+        else explicit_topic_rules_path
+    )
+
+    args = audit_data.parse_args([explicit_option, str(explicit_path)])
+
+    assert args.posts == (
+        explicit_posts_path
+        if explicit_option == "--posts"
+        else configured_posts_path
+    )
+    assert args.topic_rules == (
+        configured_topic_rules_path
+        if explicit_option == "--posts"
+        else explicit_topic_rules_path
+    )
+    get_settings.assert_called_once_with()
 
 
 def report(*, issues: int) -> DataAuditReport:
