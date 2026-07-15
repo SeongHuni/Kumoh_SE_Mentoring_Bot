@@ -1,8 +1,8 @@
 # SE Mentor Bot 프로젝트 상태와 다음 작업
 
 > 기준일: 2026-07-15
-> 기준 브랜치: `codex/backend-quality-gates`
-> 통합 범위: `main` 병합점(`3c016de`) + backend coverage·인덱스 manifest·CI 로컬 구현
+> 기준 브랜치: `main`
+> 통합 범위: backend coverage·strict index manifest·CI를 로컬 `main`에 통합
 > 상세 이력: [`superpowers/handoffs/2026-07-15-backend-quality-gates-handoff.md`](superpowers/handoffs/2026-07-15-backend-quality-gates-handoff.md)
 
 이 문서는 현재 유효한 구현 수준, 검증 근거, 외부 확인이 필요한 위험과 다음 우선순위를 관리한다. 과거 세션별 RED/GREEN 및 커밋 기록은 인수인계 문서에 유지한다.
@@ -16,7 +16,7 @@
 - 부분 수집 결과는 운영 원본이 아닌 `data/raw/candidates/`에 격리한다.
 - 데이터 감사는 현재 게시글 50건에서 실제 데이터 경고 3건을 탐지한다.
 - 임베딩·청킹·원본·주제 규칙 fingerprint와 청크 수를 strict manifest로 검증하며, 불일치한 인덱스로는 채팅하지 않는다.
-- 백엔드 154개 테스트와 product-code line coverage 91.42%, 프론트엔드 9개 테스트, Ruff·TypeScript·ESLint·Next.js production build가 기능 브랜치에서 통과했다.
+- 백엔드 154개 테스트와 product-code line coverage 91.42%, 프론트엔드 9개 테스트, Ruff·TypeScript·ESLint·Next.js production build가 병합된 `main`에서 통과했다.
 - GitHub Actions 품질 workflow를 추가했고 동일 명령의 로컬 검증은 통과했지만, 원격 workflow 실행은 push 후 확인해야 한다.
 - SE 게시판은 `robots.txt`가 전체 자동 수집을 금지하므로 운영자 서면 허가 또는 승인된 공식 API 확보 전까지 자동 크롤링하지 않는다.
 - 따라서 이번 backend 품질 gate의 로컬 구현과 실제 인덱스 회귀는 완료됐지만 SE 데이터 권한, 오래된 개설강좌 자료, 졸업 자료, frontend E2E와 운영 안전성 때문에 파일럿·운영 준비는 진행 중이다.
@@ -38,8 +38,8 @@
 | 자동 평가 | 완료 | 고정 30문항 전체 통과, exit 0 | 데이터 변경 시 공식 원문 재검토 |
 | 프론트엔드 | 완료 | 답변·출처·추천 질문·최근 공지, 9 tests, build | 페이지 fetch E2E·접근성 자동화 |
 | 전체 회귀 | 로컬 통과 | backend 154·coverage 91.42%, Ruff, frontend test/type/lint/build | 원격 CI 실행 확인 |
-| CI 품질 gate | 로컬 완료 | PR·main workflow와 동일 명령 통과 | branch push 후 GitHub Actions 확인·필수 검사 지정 |
-| main 통합 | 이전 범위 완료 | `3c016de`까지 main 통합 | 현재 기능 브랜치 최종 검증 후 병합·push |
+| CI 품질 gate | 로컬 완료 | PR·main workflow와 동일 명령 통과 | `main` push 후 GitHub Actions 확인·필수 검사 지정 |
+| main 통합 | 로컬 완료 | `3c016de` → `e051c47` fast-forward, 병합 후 전체 회귀 통과 | `origin/main` push와 원격 CI 확인 |
 | 파일럿 준비 | 부분 완료 | 로컬 기능·평가 통과 | P0 데이터 검증과 P1 안전장치 |
 | 운영 준비 | 미착수 | 계획만 존재 | 관측성·rate limit·backup·healthcheck |
 
@@ -118,13 +118,13 @@
 - 운영자 서면 허가 또는 공개·승인된 `SEBOARD_API_URL`을 확보하기 전에는 Selenium/API 우회 수집을 시도하지 않는다.
 - `missing_source=seboard` 경고는 허가 문제가 해결될 때까지 숨기지 않는다.
 
-## 6. 기능 브랜치 검증 기록
+## 6. main 통합 검증 기록
 
-2026-07-15 `codex/backend-quality-gates`에서 현재까지 실행한 결과:
+2026-07-15 병합된 로컬 `main`에서 실행한 결과:
 
 | 검증 | 결과 |
 | --- | --- |
-| 기준점 | `main`의 `3c016de`에서 격리 worktree 생성 |
+| 통합 | `3c016de`에서 `e051c47`로 fast-forward 후 기능 worktree·브랜치 제거 |
 | normative 평가 데이터 | 기능 브랜치에서 변경 없음 |
 | backend pytest | 154 tests 통과 |
 | backend product coverage | 91.42%, 85% gate 통과 |

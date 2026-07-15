@@ -30,7 +30,7 @@ Copy-Item .env.example .env
 # AI_PROVIDER=auto는 키가 있으면 OpenAI, 없으면 로컬 모드를 선택합니다.
 # 로컬 모드를 강제하려면 AI_PROVIDER=local로 설정합니다.
 
-py -3.13 -m venv backend/.venv
+py -3 -m venv backend/.venv
 backend/.venv/Scripts/python -m pip install -r backend/requirements-dev.txt
 npm --prefix frontend install
 ```

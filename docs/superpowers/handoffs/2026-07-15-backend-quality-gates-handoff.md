@@ -1,25 +1,29 @@
 # Backend Quality Gates Handoff
 
 > 작성일: 2026-07-15
-> 브랜치: `codex/backend-quality-gates`
+> 브랜치: `main`
 > 기준점: `main`의 `3c016de`
-> worktree: `.worktrees/backend-quality-gates`
-> 상태: 로컬 구현·인덱싱·회귀 검증 완료, 원격 CI와 main 통합은 미실행
+> worktree: 저장소 루트(기능 worktree 제거 완료)
+> 상태: 로컬 `main` 통합·재인덱싱·회귀 검증 완료, 원격 push·CI 미실행
 
 ## 1. 다음 작업자의 진입점
 
-이 브랜치는 RAG 답변 품질 기능을 바꾸기보다 오래된 또는 잘못 구성된 벡터 인덱스로 답변하는 위험을 차단하고, 제품 코드 coverage와 CI 기준을 고정한다. 사용자가 이번 범위에서 SE 게시판 관련 구현을 제외했으므로 `backend/app/crawling/seboard.py`, SE fixture, 크롤링 권한 정책은 변경하지 않았다.
+이 변경은 RAG 답변 품질 기능을 바꾸기보다 오래된 또는 잘못 구성된 벡터 인덱스로 답변하는 위험을 차단하고, 제품 코드 coverage와 CI 기준을 고정한다. 사용자가 이번 범위에서 SE 게시판 관련 구현을 제외했으므로 `backend/app/crawling/seboard.py`, SE fixture, 크롤링 권한 정책은 변경하지 않았다.
 
 처음 확인할 명령:
 
 ```powershell
-Set-Location .worktrees/backend-quality-gates
+git switch main
 git status --short --branch
 git log --oneline 3c016de..HEAD
+py -3 -m venv backend/.venv
+backend/.venv/Scripts/python.exe -m pip install -r backend/requirements-dev.txt
+$env:AI_PROVIDER = "local"
+backend/.venv/Scripts/python.exe -m backend.scripts.index --reset
 backend/.venv/Scripts/python.exe -c "from backend.app.main import health; print(health().model_dump())"
 ```
 
-worktree가 없다면 저장소 루트에서 `git worktree add .worktrees/backend-quality-gates codex/backend-quality-gates`로 다시 연결한다. 현재 로컬 Chroma와 생성 보고서는 Git에서 제외된다. 다른 PC나 새 clone에서는 `backend/.venv/Scripts/python.exe -m backend.scripts.index --reset`을 먼저 실행해야 health가 `ready`가 된다.
+기능 worktree와 `codex/backend-quality-gates` 로컬 브랜치는 검증 후 제거했다. 이 PC의 저장소 루트에는 `backend/.venv`가 없으므로 위 명령으로 개발 환경을 준비해야 한다. 현재 로컬 Chroma와 생성 보고서는 Git에서 제외되며, 다른 PC나 새 clone에서는 `backend/.venv/Scripts/python.exe -m backend.scripts.index --reset`을 먼저 실행해야 health가 `ready`가 된다.
 
 ## 2. 완료한 구현과 커밋
 
@@ -37,7 +41,7 @@ worktree가 없다면 저장소 루트에서 `git worktree add .worktrees/backen
 | `fb01183` | frontend `typecheck` package script로 CI cwd 해석 제거 |
 | `5ac701d` | 동일 입력 재인덱싱에서도 manifest 세대별로 RAG service를 교체 |
 
-마지막 handoff/status 커밋은 `docs: hand off backend quality gates` 메시지로 이 문서 뒤에 생성된다.
+구현 범위의 마지막 커밋은 `e051c47 docs: hand off backend quality gates`이며, 이후 로컬 `main` 병합 상태를 이 문서에 추가 기록했다.
 
 ## 3. 구현된 동작
 
@@ -70,7 +74,7 @@ worktree가 없다면 저장소 루트에서 `git worktree add .worktrees/backen
 - `.github/workflows/quality.yml`은 PR과 `main` push에서 backend tests+coverage, Ruff, frontend tests, TypeScript, ESLint, production build를 실행한다.
 - workflow는 read-only contents 권한과 concurrency cancellation을 사용한다.
 - action major는 작성일의 공식 최신 major인 checkout v7, setup-python v6, setup-node v7을 사용한다.
-- 로컬 대응 명령은 통과했지만 이 브랜치를 아직 push하지 않았으므로 GitHub Actions 원격 run은 검증하지 않았다.
+- 병합된 로컬 `main`에서 대응 명령은 통과했지만 `origin/main`에 아직 push하지 않았으므로 GitHub Actions 원격 run은 검증하지 않았다.
 
 ## 4. 2026-07-15 실제 검증값
 
@@ -85,6 +89,7 @@ worktree가 없다면 저장소 루트에서 `git worktree add .worktrees/backen
 | frontend ESLint | 통과 |
 | frontend production build | 통과, 정적 페이지 4개 |
 | workflow YAML | `Quality`, backend/frontend jobs, read-only 권한 구조 확인 |
+| main 통합 | `3c016de` → `e051c47` fast-forward, 기능 worktree·브랜치 제거 |
 | 저장 게시글 | 50건 (`kumoh=50`, `seboard=0`) |
 | 재인덱싱 | 84 chunks, exit 0 |
 | manifest fingerprint | `9fe1fee46fbfba4fee7902c60ce544efcc7fbe46f432c81a62cf94709466a2b0` |
