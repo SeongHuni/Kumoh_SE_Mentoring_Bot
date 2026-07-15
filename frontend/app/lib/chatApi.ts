@@ -78,7 +78,7 @@ function isSafeErrorMessage(text: string): boolean {
     !/<\/?[a-z][^>]*>|<!doctype\s+html/i.test(normalized) &&
     !/\b(?:traceback|stack\s+trace)\b/i.test(normalized) &&
     !/(?:API_KEY|PASSWORD|SECRET|TOKEN)\s*[:=]\s*\S+/i.test(normalized) &&
-    !/\b(?:[A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception)|Exception)\s*:/i.test(normalized) &&
+    !/\b(?:Error|Exception|[A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception))\s*:/i.test(normalized) &&
     !/\b(?:authorization|cookie)\s*:/i.test(normalized) &&
     !/\bbearer\s+\S+/i.test(normalized) &&
     !/(?:[A-Za-z]:[\\/]|\/(?:srv|app|usr|home|var|etc|tmp|opt|root)(?:[\\/]|$))/i.test(normalized) &&

@@ -277,6 +277,16 @@ describe("requestChat", () => {
       "application/json",
     ],
     [
+      "a generic Error detail",
+      JSON.stringify({ detail: "Error: 데이터베이스 연결 실패" }),
+      "application/json",
+    ],
+    [
+      "a generic Exception detail",
+      JSON.stringify({ detail: "Exception: 처리 실패" }),
+      "application/json",
+    ],
+    [
       "an Authorization bearer credential",
       JSON.stringify({ detail: "Authorization: Bearer secret-token" }),
       "application/json",
@@ -313,12 +323,13 @@ describe("requestChat", () => {
       JSON.stringify({ detail: "AI_PROVIDER=openai 설정에는 OPENAI_API_KEY가 필요합니다." }),
       "application/json",
     ],
+    ["a normal Korean error detail", JSON.stringify({ detail: "오류: 데이터베이스 연결 실패" }), "application/json"],
     ["the health endpoint guidance", "상태 확인은 /api/health를 호출하세요.", "text/plain"],
     ["the Python command guidance", "문제 해결은 python -m ... 명령을 실행하세요.", "text/plain"],
   ])("preserves %s", async (_description, body, contentType) => {
     const fetchImpl = vi.fn().mockResolvedValue(makeResponse(body, false, contentType, 503));
 
-    const message = body.startsWith("{") ? "AI_PROVIDER=openai 설정에는 OPENAI_API_KEY가 필요합니다." : body;
+    const message = body.startsWith("{") ? (JSON.parse(body) as { detail: string }).detail : body;
     await expect(
       requestChat("질문", { apiUrl: "https://api.example.test", fetchImpl }),
     ).rejects.toThrow(message);
