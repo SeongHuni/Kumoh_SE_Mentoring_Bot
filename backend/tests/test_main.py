@@ -5,8 +5,15 @@ from unittest.mock import Mock
 import httpx
 import pytest
 from backend.app import main
-from backend.app.index_manifest import IndexCompatibility
+from backend.app.domain import TextChunk
+from backend.app.index_manifest import (
+    IndexCompatibility,
+    build_index_manifest,
+    build_index_signature,
+    write_index_manifest,
+)
 from backend.app.schemas import ChatResponse
+from backend.app.vector_store import ChromaVectorStore
 from openai import APIConnectionError
 
 
@@ -235,3 +242,52 @@ def test_rag_service_cache_rotates_with_index_fingerprint(monkeypatch) -> None:
     assert second is not first
     assert first.topic_catalog is not second.topic_catalog
     assert first.posts is not second.posts
+
+
+def test_health_reopens_collection_after_external_reset(monkeypatch, tmp_path) -> None:
+    settings = replace(
+        main.settings,
+        ai_provider="local",
+        openai_api_key=None,
+        chroma_path=tmp_path / "chroma",
+        chroma_collection="reset_lifecycle",
+    )
+    monkeypatch.setattr(main, "settings", settings)
+    cache_clear = getattr(main.get_vector_store, "cache_clear", None)
+    if cache_clear is not None:
+        cache_clear()
+
+    chunk = TextChunk(
+        id="kumoh:1:0",
+        post_id="1",
+        source="kumoh",
+        title="최신 공지",
+        text="최신 공지 본문",
+        url="https://example.com/1",
+        published_at="2026-07-15",
+        chunk_index=0,
+        topic_key="general",
+        topic_label="전체 공지",
+        is_latest_topic=True,
+    )
+    embedding = [[1.0] + [0.0] * (settings.embedding_dimensions - 1)]
+    manifest = build_index_manifest(build_index_signature(settings), indexed_chunks=1)
+
+    try:
+        api_store = main.get_vector_store()
+        api_store.upsert([chunk], embedding)
+        write_index_manifest(settings.chroma_path, manifest)
+        assert main.health().status == "ready"
+
+        indexing_store = ChromaVectorStore(settings.chroma_path, settings.chroma_collection)
+        indexing_store.reset()
+        indexing_store.upsert([chunk], embedding)
+        write_index_manifest(settings.chroma_path, manifest)
+
+        result = main.health()
+        assert result.status == "ready"
+        assert result.index_reason == "compatible"
+    finally:
+        cache_clear = getattr(main.get_vector_store, "cache_clear", None)
+        if cache_clear is not None:
+            cache_clear()

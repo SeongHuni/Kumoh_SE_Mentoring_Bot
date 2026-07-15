@@ -34,7 +34,6 @@ app.add_middleware(
 )
 
 
-@lru_cache(maxsize=1)
 def get_vector_store() -> ChromaVectorStore:
     return ChromaVectorStore(settings.chroma_path, settings.chroma_collection)
 
