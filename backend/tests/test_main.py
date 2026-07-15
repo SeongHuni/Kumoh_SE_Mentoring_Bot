@@ -1,29 +1,210 @@
+import asyncio
+from dataclasses import replace
+from unittest.mock import Mock
+
+import httpx
+import pytest
 from backend.app import main
-from backend.app.config import Settings
+from backend.app.index_manifest import IndexCompatibility
+from backend.app.schemas import ChatResponse
+from openai import APIConnectionError
 
 
-def test_get_rag_service_injects_topic_context(monkeypatch, tmp_path) -> None:
-    settings = Settings(
-        ai_provider="local",
-        openai_api_key=None,
-        chat_model="test-chat",
-        embedding_model="test-embedding",
-        chroma_path=tmp_path / "chroma",
-        chroma_collection="test_posts",
-        raw_posts_path=tmp_path / "posts.json",
-        topic_rules_path=tmp_path / "topic_rules.json",
-        rag_top_k=7,
-        rag_min_score=0.42,
-        crawler_delay_seconds=0.0,
-        crawler_timeout_seconds=1.0,
-        seboard_api_url=None,
-        seboard_headless=False,
-        cors_origins=("http://testserver",),
+def api_request(method: str, path: str, **kwargs) -> httpx.Response:
+    async def send() -> httpx.Response:
+        transport = httpx.ASGITransport(app=main.app)
+        async with httpx.AsyncClient(
+            transport=transport,
+            base_url="http://testserver",
+        ) as client:
+            return await client.request(method, path, **kwargs)
+
+    return asyncio.run(send())
+
+
+def compatibility(reason: str) -> IndexCompatibility:
+    compatible = reason == "compatible"
+    indexed_chunks = 0 if reason in {"empty_index", "index_unavailable"} else 3
+    return IndexCompatibility(
+        compatible=compatible,
+        reason=reason,
+        indexed_chunks=indexed_chunks,
+        fingerprint="a" * 64 if compatible else None,
     )
-    provider = object()
-    vector_store = object()
-    catalog = object()
-    posts = [object() for _ in range(46)]
+
+
+def test_index_compatibility_maps_store_open_failure_to_unavailable(monkeypatch) -> None:
+    monkeypatch.setattr(
+        main,
+        "get_vector_store",
+        Mock(side_effect=OSError("store unavailable")),
+    )
+
+    result = main.get_index_compatibility()
+
+    assert result == IndexCompatibility(
+        compatible=False,
+        reason="index_unavailable",
+        indexed_chunks=0,
+    )
+
+
+@pytest.mark.parametrize(
+    ("provider", "key", "reason", "expected"),
+    [
+        ("openai", None, "compatible", "needs_configuration"),
+        ("local", None, "index_unavailable", "unavailable"),
+        ("local", None, "empty_index", "needs_index"),
+        ("local", None, "content_mismatch", "needs_reindex"),
+        ("local", None, "compatible", "ready"),
+        ("openai", "test-key", "compatible", "ready"),
+    ],
+)
+def test_health_status_matrix(monkeypatch, provider, key, reason, expected) -> None:
+    settings = replace(main.settings, ai_provider=provider, openai_api_key=key)
+    monkeypatch.setattr(main, "settings", settings)
+    monkeypatch.setattr(
+        main,
+        "get_index_compatibility",
+        lambda: compatibility(reason),
+        raising=False,
+    )
+
+    response = api_request("GET", "/api/health")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == expected
+    assert payload["index_reason"] == reason
+    assert payload["index_compatible"] is (reason == "compatible")
+    assert payload["openai_configured"] is bool(key)
+    assert payload["indexed_chunks"] == compatibility(reason).indexed_chunks
+    assert "fingerprint" not in payload
+    assert "raw_posts_sha256" not in payload
+
+
+def test_chat_checks_openai_configuration_before_index(monkeypatch) -> None:
+    settings = replace(main.settings, ai_provider="openai", openai_api_key=None)
+    compatibility_check = Mock()
+    service_factory = Mock()
+    monkeypatch.setattr(main, "settings", settings)
+    monkeypatch.setattr(
+        main,
+        "get_index_compatibility",
+        compatibility_check,
+        raising=False,
+    )
+    monkeypatch.setattr(main, "get_rag_service", service_factory)
+
+    response = api_request(
+        "POST",
+        "/api/chat",
+        json={"question": "최근 공지 알려줘"},
+    )
+
+    assert response.status_code == 503
+    assert "OPENAI_API_KEY" in response.json()["detail"]
+    compatibility_check.assert_not_called()
+    service_factory.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("reason", "status", "message"),
+    [
+        ("index_unavailable", 503, "상태"),
+        ("empty_index", 409, "인덱싱"),
+        ("missing_manifest", 409, "--reset"),
+        ("invalid_manifest", 409, "--reset"),
+        ("settings_mismatch", 409, "--reset"),
+        ("content_mismatch", 409, "--reset"),
+        ("chunk_count_mismatch", 409, "--reset"),
+    ],
+)
+def test_chat_blocks_incompatible_index_before_service(
+    monkeypatch, reason, status, message
+) -> None:
+    settings = replace(main.settings, ai_provider="local", openai_api_key=None)
+    service_factory = Mock()
+    monkeypatch.setattr(main, "settings", settings)
+    monkeypatch.setattr(
+        main,
+        "get_index_compatibility",
+        lambda: compatibility(reason),
+        raising=False,
+    )
+    monkeypatch.setattr(main, "get_rag_service", service_factory)
+
+    response = api_request(
+        "POST",
+        "/api/chat",
+        json={"question": "최근 공지 알려줘"},
+    )
+
+    assert response.status_code == status
+    assert message in response.json()["detail"]
+    service_factory.assert_not_called()
+
+
+def test_chat_passes_compatible_fingerprint_to_service(monkeypatch) -> None:
+    settings = replace(main.settings, ai_provider="local", openai_api_key=None)
+    service = Mock()
+    service.ask.return_value = ChatResponse(
+        answer="확인했습니다.",
+        sources=[],
+        grounded=False,
+        suggested_questions=[],
+        recent_notices=[],
+    )
+    service_factory = Mock(return_value=service)
+    monkeypatch.setattr(main, "settings", settings)
+    monkeypatch.setattr(
+        main,
+        "get_index_compatibility",
+        lambda: compatibility("compatible"),
+        raising=False,
+    )
+    monkeypatch.setattr(main, "get_rag_service", service_factory)
+
+    response = api_request(
+        "POST",
+        "/api/chat",
+        json={"question": "최근 공지 알려줘"},
+    )
+
+    assert response.status_code == 200
+    service_factory.assert_called_once_with("a" * 64)
+    service.ask.assert_called_once_with("최근 공지 알려줘")
+
+
+def test_chat_preserves_openai_api_error_mapping(monkeypatch) -> None:
+    settings = replace(main.settings, ai_provider="local", openai_api_key=None)
+    service = Mock()
+    service.ask.side_effect = APIConnectionError(
+        request=httpx.Request("POST", "https://example.com")
+    )
+    monkeypatch.setattr(main, "settings", settings)
+    monkeypatch.setattr(
+        main,
+        "get_index_compatibility",
+        lambda: compatibility("compatible"),
+        raising=False,
+    )
+    monkeypatch.setattr(main, "get_rag_service", Mock(return_value=service))
+
+    response = api_request(
+        "POST",
+        "/api/chat",
+        json={"question": "최근 공지 알려줘"},
+    )
+
+    assert response.status_code == 502
+    assert response.json()["detail"] == "OpenAI API 요청에 실패했습니다."
+
+
+def test_rag_service_cache_rotates_with_index_fingerprint(monkeypatch) -> None:
+    settings = replace(main.settings, ai_provider="local", openai_api_key=None)
+    catalogs = iter([object(), object()])
+    post_batches = iter([[object()], [object()]])
 
     class FakeRAGService:
         def __init__(self, **kwargs) -> None:
@@ -31,18 +212,26 @@ def test_get_rag_service_injects_topic_context(monkeypatch, tmp_path) -> None:
             self.posts = kwargs["posts"]
 
     monkeypatch.setattr(main, "settings", settings)
-    monkeypatch.setattr(main, "create_provider", lambda settings: provider)
-    monkeypatch.setattr(main, "get_vector_store", lambda: vector_store)
-    monkeypatch.setattr(main, "get_topic_catalog", lambda: catalog)
-    monkeypatch.setattr(main, "get_enriched_posts", lambda: posts)
+    monkeypatch.setattr(main, "create_provider", lambda settings: object())
+    monkeypatch.setattr(main, "get_vector_store", lambda: object())
+    monkeypatch.setattr(main, "load_topic_catalog", lambda path: next(catalogs))
+    monkeypatch.setattr(main, "load_posts", lambda path: next(post_batches))
+    monkeypatch.setattr(main, "enrich_posts", lambda posts, catalog: posts)
     monkeypatch.setattr(main, "RAGService", FakeRAGService)
+    main.get_topic_catalog.cache_clear()
+    main.get_enriched_posts.cache_clear()
     main.get_rag_service.cache_clear()
 
     try:
-        service = main.get_rag_service()
+        first = main.get_rag_service("a" * 64)
+        same = main.get_rag_service("a" * 64)
+        second = main.get_rag_service("b" * 64)
     finally:
+        main.get_topic_catalog.cache_clear()
+        main.get_enriched_posts.cache_clear()
         main.get_rag_service.cache_clear()
 
-    assert isinstance(service, FakeRAGService)
-    assert service.topic_catalog is catalog
-    assert len(service.posts) == 46
+    assert first is same
+    assert second is not first
+    assert first.topic_catalog is not second.topic_catalog
+    assert first.posts is not second.posts

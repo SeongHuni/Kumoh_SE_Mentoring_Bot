@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 
 from backend.app.domain import AnswerSource, RecentNotice
+from backend.app.index_manifest import IndexReason
 
 
 class ChatRequest(BaseModel):
@@ -25,9 +26,17 @@ class ChatResponse(BaseModel):
 
 
 class HealthResponse(BaseModel):
-    status: Literal["ready", "needs_configuration", "needs_index"]
+    status: Literal[
+        "ready",
+        "needs_configuration",
+        "needs_index",
+        "needs_reindex",
+        "unavailable",
+    ]
     provider: Literal["local", "openai"]
     openai_configured: bool
     indexed_chunks: int
     chat_model: str
     embedding_model: str
+    index_compatible: bool
+    index_reason: IndexReason
