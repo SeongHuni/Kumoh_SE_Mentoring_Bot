@@ -4,9 +4,15 @@ import { requestChat } from "./chatApi";
 
 import type { RecentNotice, Source } from "../components/types";
 
-function makeResponse(body: string, ok: boolean, contentType = "application/json") {
+function makeResponse(
+  body: string,
+  ok: boolean,
+  contentType = "application/json",
+  status = ok ? 200 : 500,
+) {
   return {
     ok,
+    status,
     headers: new Headers({ "content-type": contentType }),
     text: vi.fn().mockResolvedValue(body),
   } as unknown as Response;
@@ -67,16 +73,21 @@ describe("requestChat", () => {
     });
   });
 
-  it("preserves a FastAPI JSON detail message for an HTTP error", async () => {
+  it("preserves a FastAPI JSON detail message for an HTTP 409 error", async () => {
+    const response = makeResponse(
+      JSON.stringify({ detail: "이미 처리 중인 질문입니다." }),
+      false,
+      "application/json",
+      409,
+    );
     const fetchImpl = vi
       .fn()
-      .mockResolvedValue(
-        makeResponse(JSON.stringify({ detail: "이미 처리 중인 질문입니다." }), false),
-      );
+      .mockResolvedValue(response);
 
     await expect(
       requestChat("질문", { apiUrl: "https://api.example.test", fetchImpl }),
     ).rejects.toThrow("이미 처리 중인 질문입니다.");
+    expect(response.status).toBe(409);
   });
 
   it("hides HTML error bodies behind a readable fallback", async () => {
