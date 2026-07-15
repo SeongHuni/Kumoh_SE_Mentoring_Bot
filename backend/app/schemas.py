@@ -25,6 +25,10 @@ class ChatResponse(BaseModel):
     recent_notices: list[RecentNotice] = Field(default_factory=list)
 
 
+class LiveResponse(BaseModel):
+    status: Literal["alive"] = "alive"
+
+
 class HealthResponse(BaseModel):
     status: Literal[
         "ready",

@@ -30,6 +30,17 @@ def api_request(method: str, path: str, **kwargs) -> httpx.Response:
     return asyncio.run(send())
 
 
+def test_live_reports_process_without_checking_index(monkeypatch) -> None:
+    compatibility_check = Mock(side_effect=AssertionError("index must not be opened"))
+    monkeypatch.setattr(main, "get_index_compatibility", compatibility_check)
+
+    response = api_request("GET", "/api/live")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "alive"}
+    compatibility_check.assert_not_called()
+
+
 def compatibility(reason: str) -> IndexCompatibility:
     compatible = reason == "compatible"
     indexed_chunks = 0 if reason in {"empty_index", "index_unavailable"} else 3

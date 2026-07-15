@@ -13,7 +13,7 @@ from backend.app.domain import BoardPost
 from backend.app.index_manifest import IndexCompatibility, assess_index_compatibility
 from backend.app.provider_factory import create_provider, effective_models, selected_provider_name
 from backend.app.rag import RAGService
-from backend.app.schemas import ChatRequest, ChatResponse, HealthResponse
+from backend.app.schemas import ChatRequest, ChatResponse, HealthResponse, LiveResponse
 from backend.app.storage import load_posts
 from backend.app.topic_classifier import enrich_posts
 from backend.app.topic_rules import TopicCatalog, load_topic_catalog
@@ -78,6 +78,11 @@ def get_index_compatibility() -> IndexCompatibility:
 @app.get("/", include_in_schema=False)
 def root() -> dict[str, str]:
     return {"name": "SE Mentor Bot API", "docs": "/docs"}
+
+
+@app.get("/api/live", response_model=LiveResponse)
+def live() -> LiveResponse:
+    return LiveResponse()
 
 
 @app.get("/api/health", response_model=HealthResponse)
