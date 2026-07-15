@@ -2,11 +2,61 @@ import subprocess
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from backend.app.config import REPOSITORY_ROOT
 from backend.app.data_audit import AuditIssue, DataAuditReport, TopicAuditSummary
 from backend.scripts import audit_data
+
+
+def test_parse_args_uses_configured_data_paths(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    raw_posts_path = tmp_path / "configured-posts.json"
+    topic_rules_path = tmp_path / "configured-topic-rules.json"
+    monkeypatch.setattr(
+        audit_data,
+        "get_settings",
+        lambda: SimpleNamespace(
+            raw_posts_path=raw_posts_path,
+            topic_rules_path=topic_rules_path,
+        ),
+    )
+
+    args = audit_data.parse_args([])
+
+    assert args.posts == raw_posts_path
+    assert args.topic_rules == topic_rules_path
+
+
+def test_parse_args_explicit_paths_override_settings(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        audit_data,
+        "get_settings",
+        lambda: SimpleNamespace(
+            raw_posts_path=tmp_path / "configured-posts.json",
+            topic_rules_path=tmp_path / "configured-topic-rules.json",
+        ),
+    )
+    explicit_posts_path = tmp_path / "explicit-posts.json"
+    explicit_topic_rules_path = tmp_path / "explicit-topic-rules.json"
+
+    args = audit_data.parse_args(
+        [
+            "--posts",
+            str(explicit_posts_path),
+            "--topic-rules",
+            str(explicit_topic_rules_path),
+        ]
+    )
+
+    assert args.posts == explicit_posts_path
+    assert args.topic_rules == explicit_topic_rules_path
 
 
 def report(*, issues: int) -> DataAuditReport:

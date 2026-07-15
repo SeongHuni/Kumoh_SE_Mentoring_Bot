@@ -4,7 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from backend.app.config import REPOSITORY_ROOT
+from backend.app.config import REPOSITORY_ROOT, get_settings
 from backend.app.data_audit import DataAuditReport, audit_posts, render_markdown
 from backend.app.reporting import write_text_reports
 from backend.app.storage import load_posts
@@ -12,18 +12,19 @@ from backend.app.topic_rules import load_topic_catalog
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    settings = get_settings()
     parser = argparse.ArgumentParser(
         description="RAG 원본 데이터의 최신성과 분류를 감사합니다."
     )
     parser.add_argument(
         "--posts",
         type=Path,
-        default=REPOSITORY_ROOT / "data" / "raw" / "posts.json",
+        default=settings.raw_posts_path,
     )
     parser.add_argument(
         "--topic-rules",
         type=Path,
-        default=REPOSITORY_ROOT / "data" / "topic_rules.json",
+        default=settings.topic_rules_path,
     )
     parser.add_argument(
         "--output-dir",
