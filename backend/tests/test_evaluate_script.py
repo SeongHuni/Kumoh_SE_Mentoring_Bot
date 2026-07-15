@@ -1,11 +1,13 @@
 import subprocess
 import sys
 from argparse import Namespace
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
-from backend.app.config import REPOSITORY_ROOT
+from backend.app.config import REPOSITORY_ROOT, Settings, get_settings
 from backend.app.evaluation import (
     EvaluationChecks,
     EvaluationMetric,
@@ -13,7 +15,128 @@ from backend.app.evaluation import (
     EvaluationResult,
     EvaluationSummary,
 )
+from backend.app.index_manifest import IndexCompatibility
 from backend.scripts import evaluate
+
+
+def evaluation_args(tmp_path: Path, provider: str = "local") -> Namespace:
+    return Namespace(
+        questions=tmp_path / "questions.json",
+        output_dir=tmp_path / "reports",
+        provider=provider,
+        minimum_cases=1,
+        limit=1,
+    )
+
+
+def stub_evaluation_inputs(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> tuple[Settings, Mock]:
+    app_settings = replace(
+        get_settings(),
+        ai_provider="local",
+        openai_api_key=None,
+        chroma_path=tmp_path / "chroma",
+        raw_posts_path=tmp_path / "posts.json",
+        topic_rules_path=tmp_path / "topic-rules.json",
+    )
+    catalog = object()
+    raw_posts = [object()]
+    posts = [object()]
+    store = Mock(name="vector_store")
+    store.count.return_value = 84
+
+    monkeypatch.setattr(evaluate, "get_settings", Mock(return_value=app_settings))
+    monkeypatch.setattr(
+        evaluate,
+        "load_evaluation_cases",
+        Mock(return_value=[object()]),
+    )
+    monkeypatch.setattr(evaluate, "load_topic_catalog", Mock(return_value=catalog))
+    monkeypatch.setattr(evaluate, "load_posts", Mock(return_value=raw_posts))
+    monkeypatch.setattr(evaluate, "enrich_posts", Mock(return_value=posts))
+    monkeypatch.setattr(
+        evaluate,
+        "ChromaVectorStore",
+        Mock(return_value=store),
+    )
+    return app_settings, store
+
+
+def test_run_evaluation_rejects_incompatible_index_before_provider(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    app_settings, store = stub_evaluation_inputs(monkeypatch, tmp_path)
+    compatibility_check = Mock(
+        return_value=IndexCompatibility(False, "settings_mismatch", 84)
+    )
+    provider_factory = Mock()
+    monkeypatch.setattr(
+        evaluate,
+        "assess_index_compatibility",
+        compatibility_check,
+        raising=False,
+    )
+    monkeypatch.setattr(evaluate, "create_provider", provider_factory)
+    monkeypatch.setattr(evaluate, "evaluate_cases", Mock(return_value=[]))
+
+    with pytest.raises(ValueError, match="settings_mismatch"):
+        evaluate.run_evaluation(evaluation_args(tmp_path))
+
+    effective_settings = replace(app_settings, ai_provider="local")
+    compatibility_check.assert_called_once_with(
+        settings=effective_settings,
+        store=store,
+    )
+    assert compatibility_check.call_args.kwargs["settings"] is not app_settings
+    provider_factory.assert_not_called()
+
+
+def test_run_evaluation_uses_compatible_index_chunk_count(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    app_settings, store = stub_evaluation_inputs(monkeypatch, tmp_path)
+    store.count.return_value = 7
+    compatibility_check = Mock(
+        return_value=IndexCompatibility(
+            True,
+            "compatible",
+            84,
+            fingerprint="a" * 64,
+            generation="2026-07-15T03:00:00+00:00",
+        )
+    )
+    provider = Mock(name="provider")
+    provider_factory = Mock(return_value=provider)
+    service = Mock(name="rag_service")
+    rag_factory = Mock(return_value=service)
+    evaluation_results = [object()]
+    case_evaluator = Mock(return_value=evaluation_results)
+    stub_report = report(failed=0)
+    report_builder = Mock(return_value=stub_report)
+    monkeypatch.setattr(
+        evaluate,
+        "assess_index_compatibility",
+        compatibility_check,
+    )
+    monkeypatch.setattr(evaluate, "create_provider", provider_factory)
+    monkeypatch.setattr(evaluate, "RAGService", rag_factory)
+    monkeypatch.setattr(evaluate, "evaluate_cases", case_evaluator)
+    monkeypatch.setattr(evaluate, "build_evaluation_report", report_builder)
+
+    result = evaluate.run_evaluation(
+        evaluation_args(tmp_path, provider="configured")
+    )
+
+    assert result is stub_report
+    compatibility_check.assert_called_once_with(
+        settings=app_settings,
+        store=store,
+    )
+    assert compatibility_check.call_args.kwargs["settings"] is app_settings
+    provider_factory.assert_called_once_with(app_settings)
+    assert report_builder.call_args.kwargs["indexed_chunks"] == 84
+    store.count.assert_not_called()
 
 
 def test_module_help_does_not_emit_runtime_warning() -> None:
@@ -342,8 +465,3 @@ def test_main_returns_two_when_report_write_fails(
 def test_validate_minimum_cases_rejects_too_few_cases() -> None:
     with pytest.raises(ValueError, match="최소 30개"):
         evaluate.validate_minimum_cases(case_count=29, minimum=30)
-
-
-def test_validate_indexed_chunks_rejects_empty_store() -> None:
-    with pytest.raises(ValueError, match="벡터 인덱스가 비어"):
-        evaluate.validate_indexed_chunks(0)

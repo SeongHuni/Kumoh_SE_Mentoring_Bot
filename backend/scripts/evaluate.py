@@ -13,6 +13,7 @@ from backend.app.evaluation import (
     load_evaluation_cases,
     render_markdown,
 )
+from backend.app.index_manifest import assess_index_compatibility
 from backend.app.provider_factory import (
     create_provider,
     effective_models,
@@ -70,11 +71,6 @@ def validate_minimum_cases(case_count: int, minimum: int) -> None:
         raise ValueError(f"평가 질문은 최소 {minimum}개가 필요합니다: {case_count}개")
 
 
-def validate_indexed_chunks(indexed_chunks: int) -> None:
-    if indexed_chunks < 1:
-        raise ValueError("벡터 인덱스가 비어 있습니다. 재인덱싱을 먼저 실행하세요.")
-
-
 def write_reports(report: EvaluationReport, output_dir: Path) -> None:
     write_text_reports(
         (
@@ -112,8 +108,16 @@ def run_evaluation(args: argparse.Namespace) -> EvaluationReport:
         effective_settings.chroma_path,
         effective_settings.chroma_collection,
     )
-    indexed_chunks = vector_store.count()
-    validate_indexed_chunks(indexed_chunks)
+    compatibility = assess_index_compatibility(
+        settings=effective_settings,
+        store=vector_store,
+    )
+    if not compatibility.compatible:
+        raise ValueError(
+            "벡터 인덱스가 현재 설정과 호환되지 않습니다: "
+            f"{compatibility.reason}. 인덱스를 생성할 때와 동일한 provider로 "
+            "index --reset을 실행하세요."
+        )
 
     provider = create_provider(effective_settings)
     service = RAGService(
@@ -131,7 +135,7 @@ def run_evaluation(args: argparse.Namespace) -> EvaluationReport:
         provider=selected_provider_name(effective_settings),
         chat_model=chat_model,
         embedding_model=embedding_model,
-        indexed_chunks=indexed_chunks,
+        indexed_chunks=compatibility.indexed_chunks,
     )
 
 
