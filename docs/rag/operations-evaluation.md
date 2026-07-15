@@ -70,11 +70,14 @@ if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 docker compose config
 docker compose up -d --build
 docker compose ps
-Invoke-RestMethod http://localhost:8000/api/live
-Invoke-RestMethod http://localhost:8000/api/health
+$backendPort = (docker compose port backend 8000).Trim().Split(':')[-1]
+$frontendPort = (docker compose port frontend 3000).Trim().Split(':')[-1]
+Invoke-RestMethod "http://localhost:$backendPort/api/live"
+Invoke-RestMethod "http://localhost:$backendPort/api/health"
+Invoke-WebRequest "http://localhost:$frontendPort" -UseBasicParsing
 ```
 
-Compose backend healthcheck는 `/api/live`를 사용하고 frontend는 root HTTP 응답을 확인한다. frontend는 backend healthcheck가 healthy가 된 뒤 시작하도록 설정되어 있다. 이 healthcheck와 `depends_on`은 startup ordering과 상태 보고를 위한 것이며 unhealthy 컨테이너를 자동으로 고치는 autoheal을 보장하지 않는다. 현재 작업 호스트에서 Docker runtime을 사용할 수 없다면 위 명령의 runtime 결과를 완료 근거로 주장하지 않는다.
+Compose backend healthcheck는 `/api/live`를 사용하고 frontend는 root HTTP 응답을 확인한다. frontend는 backend healthcheck가 healthy가 된 뒤 시작하도록 설정되어 있다. `docker compose port`로 실제 published port를 조회한 뒤 probe에 사용하며, 고정 `localhost:8000`/`localhost:3000`을 runtime 결과로 가정하지 않는다. 이 healthcheck와 `depends_on`은 startup ordering과 상태 보고를 위한 것이며 unhealthy 컨테이너를 자동으로 고치는 autoheal을 보장하지 않는다. 현재 작업 호스트에서 Docker runtime을 사용할 수 없다면 위 명령의 runtime 결과를 완료 근거로 주장하지 않는다.
 
 ## 테스트와 데이터 감사
 
@@ -85,6 +88,8 @@ backend/.venv/Scripts/python.exe -m backend.scripts.audit_data
 ```
 
 데이터 감사는 명시 옵션이 없으면 설정된 `RAW_POSTS_PATH`와 `TOPIC_RULES_PATH`를 읽고 `data/audit/reports/latest.json`, `latest.md`에 보고서를 쓴다. 기본 required source는 `kumoh`와 `seboard`이며 `--posts`, `--topic-rules`, `--output-dir`, `--stale-after-days`, `--required-source`로 조정할 수 있다.
+
+`audit_data` exit 1은 command failure가 아니라 품질 warning 존재를 뜻한다. Prior snapshot은 3 warnings/exit 1이었지만 Task 10에서는 audit를 재실행하지 않았고, 새 실행 결과는 달라질 수 있다.
 
 | exit | 의미 | 조치 |
 | ---: | --- | --- |

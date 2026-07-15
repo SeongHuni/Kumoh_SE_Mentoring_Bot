@@ -1,6 +1,6 @@
 # SE Mentor Bot 프로젝트 상태와 다음 작업
 
-> 기준일: 2026-07-15
+> 기준일: 2026-07-16
 > 기준 브랜치: `codex/maintainability-audit`
 > 검증 기준 base: `b99f997`
 > 최신 인수인계: [`superpowers/handoffs/2026-07-15-maintainability-operational-safety-handoff.md`](superpowers/handoffs/2026-07-15-maintainability-operational-safety-handoff.md)
@@ -54,7 +54,7 @@
 | frontend full audit | `found 0 vulnerabilities` |
 | focused deployment pytest | `....... [100%]` — 7 static Compose/Docker contract tests |
 | `git diff --check` | exit 0 |
-| canonical stale search | Task10 canonical obsolete search over `README.md`, `AGENTS.md`, `.env.example`, `docs/PROJECT_STATUS.md`, `docs/RAG_ARCHITECTURE.md`, and `docs/rag` did not include `46건` and returned exact output `canonical obsolete search: no matches`. Separate targeted search found exactly one `46건` occurrence at `docs/rag/operations-evaluation.md:117`. It is an allowed historical local threshold-calibration context, not a current count. A broader repository/historical-docs search retains this intentional threshold occurrence, alongside historical plan/spec text that documents old-state checks; none are canonical current-count claims. |
+| canonical stale search | Re-runnable canonical obsolete search is recorded below; its pattern excludes `46건`, and empty output with `rg` exit 1 is success. Source guidance intentionally retains historical threshold context in `.env.example` (two lines) and `docs/rag/operations-evaluation.md` (one line); status/handoff self-reference is excluded. |
 | Docker | executable unavailable; `docker compose config`, build, ps, start, and health transition not run |
 
 Next build가 `frontend/next-env.d.ts`를 생성 변경했다. pre-build SHA-256 `A3EA130D80CDE31C5180AF37457E5D1318A1E30888C14BA4624F117E382987C4`, post-build `85AE5AEE75F011967CF2D25CBC342F62D69314E9D925F7F4AA3456FC2CFFCCA6`를 확인했고, 생성 변경은 원복했다. 최종 worktree에서 tracked 변경은 이 문서와 handoff만 남긴다.
@@ -69,7 +69,7 @@ Next build가 `frontend/next-env.d.ts`를 생성 변경했다. pre-build SHA-256
 | 게시일 범위 | 2024-09-04 ~ 2026-06-30 |
 | 로컬 인덱스 | 84 chunks, prior manifest fingerprint prefix `9fe1fee46fbf` |
 | 평가 | 30/30, exit 0 |
-| 데이터 감사 | 3 warnings, exit 1 |
+| 데이터 감사 | Prior snapshot: 3 warnings, exit 1; exit 1 means quality warnings, not command failure. Task 10 did not rerun it and a new run may differ. |
 
 기존 topic snapshot: `general` 15 (2026-06-17), `career` 14 (2026-06-30), `registration` 12 (2026-06-16), `scholarship` 6 (2026-06-17), `capstone` 2 (2026-03-19), `course_openings` 1 (2025-08-07), `graduation` 0 (없음). 이 날짜와 건수는 현재 live source의 최신성을 증명하지 않는다.
 
@@ -109,17 +109,32 @@ backend/.venv/Scripts/python.exe -m backend.scripts.audit_data
 
 `--provider configured`는 현재 `AI_PROVIDER` 설정을 사용해 provider·모델이 맞는 인덱스를 평가한다. 데이터·provider·embedding·chunk 설정을 바꾸면 index → evaluate → audit 순서로 다시 실행한다.
 
+`audit_data` exit 1은 명령 자체의 실행 실패가 아니라 품질 warning이 존재한다는 뜻이다. Prior snapshot은 3 warnings/exit 1이었지만 Task 10에서는 audit를 재실행하지 않았으며, 새 실행 결과는 달라질 수 있다.
+
+Task10 canonical obsolete search는 다음처럼 재실행한다. 이 pattern에는 `46건`을 넣지 않는다. 대상 파일에서 empty output과 `rg` exit 1이면 성공이며, exit 0은 stale match, exit 2 이상은 search error다.
+
+```powershell
+rg -n "약 100건|--seboard-limit 50|현재 79청크|fingerprint를 검증하지 않는다|No application manifest|Git history is not available|npm --prefix frontend install" README.md AGENTS.md .env.example docs/RAG_ARCHITECTURE.md docs/rag
+if ($LASTEXITCODE -eq 1) { 'canonical obsolete search: no matches' }
+elseif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+```
+
+Historical threshold guidance is searched separately with `rg -n "46건" .env.example docs/rag/operations-evaluation.md`; its intentional references are not current post/index counts. This source-only search excludes these status and handoff documents to avoid self-reference.
+
 ```powershell
 npm --prefix frontend audit --omit=dev
 npm --prefix frontend audit
 docker compose config
 docker compose up -d --build
 docker compose ps
-Invoke-RestMethod http://localhost:8000/api/live
-Invoke-RestMethod http://localhost:8000/api/health
+$backendPort = (docker compose port backend 8000).Trim().Split(':')[-1]
+$frontendPort = (docker compose port frontend 3000).Trim().Split(':')[-1]
+Invoke-RestMethod "http://localhost:$backendPort/api/live"
+Invoke-RestMethod "http://localhost:$backendPort/api/health"
+Invoke-WebRequest "http://localhost:$frontendPort" -UseBasicParsing
 ```
 
-마지막 다섯 Docker 명령은 Docker-enabled host에서만 실행한다. 현재 호스트에서는 Docker가 없어 static Compose contract만 검증됐다.
+Compose 검증은 published port를 `docker compose port`로 조회한 뒤 실제 backend/frontend port를 사용한다. 현재 호스트에서는 Docker가 없어 static Compose contract만 검증됐고 runtime은 미검증이다.
 
 ## 7. Open only
 

@@ -2,7 +2,7 @@
 
 ## Outcome
 
-Task 10 ran the requested local backend, frontend, invariant, focused deployment, dependency, and Docker availability gates on branch `codex/maintainability-audit`. The verification target before this handoff documentation was `55cb283`, using base `b99f997`; the first status/handoff record commit was `34d1270`. The code gates passed with the exact results below. This is a local verification handoff only: the branch was not pushed or merged, Docker runtime was not available, browser E2E was not run, and raw data/index/evaluation/audit numbers were not re-executed. Current HEAD and commit count are intentionally not fixed here; query them with `git rev-parse HEAD` and `git rev-list --count b99f997..HEAD`.
+This handoff filename and the implementation plan began on 2026-07-15. The full Task 10 gate, status, and handoff recording commits completed on 2026-07-16. Task 10 ran the requested local backend, frontend, invariant, focused deployment, dependency, and Docker availability gates on branch `codex/maintainability-audit`. The verification target before this handoff documentation was `55cb283`, using base `b99f997`; the first status/handoff record commit was `34d1270`. The code gates passed with the exact results below. This is a local verification handoff only: the branch was not pushed or merged, Docker runtime was not available, browser E2E was not run, and raw data/index/evaluation/audit numbers were not re-executed. Current HEAD and commit count are intentionally not fixed here; query them with `git rev-parse HEAD` and `git rev-list --count b99f997..HEAD`.
 
 Locally completed before this handoff:
 
@@ -109,13 +109,15 @@ git diff --check
 
 Exited 0.
 
-Task10 canonical obsolete search over `README.md`, `AGENTS.md`, `.env.example`, `docs/PROJECT_STATUS.md`, `docs/RAG_ARCHITECTURE.md`, and `docs/rag` did not include `46건` and returned exact output `canonical obsolete search: no matches`.
+Task10 canonical obsolete search is rerunnable with this command. It does not include `46건`; empty output with `rg` exit 1 is success, exit 0 indicates a stale match, and exit 2 or higher indicates a search error:
 
-```text
-canonical obsolete search: no matches
+```powershell
+rg -n "약 100건|--seboard-limit 50|현재 79청크|fingerprint를 검증하지 않는다|No application manifest|Git history is not available|npm --prefix frontend install" README.md AGENTS.md .env.example docs/RAG_ARCHITECTURE.md docs/rag
+if ($LASTEXITCODE -eq 1) { 'canonical obsolete search: no matches' }
+elseif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 ```
 
-Separate targeted search found exactly one `46건` occurrence at `docs/rag/operations-evaluation.md:117`. It is an allowed historical local threshold-calibration context, not a current count. A broader repository/historical-docs search retains this intentional threshold occurrence, alongside historical plan/spec text that documents old-state checks; none are canonical current-count claims.
+Observed canonical result: empty output and exact success output `canonical obsolete search: no matches`. A separate source-guidance search is `rg -n "46건" .env.example docs/rag/operations-evaluation.md`; it intentionally finds historical threshold context in `.env.example` (two lines) and `docs/rag/operations-evaluation.md` (one line). This source-only search excludes status/handoff self-reference. A broader repository/historical-docs search retains these intentional threshold references alongside historical plan/spec text that documents old-state checks; none are canonical current-count claims.
 
 ### Focused deployment and Docker
 
@@ -139,11 +141,11 @@ Docker availability check returned:
 docker executable: unavailable
 ```
 
-Therefore `docker compose config`, `docker compose build`, `docker compose up`, `docker compose ps`, and actual healthy/unhealthy transitions were not run. Static contract evidence is not Docker runtime evidence.
+Therefore `docker compose config`, `docker compose build`, `docker compose up`, `docker compose ps`, published-port lookup, and actual healthy/unhealthy transitions were not run. Static contract evidence is not Docker runtime evidence.
 
 ### Prior data snapshot boundary
 
-The prior measured snapshot remains 50 posts, 84 chunks, 30/30 evaluation, and 3 audit warnings, sourced from the previous `PROJECT_STATUS.md` snapshot dated 2026-07-15. Task 10 did not rerun raw data counts, topic dates, indexing, evaluation, or audit, so these numbers are not current gate measurements.
+The prior measured snapshot remains 50 posts, 84 chunks, 30/30 evaluation, and 3 audit warnings/exit 1, sourced from the previous `PROJECT_STATUS.md` snapshot dated 2026-07-15. Audit exit 1 means quality warnings were found, not that the audit command failed. Task 10 did not rerun raw data counts, topic dates, indexing, evaluation, or audit, so a new run may produce different results and these numbers are not current gate measurements.
 
 ### Documentation verification before and after this follow-up
 
@@ -175,7 +177,18 @@ After this follow-up commit, the same diff check and link checks were run again,
 
 Execute in this order:
 
-1. On a Docker-enabled host, run `docker compose config`, `docker compose up -d --build`, `docker compose ps`, then record backend `/api/live` and `/api/health` plus frontend health transitions. Keep static and runtime evidence separate.
+1. On a Docker-enabled host, run the following and record backend `/api/live` and `/api/health` plus frontend health transitions. Keep static and runtime evidence separate.
+
+   ```powershell
+   docker compose config
+   docker compose up -d --build
+   docker compose ps
+   $backendPort = (docker compose port backend 8000).Trim().Split(':')[-1]
+   $frontendPort = (docker compose port frontend 3000).Trim().Split(':')[-1]
+   Invoke-RestMethod "http://localhost:$backendPort/api/live"
+   Invoke-RestMethod "http://localhost:$backendPort/api/health"
+   Invoke-WebRequest "http://localhost:$frontendPort" -UseBasicParsing
+   ```
 2. Run 390px/1280px browser E2E and visual regression for success, server error, timeout, suggestion, source, and recent flows.
 3. Push this branch, inspect remote GitHub Actions, and verify branch protection required checks. Do not report merge/push before those operations succeed.
 4. Obtain and record SE permission or an approved API before any positive crawl limit; the acknowledgement flag alone is insufficient.
@@ -190,6 +203,14 @@ backend/.venv/Scripts/python.exe -m backend.scripts.evaluate --provider configur
 backend/.venv/Scripts/python.exe -m backend.scripts.audit_data
 npm --prefix frontend audit --omit=dev
 npm --prefix frontend audit
+docker compose config
+docker compose up -d --build
+docker compose ps
+$backendPort = (docker compose port backend 8000).Trim().Split(':')[-1]
+$frontendPort = (docker compose port frontend 3000).Trim().Split(':')[-1]
+Invoke-RestMethod "http://localhost:$backendPort/api/live"
+Invoke-RestMethod "http://localhost:$backendPort/api/health"
+Invoke-WebRequest "http://localhost:$frontendPort" -UseBasicParsing
 ```
 
 ## Security
