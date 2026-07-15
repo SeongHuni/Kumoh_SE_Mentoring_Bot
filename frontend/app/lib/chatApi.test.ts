@@ -262,6 +262,41 @@ describe("requestChat", () => {
   });
 
   it.each([
+    ["a credential-bearing source URL", { sources: [{ ...source, url: "https://user:pass@example.test/course" }] }],
+    [
+      "a credential-bearing recent notice URL",
+      { recent_notices: [{ ...notice, url: "http://user:pass@example.test/notice" }] },
+    ],
+  ])("rejects a successful payload with %s", async (_description, fields) => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      makeResponse(JSON.stringify({ answer: "답변", ...fields }), true),
+    );
+
+    await expect(
+      requestChat("질문", { apiUrl: "https://api.example.test", fetchImpl }),
+    ).rejects.toMatchObject({
+      kind: "invalid-success",
+      message: "서버 응답 형식을 확인할 수 없습니다.",
+    });
+  });
+
+  it.each([
+    ["a source URL with a query", { sources: [{ ...source, url: "https://example.test/course?year=2026" }] }],
+    [
+      "a recent notice URL with a fragment",
+      { recent_notices: [{ ...notice, url: "https://example.test/notice#details" }] },
+    ],
+  ])("accepts %s", async (_description, fields) => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      makeResponse(JSON.stringify({ answer: "답변", ...fields }), true),
+    );
+
+    await expect(
+      requestChat("질문", { apiUrl: "https://api.example.test", fetchImpl }),
+    ).resolves.toMatchObject({ content: "답변" });
+  });
+
+  it.each([
     [
       "a JSON traceback detail",
       JSON.stringify({ detail: "Traceback (most recent call last): handler failed" }),
@@ -270,6 +305,16 @@ describe("requestChat", () => {
     ["an HTML detail", JSON.stringify({ detail: "<html>server failure</html>" }), "application/json"],
     ["a multiline technical detail", JSON.stringify({ detail: "첫 줄\nstack trace: 두 번째 줄" }), "application/json"],
     ["a JSON API key detail", JSON.stringify({ detail: "OPENAI_API_KEY: sk-live-value" }), "application/json"],
+    [
+      "a label-less project API key detail",
+      JSON.stringify({ detail: "요청 실패: sk-proj-FAKE_TOKEN_FOR_TEST_ONLY_1234567890" }),
+      "application/json",
+    ],
+    [
+      "a label-less API key in plain text",
+      "요청 실패: sk-FAKE_TOKEN_FOR_TEST_ONLY_1234567890",
+      "text/plain",
+    ],
     ["a plain-text password detail", "PASSWORD = hunter2", "text/plain"],
     [
       "a RuntimeError with a Unix path",
@@ -346,6 +391,7 @@ describe("requestChat", () => {
     ["the health endpoint with punctuation", "상태 확인: /api/health. 확인하세요.", "text/plain"],
     ["a safe HTTP URL", "문서 안내: http://kumoh.ac.kr/help", "text/plain"],
     ["a safe HTTPS URL", "문서 안내: https://kumoh.ac.kr/help", "text/plain"],
+    ["a short non-secret sk word", "설정 키는 sk-공지 입니다.", "text/plain"],
     ["the Python command guidance", "문제 해결은 python -m ... 명령을 실행하세요.", "text/plain"],
   ])("preserves %s", async (_description, body, contentType) => {
     const fetchImpl = vi.fn().mockResolvedValue(makeResponse(body, false, contentType, 503));

@@ -58,8 +58,12 @@ function isHttpUrl(value: unknown): value is string {
   if (!isNonEmptyString(value)) return false;
 
   try {
-    const protocol = new URL(value).protocol;
-    return protocol === "http:" || protocol === "https:";
+    const url = new URL(value);
+    return (
+      (url.protocol === "http:" || url.protocol === "https:") &&
+      url.username === "" &&
+      url.password === ""
+    );
   } catch {
     return false;
   }
@@ -71,6 +75,7 @@ function isPlainTextContentType(contentType: string): boolean {
 
 const HTTP_URL_PATTERN = /https?:\/\/[^\s<>"']+/gi;
 const PUBLIC_ENDPOINT_TOKEN_PATTERN = /\/api\/(?:health|live)/gi;
+const OPENAI_TOKEN_PATTERN = /\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}/i;
 const KOREAN_PARTICLE_PATTERN = /^(?:에서|으로|정도|를|을|은|는|이|가|에|로|와|과|의|도|만)/;
 const SENTENCE_PUNCTUATION_PATTERN = /^[.,!;:。、，．！…]/;
 
@@ -143,6 +148,7 @@ function isSafeErrorMessage(text: string): boolean {
     !/<\/?[a-z][^>]*>|<!doctype\s+html/i.test(normalized) &&
     !/\b(?:traceback|stack\s+trace)\b/i.test(normalized) &&
     !/(?:API_KEY|PASSWORD|SECRET|TOKEN)\s*[:=]\s*\S+/i.test(normalized) &&
+    !OPENAI_TOKEN_PATTERN.test(normalized) &&
     !/\b(?:Error|Exception|[A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception))\s*:/i.test(normalized) &&
     !/\b(?:authorization|cookie)\s*:/i.test(normalized) &&
     !/\bbearer\s+\S+/i.test(normalized) &&
