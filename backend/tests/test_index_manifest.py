@@ -211,4 +211,7 @@ def test_compatibility_reason_matrix(tmp_path, setup, reason) -> None:
     assert result.reason == reason
     assert result.compatible is (reason == "compatible")
     assert (result.fingerprint is not None) is (reason == "compatible")
+    assert (result.generation is not None) is (reason == "compatible")
+    if reason == "compatible":
+        assert result.generation == FIXED_TIME.isoformat()
     assert result.indexed_chunks == (0 if setup in {"unavailable", "empty"} else store.value)

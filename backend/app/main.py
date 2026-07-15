@@ -55,7 +55,7 @@ def get_enriched_posts(index_fingerprint: str) -> list[BoardPost]:
 
 
 @lru_cache(maxsize=4)
-def get_rag_service(index_fingerprint: str) -> RAGService:
+def get_rag_service(index_fingerprint: str, index_generation: str) -> RAGService:
     provider = create_provider(settings)
     return RAGService(
         provider=provider,
@@ -130,7 +130,11 @@ async def chat(payload: ChatRequest) -> ChatResponse:
                 "python -m backend.scripts.index --reset"
             ),
         )
-    if not compatibility.compatible or compatibility.fingerprint is None:
+    if (
+        not compatibility.compatible
+        or compatibility.fingerprint is None
+        or compatibility.generation is None
+    ):
         raise HTTPException(
             status_code=409,
             detail=(
@@ -139,7 +143,10 @@ async def chat(payload: ChatRequest) -> ChatResponse:
             ),
         )
     try:
-        service = get_rag_service(compatibility.fingerprint)
+        service = get_rag_service(
+            compatibility.fingerprint,
+            compatibility.generation,
+        )
         return await run_in_threadpool(service.ask, payload.question)
     except APIError as exc:
         raise HTTPException(status_code=502, detail="OpenAI API 요청에 실패했습니다.") from exc

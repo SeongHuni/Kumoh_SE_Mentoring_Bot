@@ -90,6 +90,7 @@ class IndexCompatibility:
     reason: IndexReason
     indexed_chunks: int
     fingerprint: str | None = None
+    generation: str | None = None
 
 
 class CountableStore(Protocol):
@@ -222,4 +223,10 @@ def assess_index_compatibility(
         return IndexCompatibility(False, "content_mismatch", indexed_chunks)
     if manifest.indexed_chunks != indexed_chunks:
         return IndexCompatibility(False, "chunk_count_mismatch", indexed_chunks)
-    return IndexCompatibility(True, "compatible", indexed_chunks, manifest.fingerprint)
+    return IndexCompatibility(
+        True,
+        "compatible",
+        indexed_chunks,
+        fingerprint=manifest.fingerprint,
+        generation=manifest.generated_at.isoformat(),
+    )

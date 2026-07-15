@@ -1,5 +1,6 @@
 import asyncio
 from dataclasses import replace
+from datetime import UTC, datetime
 from unittest.mock import Mock
 
 import httpx
@@ -37,6 +38,7 @@ def compatibility(reason: str) -> IndexCompatibility:
         reason=reason,
         indexed_chunks=indexed_chunks,
         fingerprint="a" * 64 if compatible else None,
+        generation="2026-07-15T00:00:00+00:00" if compatible else None,
     )
 
 
@@ -179,7 +181,10 @@ def test_chat_passes_compatible_fingerprint_to_service(monkeypatch) -> None:
     )
 
     assert response.status_code == 200
-    service_factory.assert_called_once_with("a" * 64)
+    service_factory.assert_called_once_with(
+        "a" * 64,
+        "2026-07-15T00:00:00+00:00",
+    )
     service.ask.assert_called_once_with("최근 공지 알려줘")
 
 
@@ -212,15 +217,17 @@ def test_rag_service_cache_rotates_with_index_fingerprint(monkeypatch) -> None:
     settings = replace(main.settings, ai_provider="local", openai_api_key=None)
     catalogs = iter([object(), object()])
     post_batches = iter([[object()], [object()]])
+    vector_stores = iter([object(), object(), object()])
 
     class FakeRAGService:
         def __init__(self, **kwargs) -> None:
             self.topic_catalog = kwargs["topic_catalog"]
             self.posts = kwargs["posts"]
+            self.vector_store = kwargs["vector_store"]
 
     monkeypatch.setattr(main, "settings", settings)
     monkeypatch.setattr(main, "create_provider", lambda settings: object())
-    monkeypatch.setattr(main, "get_vector_store", lambda: object())
+    monkeypatch.setattr(main, "get_vector_store", lambda: next(vector_stores))
     monkeypatch.setattr(main, "load_topic_catalog", lambda path: next(catalogs))
     monkeypatch.setattr(main, "load_posts", lambda path: next(post_batches))
     monkeypatch.setattr(main, "enrich_posts", lambda posts, catalog: posts)
@@ -230,15 +237,20 @@ def test_rag_service_cache_rotates_with_index_fingerprint(monkeypatch) -> None:
     main.get_rag_service.cache_clear()
 
     try:
-        first = main.get_rag_service("a" * 64)
-        same = main.get_rag_service("a" * 64)
-        second = main.get_rag_service("b" * 64)
+        first = main.get_rag_service("a" * 64, "generation-1")
+        same = main.get_rag_service("a" * 64, "generation-1")
+        replacement = main.get_rag_service("a" * 64, "generation-2")
+        second = main.get_rag_service("b" * 64, "generation-3")
     finally:
         main.get_topic_catalog.cache_clear()
         main.get_enriched_posts.cache_clear()
         main.get_rag_service.cache_clear()
 
     assert first is same
+    assert replacement is not first
+    assert replacement.vector_store is not first.vector_store
+    assert replacement.topic_catalog is first.topic_catalog
+    assert replacement.posts is first.posts
     assert second is not first
     assert first.topic_catalog is not second.topic_catalog
     assert first.posts is not second.posts
@@ -271,23 +283,51 @@ def test_health_reopens_collection_after_external_reset(monkeypatch, tmp_path) -
         is_latest_topic=True,
     )
     embedding = [[1.0] + [0.0] * (settings.embedding_dimensions - 1)]
-    manifest = build_index_manifest(build_index_signature(settings), indexed_chunks=1)
+    signature = build_index_signature(settings)
+    manifest = build_index_manifest(
+        signature,
+        indexed_chunks=1,
+        now=datetime(2026, 7, 15, 1, 0, tzinfo=UTC),
+    )
+    main.get_rag_service.cache_clear()
 
     try:
         api_store = main.get_vector_store()
         api_store.upsert([chunk], embedding)
         write_index_manifest(settings.chroma_path, manifest)
         assert main.health().status == "ready"
+        initial_compatibility = main.get_index_compatibility()
+        assert initial_compatibility.generation is not None
+        initial_service = main.get_rag_service(
+            manifest.fingerprint,
+            initial_compatibility.generation,
+        )
 
         indexing_store = ChromaVectorStore(settings.chroma_path, settings.chroma_collection)
         indexing_store.reset()
         indexing_store.upsert([chunk], embedding)
-        write_index_manifest(settings.chroma_path, manifest)
+        replacement_manifest = build_index_manifest(
+            signature,
+            indexed_chunks=1,
+            now=datetime(2026, 7, 15, 2, 0, tzinfo=UTC),
+        )
+        write_index_manifest(settings.chroma_path, replacement_manifest)
 
         result = main.health()
         assert result.status == "ready"
         assert result.index_reason == "compatible"
+        replacement_compatibility = main.get_index_compatibility()
+        assert replacement_compatibility.fingerprint == initial_compatibility.fingerprint
+        assert replacement_compatibility.generation != initial_compatibility.generation
+        assert replacement_compatibility.generation is not None
+        replacement_service = main.get_rag_service(
+            replacement_manifest.fingerprint,
+            replacement_compatibility.generation,
+        )
+        assert replacement_service is not initial_service
+        assert replacement_service.vector_store.count() == 1
     finally:
+        main.get_rag_service.cache_clear()
         cache_clear = getattr(main.get_vector_store, "cache_clear", None)
         if cache_clear is not None:
             cache_clear()
