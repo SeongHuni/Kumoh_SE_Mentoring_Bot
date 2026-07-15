@@ -23,7 +23,8 @@ docs/                  현재 상태·아키텍처·운영 문서
 
 - Python 3.11~3.13
 - Node.js `^20.19.0 || ^22.13.0 || >=24.0.0` (`frontend/package.json`의 `engines`와 동일)
-- Chrome/Selenium: 운영자 서면 허가 후 승인된 Selenium 경로를 사용할 때만 필요하며, 승인된 API 경로에는 필요하지 않음
+- Selenium Python dependency: `backend/requirements-dev.txt`가 참조하는 `backend/requirements.txt`의 `selenium==4.45.0`이므로 기본 개발 설치에 포함되지만, 권한 확보 전에는 SE 수집 실행에 사용하지 않음
+- Chrome/browser 준비와 실제 Selenium 수집 경로 실행: 운영자 서면 허가 범위가 문서화된 뒤에만 필요·허용되며, 승인된 공식 API 경로에는 Chrome이 필요하지 않음
 - OpenAI API 키(선택): 키나 할당량이 없으면 로컬 모드 사용 가능
 
 ```powershell
@@ -47,7 +48,7 @@ backend/.venv/Scripts/python.exe -m backend.scripts.crawl --kumoh-limit 50 --seb
 backend/.venv/Scripts/python.exe -m backend.scripts.index --reset
 ```
 
-SE 게시판 수집은 현재 비활성화되어 있습니다. 2026-07-14 확인 기준 `seboard.site/robots.txt`가 `User-agent: * / Disallow: /`로 전체 자동 수집을 금지하고 있습니다. `--seboard-limit`에 양수를 지정하려면 운영자 서면 허가 또는 승인된 공식 API 사용 승인이 먼저 있어야 하며, CLI에도 `--seboard-permission-confirmed`를 함께 지정해야 합니다. 이 flag는 운영자가 권한을 확인했다는 의사를 기록할 뿐, 실제 권한을 대신하지 않습니다. 승인된 경로에서만 `SEBOARD_API_URL`의 공식 JSON API를 우선 사용하고, 서면 허가 범위에 포함된 Selenium 경로를 선택할 때만 Chrome/Selenium을 설치하세요. 로그인 우회, CAPTCHA 무력화, 접근제어 회피는 범위 밖입니다.
+SE 게시판 수집은 현재 비활성화되어 있습니다. 2026-07-14 확인 기준 `seboard.site/robots.txt`가 `User-agent: * / Disallow: /`로 전체 자동 수집을 금지하고 있습니다. `--seboard-limit`에 양수를 지정하려면 운영자 서면 허가 또는 승인된 공식 API 사용 승인이 먼저 있어야 하며, CLI에도 `--seboard-permission-confirmed`를 함께 지정해야 합니다. 이 flag는 운영자가 권한을 확인했다는 의사를 기록할 뿐, 실제 권한을 대신하지 않습니다. 승인된 공식 API 경로에서는 `SEBOARD_API_URL`을 사용하고 Chrome이 필요하지 않습니다. 서면 허가 범위가 문서화된 뒤 승인된 Selenium 경로를 선택할 때만 Chrome/browser를 준비하고 Selenium 수집을 실행하세요. 로그인 우회, CAPTCHA 무력화, 접근제어 회피는 범위 밖입니다.
 
 한 소스가 일시적으로 실패해도 성공한 데이터를 점검하려면 `--allow-partial`을 추가합니다. 이때 부분 결과는 `data/raw/candidates/posts-partial.json`에만 저장되며 운영 원본 `data/raw/posts.json`을 덮어쓰지 않습니다. 후보를 운영 원본으로 승격하려면 소스·날짜·URL을 검토한 뒤 별도로 반영하고 전체 재인덱싱하세요.
 
