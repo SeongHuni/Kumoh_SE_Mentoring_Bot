@@ -1,60 +1,53 @@
 # RAG Overview
 
-이 문서는 현재 RAG 구현의 운영 상태, 전체 흐름, 확장 우선순위를 설명한다.
+이 문서는 RAG의 안정적인 구조와 동작, 아직 구현되지 않은 확장 우선순위를 설명한다. 변동 가능한 건수·준비도·위험은 [`../PROJECT_STATUS.md`](../PROJECT_STATUS.md)를 단일 상태 문서로 확인한다.
 
-## 현재 운영 상태
+## 현재 구현의 경계
 
-- 데이터: 금오공과대학교 소프트웨어전공 공개 게시글 46건
-- 인덱스: 900자 청크 79개, Chroma 영속 컬렉션
-- 실행 provider: `local`
-- 임베딩: `local-hash-embedding-v1`, 1,536차원
-- 답변: `local-extractive-answer-v1` 추출형 답변
-- SE 게시판: 크롤러는 구현되어 있으나 실제 화면 구조 검증은 보류
-- OpenAI: 코드 경로는 구현되어 있으나 현재 키 할당량 문제로 운영하지 않음
-
-현재 로컬 provider는 LLM이 아니다. 질문과 문서를 해시 벡터로 비교하고 검색된 원문 문장을 템플릿으로 반환한다.
+- local provider는 결정적 hash embedding과 출처 기반 extractive answer를 제공한다.
+- OpenAI provider는 OpenAI Embeddings API와 Responses API를 지원한다.
+- API와 평가 CLI는 현재 설정·원본·주제 규칙·청킹·collection과 일치하는 strict index manifest가 있을 때만 질의 또는 평가를 진행한다.
+- SE 게시판 수집은 robots 정책과 사용 권한을 확인한 뒤 운영자 서면 허가 또는 승인된 공식 API가 확보될 때까지 비활성 상태로 유지한다.
 
 ## 전체 흐름
 
 ```mermaid
 flowchart LR
-    A[공개 게시판] --> B[크롤러]
+    A[승인된 공개 게시판] --> B[크롤러]
     B --> C[data/raw/posts.json]
     C --> TC[주제 분류 및 최신본 계산]
     TR[data/topic_rules.json] --> TC
-    TC --> D[정규화 및 청킹]
-    D --> E[Embedding Provider]
-    E --> F[(Chroma Vector DB)]
-    Q[사용자 질문] --> QT[질문 주제 분류]
-    TR --> QT
-    QT --> QE[질문 임베딩]
+    TC --> D[정규화 및 문자 청킹]
+    D --> E[선택된 Embedding Provider]
+    E --> F[(Chroma Persistent Collection)]
+    Q[사용자 질문] --> QC[질문 주제 및 의도 분류]
+    TR --> QC
+    QC --> QE[현재 provider로 질문 임베딩]
     QE --> F
-    QT --> WF[주제 및 최신본 where filter]
+    QC --> WF[주제·최신본 where filter]
     WF --> F
-    F --> R[Top-K 벡터 검색]
-    R --> RR[제목 기반 재정렬]
-    RR --> T[절대·상대 임계값 필터]
-    T --> G[답변 Provider]
-    G --> API[답변·출처·추천 질문·최근 공지]
+    F --> R[Top-K cosine 검색]
+    R --> RR[제목·정책 기반 재정렬]
+    RR --> G[근거 및 점수 필터]
+    G --> A1[선택된 Answer Provider]
+    A1 --> API[답변·출처·추천 질문·최근 공지]
     API --> UI[Next.js 채팅 UI]
 ```
 
-파이프라인은 오프라인 인덱싱과 온라인 질의로 나뉜다.
+오프라인과 온라인 경계는 다음과 같다.
 
 ```text
-오프라인: crawl → raw JSON → topic/latest enrichment → chunk → embed → Chroma upsert
-온라인: question → topic classification → latest-only where filter → embed → cosine search → rerank → score filter → answer + sources + follow-ups
+오프라인: crawl → raw JSON → topic/latest enrichment → normalize/chunk → embed → Chroma upsert + manifest
+온라인: request → strict manifest check → topic/intent → query embed → latest-only Chroma search → rerank/evidence gate → answer + sources
 ```
 
-## 확장 우선순위
+## 아직 구현되지 않은 확장 우선순위
 
-1. SE 게시판의 실제 공개 API 또는 DOM 스키마 확정 및 fixture 테스트 추가
-2. embedding fingerprint 저장·검증으로 잘못된 인덱스 사용 차단
-3. BM25/vector hybrid 검색 및 카테고리·날짜 필터
-4. PDF/HWP 첨부 텍스트 추출과 문서별 parser 분리
-5. 증분 크롤링, 변경 감지, 삭제 문서 반영
-6. 자동 평가 CLI와 검색/답변 품질 리포트
-7. OpenAI quota 확보 후 local/OpenAI A/B 평가
-8. 요청 ID, 검색 점수, 선택 문서, 지연시간 관측 로그
+1. SE 데이터 계약과 승인된 공식 API 연동, fixture 기반 계약 테스트
+2. BM25/vector hybrid 검색과 reranker
+3. PDF/HWP 첨부 본문 parser
+4. 증분 update/delete와 Chroma backup/restore
+5. OpenAI quota 확보 후 provider A/B 평가와 별도 threshold calibration
+6. 개인정보를 남기지 않는 request·검색·지연시간 observability
 
-새 provider는 `AIProvider` 프로토콜을 구현하고 `provider_factory.py`에 등록한다. 새 데이터 소스는 `BoardPost`를 반환하도록 만들어 이후 청킹·검색 계층을 재사용한다.
+새 provider는 `AIProvider`의 `embed`·`answer` 계약을 구현하고 `provider_factory.py`에 등록한다. 새 source는 `BoardPost`를 반환해야 이후 주제 분류·청킹·검색 계층을 재사용할 수 있다.

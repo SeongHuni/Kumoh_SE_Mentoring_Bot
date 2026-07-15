@@ -1,131 +1,119 @@
 # RAG Operations And Evaluation
 
-이 문서는 구성값, 운영 절차, 테스트와 평가 기준을 설명한다.
+이 문서는 지원 설정, 운영 절차, health/readiness, 테스트·평가·데이터 감사 기준을 설명한다. 현재 건수·준비도·위험은 [`../PROJECT_STATUS.md`](../PROJECT_STATUS.md)를 단일 상태 문서로 확인한다.
 
-## 구성값
+## 주요 환경변수
 
-| 환경변수 | 기본값 | 역할 |
-| --- | --- | --- |
-| `AI_PROVIDER` | `auto` | provider 선택 |
-| `OPENAI_CHAT_MODEL` | `gpt-5.6-luna` | OpenAI 답변 모델 |
-| `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small` | OpenAI 임베딩 모델 |
-| `EMBEDDING_DIMENSIONS` | `1536` | 임베딩 벡터 차원 |
-| `CHUNK_SIZE` | `900` | 문자 기준 청크 최대 크기 |
-| `CHUNK_OVERLAP` | `150` | 인접 청크 중복 크기 |
-| `CHROMA_PATH` | `./chroma_db` | 벡터 저장 위치 |
-| `CHROMA_COLLECTION` | `se_mentor_posts` | 컬렉션 이름 |
-| `RAW_POSTS_PATH` | `./data/raw/posts.json` | 원본 JSON |
-| `TOPIC_RULES_PATH` | `./data/topic_rules.json` | 주제·키워드·추천 질문 규칙 |
-| `RAG_TOP_K` | `5` | 초기 벡터 검색 수 |
-| `RAG_MIN_SCORE` | `0.10` | 절대 임계값(로컬 해시 임베딩 보정값) |
-| `CRAWLER_DELAY_SECONDS` | `1.0` | 사이트 요청 간격 |
-| `SEBOARD_API_URL` | 빈 값 | 확인된 공개 API 주소 |
+`.env.example`은 비밀값이 없는 검증된 안전한 local sample이다. 애플리케이션 `config.py`는 환경변수가 없을 때 `AI_PROVIDER=auto`를 fallback으로 사용하며, `auto`는 key가 있으면 OpenAI, 없으면 local을 선택한다. 따라서 sample의 `AI_PROVIDER=local`과 application fallback `auto`를 같은 의미의 기본값으로 읽지 않는다.
+
+| 환경변수 | `.env.example` sample | application fallback | 역할 |
+| --- | --- | --- | --- |
+| `AI_PROVIDER` | `local` | `auto` | `local`, `openai`, `auto` provider 선택 |
+| `OPENAI_API_KEY` | 빈 값 | 없음 | OpenAI Embeddings/Responses 인증 |
+| `OPENAI_CHAT_MODEL` | `gpt-5.6-luna` | `gpt-5.6-luna` | OpenAI 답변 모델; embedding signature와 무관 |
+| `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small` | `text-embedding-3-small` | OpenAI 임베딩 모델 |
+| `EMBEDDING_DIMENSIONS` | `1536` | `1536` | 임베딩 벡터 차원 |
+| `CHUNK_SIZE` | `900` | `900` | 문자 기준 청크 최대 크기 |
+| `CHUNK_OVERLAP` | `150` | `150` | 인접 청크 중복 크기 |
+| `CHROMA_PATH` | `./chroma_db` | `./chroma_db` | Chroma와 manifest 저장 위치 |
+| `CHROMA_COLLECTION` | `se_mentor_posts` | `se_mentor_posts` | Chroma collection 이름 |
+| `RAW_POSTS_PATH` | `./data/raw/posts.json` | `./data/raw/posts.json` | 원본 JSON snapshot |
+| `TOPIC_RULES_PATH` | `./data/topic_rules.json` | `./data/topic_rules.json` | topic·keyword·evidence 규칙 |
+| `RAG_TOP_K` | `5` | `5` | 초기 vector 검색 수 |
+| `RAG_MIN_SCORE` | `0.10` | `0.10` | 최종 검색 절대 threshold |
+| `CRAWLER_DELAY_SECONDS` | `1.0` | `1.0` | 요청 간격 |
+| `CRAWLER_TIMEOUT_SECONDS` | `20.0` | `20.0` | crawler 요청 timeout |
+| `SEBOARD_API_URL` | 빈 값 | 없음 | 승인된 SE JSON API 주소 |
+| `SEBOARD_HEADLESS` | `true` | `true` | 허용된 Selenium 경로의 headless 실행 |
+| `CORS_ORIGINS` | `http://localhost:3000` | `http://localhost:3000` | API 허용 frontend origin 목록 |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | Compose build arg 기본값 | frontend가 호출할 API 주소 |
+| `BACKEND_PORT` | `8000` | Compose mapping 기본값 | host의 backend port |
+| `FRONTEND_PORT` | `3000` | Compose mapping 기본값 | host의 frontend port |
+
+`NEXT_PUBLIC_API_URL`은 Next.js frontend 이미지 빌드 시 삽입되는 build-time 값이다. 값을 바꾸면 frontend 이미지를 반드시 rebuild해야 하며, 실행 중 컨테이너 환경변수만 바꾸어 이미 빌드된 UI의 API 주소를 변경할 수 없다.
+
+`CHROMA_PATH/index-manifest.json`은 provider, embedding model/dimension, chunking, collection, raw/topic SHA-256, chunk count와 signature fingerprint를 기록한다. provider·모델·차원·collection·chunking·원본·topic rules가 바뀌면 `index --reset`을 실행하고, `OPENAI_CHAT_MODEL`만 바뀌면 재인덱싱하지 않는다.
 
 ## 운영 절차
 
-일반 작업 순서:
+허용된 학과 source만 수집하는 기본 명령은 다음과 같다. SE 게시판은 권한과 승인된 API가 확인되기 전까지 `--seboard-limit 0`을 유지한다.
 
 ```powershell
-# 1. 현재 허용된 학과 소스 수집
-backend/.venv/Scripts/python -m backend.scripts.crawl --kumoh-limit 50 --seboard-limit 0
+backend/.venv/Scripts/python.exe -m backend.scripts.crawl --kumoh-limit 50 --seboard-limit 0
+backend/.venv/Scripts/python.exe -m backend.scripts.index --reset
+```
 
-# 2. provider 또는 데이터 변경 후 전체 인덱싱
-backend/.venv/Scripts/python -m backend.scripts.index --reset
+원본 변경, topic rule 변경, provider/embedding 변경, collection·chunking 변경 후에는 index → evaluation → audit 순서로 재검증한다. 인덱싱은 임베딩 수·차원과 입력 signature를 먼저 확인하고, 성공한 Chroma 저장 뒤 manifest를 기록한다. manifest 누락·손상, 설정·content hash·실제 chunk count 불일치는 전체 재인덱싱으로 복구한다.
 
-# 3. 서버 재기동
+`--allow-partial` 수집 결과는 `data/raw/candidates/posts-partial.json`에만 저장한다. source·canonical URL·게시일을 사람 검토로 확인해 운영 원본에 반영한 뒤 다시 인덱싱한다.
+
+## Liveness와 readiness
+
+| endpoint/status | 의미 | 조치 |
+| --- | --- | --- |
+| `/api/live` → `alive` | FastAPI process가 요청을 처리할 수 있음; Chroma readiness는 검사하지 않음 | process/container liveness 확인 |
+| `/api/health` → `ready` / `compatible` | 현재 설정·데이터·manifest·chunk count가 일치해 RAG 사용 가능 | 채팅 제공 |
+| `/api/health` → `needs_configuration` | 선택 provider에 필요한 설정이 없음 | OpenAI key 또는 provider 설정 복구 |
+| `/api/health` → `needs_index` / `empty_index` | collection이 비어 있음 | 전체 인덱싱 실행 |
+| `/api/health` → `needs_reindex` | `missing_manifest`, `invalid_manifest`, `settings_mismatch`, `content_mismatch`, `chunk_count_mismatch` | 전체 재인덱싱 실행 |
+| `/api/health` → `unavailable` / `index_unavailable` | 저장소를 열 수 없음 | 경로·권한·Chroma 상태 복구 |
+
+호환되지 않는 index는 `/api/chat`에서 provider 호출 전에 차단된다. `needs_index`·`needs_reindex`는 `409`, provider 설정·저장소 문제는 `503`, OpenAI 호출 실패는 `502`다.
+
+## Compose 검증
+
+Docker Desktop 또는 Docker Engine과 Compose plugin이 필요하다. 검증 명령은 다음과 같다.
+
+```powershell
+docker compose config
 docker compose up -d --build
-
-# 4. 상태 확인
+docker compose ps
+Invoke-RestMethod http://localhost:8000/api/live
 Invoke-RestMethod http://localhost:8000/api/health
 ```
 
-인덱싱 성공 시 `CHROMA_PATH/index-manifest.json`에 schema version, provider, 임베딩 모델·차원, 청킹 설정, 컬렉션 이름, 원본·주제 규칙 SHA-256, 청크 수와 전체 signature fingerprint가 기록된다. 임시 파일을 교체하는 방식으로 저장하므로 중간 상태를 정상 manifest로 노출하지 않는다. 원본·규칙·임베딩·청킹 설정을 변경했거나 manifest가 손상·누락되면 `index --reset`으로만 복구한다.
+Compose backend healthcheck는 `/api/live`를 사용하고 frontend는 root HTTP 응답을 확인한다. frontend는 backend healthcheck가 healthy가 된 뒤 시작하도록 설정되어 있다. 이 healthcheck와 `depends_on`은 startup ordering과 상태 보고를 위한 것이며 unhealthy 컨테이너를 자동으로 고치는 autoheal을 보장하지 않는다. 현재 작업 호스트에서 Docker runtime을 사용할 수 없다면 위 명령의 runtime 결과를 완료 근거로 주장하지 않는다.
 
-`/api/health`에서 provider, 모델명, 인덱싱 청크 수, `index_compatible`, `index_reason`을 확인한다.
-
-| `status` | 대표 `index_reason` | 운영 조치 |
-| --- | --- | --- |
-| `ready` | `compatible` | 채팅 제공 |
-| `needs_configuration` | 설정 오류 | OpenAI 키 또는 provider 설정 복구 |
-| `needs_index` | `empty_index` | 전체 인덱싱 실행 |
-| `needs_reindex` | `missing_manifest`, `invalid_manifest`, `settings_mismatch`, `content_mismatch`, `chunk_count_mismatch` | 전체 재인덱싱 실행 |
-| `unavailable` | `index_unavailable` | 저장 경로·권한·Chroma 상태 복구 |
-
-채팅 API는 `needs_index`·`needs_reindex`에 `409`, `needs_configuration`·`unavailable`에 `503`, OpenAI 호출 실패에 `502`를 반환하며 호환되지 않는 인덱스로 provider를 호출하지 않는다.
-
-`--allow-partial` 실행에서 일부 소스가 실패하면 결과는 `data/raw/candidates/posts-partial.json`에 저장된다. 이 후보 파일은 Git에서 제외되며, 운영 원본 `data/raw/posts.json`은 변경하지 않는다. 두 소스 성공 또는 사람이 수행한 원문 URL·게시일 검증 없이 후보를 운영 원본으로 자동 승격하지 않는다.
-
-SE 게시판은 `robots.txt`가 전체 자동 수집을 금지하므로 운영자 서면 허가 또는 승인된 공식 API를 확보하기 전까지 `--seboard-limit 0`을 유지한다. 권한 확보 후에도 부분 결과는 위 후보 경로에서 먼저 검토한다.
-
-`data/topic_rules.json`은 주제 관리의 단일 유지보수 지점이다. 주제 키·표시명·키워드·추천 질문·근거 marker·동의어 또는 원본 게시글을 변경하면 반드시 `--reset`으로 전체 재인덱싱한다. 최신성은 유효한 `published_at`을 우선하고, 누락되거나 파싱할 수 없을 때 `crawled_at`을 사용한다. 온라인 검색은 `is_latest_topic=true`를 적용해 같은 주제의 이전 게시글을 제외한다.
-
-검색된 최신 문서라도 질문과 문서의 연도·학기가 충돌하면 근거로 인정하지 않는다. 제목 marker나 동의어는 질문 표현과 연결될 때만 유효하며, 일반적인 “최근 학과 공지” 질문은 주제 점수보다 게시일이 가장 최신인 문서를 우선한다. 이 근거 게이트를 통과하지 못하면 provider 답변을 호출하지 않고 `grounded=false`를 반환한다.
-
-규칙 변경 후에는 `/api/chat` 응답에서 다음을 함께 점검한다.
-
-- `sources`가 분류된 주제의 최신 게시글만 가리키는지
-- `suggested_questions`가 해당 주제 또는 `general` 규칙과 일치하는지
-- `recent_notices`에 주제 라벨·게시일·canonical URL이 있는지
-- 근거가 없을 때 `grounded=false`이고 추측성 답변을 만들지 않는지
-
-## 테스트와 평가
-
-현재 단위 테스트는 청킹, 학과 게시판 파싱, 저장 중복 제거, Chroma 최근접 검색, RAG 임계값, 로컬 임베딩 결정성 및 출처 표기를 검사한다.
+## 테스트와 데이터 감사
 
 ```powershell
-backend/.venv/Scripts/python -m ruff check backend
+backend/.venv/Scripts/python.exe -m ruff check backend
 backend/.venv/Scripts/python.exe -m pytest -c backend/pyproject.toml backend/tests --cov=backend.app --cov=backend.scripts --cov-config=backend/pyproject.toml --cov-report=term-missing
+backend/.venv/Scripts/python.exe -m backend.scripts.audit_data
 ```
 
-coverage 대상은 `backend.app`, `backend.scripts`이며 package `__init__.py`와 사용자 범위에서 제외한 `backend/app/crawling/seboard.py`는 제외한다. line coverage가 85% 미만이면 실패한다. [`.github/workflows/quality.yml`](../../.github/workflows/quality.yml)은 이 gate와 Ruff, frontend test·TypeScript·ESLint·production build를 PR과 `main` push에서 실행한다.
+데이터 감사는 명시 옵션이 없으면 설정된 `RAW_POSTS_PATH`와 `TOPIC_RULES_PATH`를 읽고 `data/audit/reports/latest.json`, `latest.md`에 보고서를 쓴다. 기본 required source는 `kumoh`와 `seboard`이며 `--posts`, `--topic-rules`, `--output-dir`, `--stale-after-days`, `--required-source`로 조정할 수 있다.
 
-### 자동 평가
-
-```powershell
-backend/.venv/Scripts/python -m backend.scripts.index --reset
-backend/.venv/Scripts/python -m backend.scripts.evaluate
-```
-
-- 기본 provider는 `local`이다.
-- `--provider configured`는 현재 `.env` provider를 사용한다.
-- `latest.json`, `latest.md`는 `data/evaluation/reports/`에 생성된다.
-- exit 0은 전체 통과, exit 1은 품질 assertion 실패, exit 2는 실행 오류다.
-- 데이터 재수집 후 30개 baseline 기대값을 공식 원문과 재검토한다.
-
-| 인자 | 기본값 | 용도 |
-| --- | --- | --- |
-| `--questions` | `data/evaluation/questions.json` | 평가 입력 파일 |
-| `--output-dir` | `data/evaluation/reports` | JSON·Markdown 보고서 위치 |
-| `--provider` | `local` | `local` 또는 현재 환경의 `configured` provider 선택 |
-| `--minimum-cases` | `30` | 전체 입력 파일의 최소 케이스 수 |
-| `--limit` | 없음 | schema·최소 수 검증 후 첫 N개만 smoke 실행 |
-
-검색 품질 변경 시 `data/evaluation/questions.json`을 확장해 다음을 기록한다.
-
-- 기대 문서가 Top-1/Top-3/Top-5에 포함되는지
-- 범위 밖 질문이 `grounded=false`인지
-- `expected_topic_key`와 실제 주제 분류가 일치하는지
-- `expected_latest_only=true` 질문의 모든 출처가 주제별 최신 게시글인지
-- 답변의 날짜·대상·신청 경로가 원문과 일치하는지
-- 표시한 `[자료 N]`과 source 카드가 일치하는지
-- provider별 지연시간, API 비용, 실패율
-
-임계값은 소수의 성공 예시가 아니라 최소 30개 이상의 대표 질문으로 결정한다.
-
-현재 로컬 검증 스냅샷(2026-07-15)은 게시글 50건·청크 84개, 평가 30/30(exit 0)이다. 세부 지표는 topic 30/30, grounded 30/30, latest-only 30/30, source-title 11/11이다. 이 수치는 현재 저장 데이터에 대한 회귀 기준이며 공식 사이트의 실제 최신성을 보증하지 않는다.
-
-## 데이터 품질 감사
-
-```powershell
-backend/.venv/Scripts/python -m backend.scripts.audit_data
-```
-
-감사 보고서는 `data/audit/reports/latest.json`, `latest.md`에 원자적으로 저장되고 Git에서 제외된다. 게시글 본문, 비밀값, 로컬 절대 경로는 보고서에 포함하지 않는다.
-
-| exit | 의미 | 운영 조치 |
+| exit | 의미 | 조치 |
 | ---: | --- | --- |
-| 0 | 품질 경고 없음 | 재인덱싱·평가 진행 |
-| 1 | 품질 경고 있음 | 경고 코드를 검토하고 공식 원문과 대조 |
-| 2 | 입력·설정 오류 | 원본 JSON·주제 규칙·출력 권한 복구 후 재실행 |
+| `0` | 품질 경고 없음 | 다음 단계 진행 |
+| `1` | 게시글 source 누락, stale topic, empty topic 등 품질 경고 존재 | 경고를 공식 원문과 대조하고 승인·해결 여부 기록 |
+| `2` | 입력·설정·출력 오류 | 경로·JSON·topic rules·권한을 복구한 뒤 재실행 |
 
-현재 데이터에서는 `missing_source=seboard`, `stale_topic=course_openings`, `empty_topic=graduation`이 각 1건이다. 따라서 감사는 exit 1이며 의도된 운영 경고다. 특히 `course_openings`의 현재 최신 게시일 2025-08-07과 SE 소스 부재는 운영자 허가·승인 API 및 수동 URL·날짜 대조 전까지 해결 완료로 표시하지 않는다.
+감사 보고서는 본문과 비밀값을 기록하지 않으며 생성물은 Git에 포함하지 않는다.
+
+## 평가
+
+provider-matched 평가의 정확한 순서는 다음과 같다.
+
+```powershell
+$env:AI_PROVIDER="local"
+backend/.venv/Scripts/python.exe -m backend.scripts.index --reset
+backend/.venv/Scripts/python.exe -m backend.scripts.evaluate --provider configured
+```
+
+`--provider configured`는 현재 설정에서 선택된 provider를 사용한다. `AI_PROVIDER=auto`라면 key 유무로 실제 selected provider가 정해진다. `--provider local`은 local 설정으로 만든 local index만 평가할 때 사용한다. 평가 CLI는 첫 질문을 실행하거나 provider를 생성하기 전에 strict manifest를 검사하며, provider·model·dimension·collection·chunking·content 또는 chunk count가 일치하지 않으면 exit 2로 종료한다.
+
+평가 exit 의미는 다음과 같다.
+
+- `0`: 모든 품질 assertion 통과
+- `1`: 평가 실행은 끝났지만 품질 assertion 실패
+- `2`: 질문 파일·설정·index manifest 등 입력/실행 오류로 평가를 완료하지 못함
+
+### Threshold calibration
+
+`RAG_MIN_SCORE=0.10`은 local hash embedding의 과거 46건 historical tuning snapshot에서만 조정된 값이며 OpenAI embedding에 검증되지 않았다. 이 숫자를 OpenAI의 기본 threshold나 현재 status로 해석하지 않는다.
+
+provider 또는 데이터가 바뀌면 최소 30문항에서 positive/negative retrieval score distribution을 따로 수집한다. threshold를 정할 때 false-positive 최고 점수와 true-positive 최저 점수, 두 값 사이의 margin을 기록하고 그 근거로 선택한다. 평가 pass count만으로 calibration이 끝났다고 하지 않는다. OpenAI로 전환할 때는 provider-matched reindex/evaluation과 별도 threshold 기록을 남긴다.
+
+평가 질문은 기대 topic, Top-K 문서 포함 여부, latest-only, grounded 거절, source metadata와 날짜·대상·신청 경로 일치 여부를 확인해야 한다. 세부 수치와 현재 snapshot은 [`../PROJECT_STATUS.md`](../PROJECT_STATUS.md) 및 생성 report를 참조한다.

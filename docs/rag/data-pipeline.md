@@ -1,58 +1,57 @@
 # RAG Data Pipeline
 
-이 문서는 게시판 수집, 원본 스키마, 정규화와 청킹 규칙을 설명한다.
+이 문서는 게시판 수집, 원본 snapshot, 최신성, 정규화와 청킹 규칙을 설명한다.
 
-## 데이터 수집 계층
+## SE 게시판 실행 경계
 
-### 학과 게시판
+SE 게시판은 `seboard.site/robots.txt`의 전체 `Disallow: /` 정책처럼 robots가 자동 수집을 금지하는 동안 실행하지 않는다. 운영자 서면 허가 또는 사용 범위가 문서화된 승인된 공식 API를 확보하기 전에는 public CLI에서 `--seboard-limit`을 양수로 지정하지 않는다.
 
-`KumohBoardCrawler`는 `httpx + BeautifulSoup`을 사용한다. 목록의 `articleNo`를 canonical URL로 변환해 고정 공지 중복을 방지한다. 상세 페이지에서 제목, 본문, 작성자, 작성일, 첨부파일 링크를 추출한다. 이미지 전용·삭제·일시 실패 게시글은 텍스트 임베딩 대상에서 제외한다.
+공용 CLI의 기본값은 `--seboard-limit 0`이다. 양수를 지정하려면 `--seboard-permission-confirmed`가 필요하지만, 이 flag는 운영자가 권한을 확인했다는 의사를 기록할 뿐 실제 허가나 API 이용 권한을 대신하지 않는다.
 
-### SE 게시판
+권한과 사용 범위가 문서화된 뒤에는 승인된 JSON API를 먼저 사용한다. `SEBOARD_API_URL`이 승인된 API 주소를 가리킬 때 crawler는 JSON 응답을 사용하고, API 경로가 승인되지 않았거나 제공되지 않는 경우에만 허용 범위 안에서 Selenium을 두 번째 선택지로 사용한다. 로그인·인증 우회, CAPTCHA 무력화, 접근제어 회피는 하지 않는다.
 
-다음 순서로 선택한다.
+부분 수집은 운영 원본으로 바로 승격하지 않는다. `--allow-partial` 결과는 `data/raw/candidates/posts-partial.json` 후보에만 저장하고, 사람이 각 후보의 source·canonical URL·게시일·본문 범위를 검토한 뒤 승인된 것만 `data/raw/posts.json`에 반영한다. 후보 승격이나 원본 변경 후에는 전체 재인덱싱과 평가·감사를 다시 실행한다.
 
-1. `SEBOARD_API_URL`이 있으면 공개 JSON API 사용
-2. 없으면 headless Selenium으로 렌더링 후 링크와 본문 탐색
-3. 두 방식 모두 실패하면 `--allow-partial`로 학과 게시판만 저장
+현재 허용된 public 실행 예시는 다음과 같다.
 
-로그인 우회, CAPTCHA 무력화, 접근제어 회피는 범위 밖이다. API 응답 필드는 여러 후보명(`id`, `postId`, `title`, `subject`, `content`, `body` 등)을 허용하지만 실제 API가 확인되면 명시적 스키마로 좁히는 것이 좋다.
+```powershell
+backend/.venv/Scripts/python.exe -m backend.scripts.crawl --kumoh-limit 50 --seboard-limit 0
+```
 
-## 원본 스키마
+## 학과 게시판
+
+`KumohBoardCrawler`는 `httpx + BeautifulSoup`을 사용한다. 목록의 `articleNo`를 canonical URL로 변환해 고정 공지 중복을 줄이고, 상세 페이지에서 제목·본문·작성자·작성일·첨부파일 링크를 추출한다. 이미지 전용·삭제·일시 실패 게시글은 텍스트 임베딩 대상에서 제외한다.
+
+## 원본 스키마와 보존
 
 `BoardPost`는 다음 정보를 보존한다.
 
 | 필드 | 용도 |
 | --- | --- |
-| `id`, `source` | 원본 식별 및 중복 제거 |
-| `title`, `content` | 검색·답변 본문 |
+| `id`, `source` | 원본 식별과 중복 제거 |
+| `title`, `content` | 검색과 답변 본문 |
 | `author`, `published_at` | 답변 맥락과 최신성 판단 |
 | `url` | 사용자에게 제공할 canonical 출처 |
-| `attachments` | 첨부 이름·링크 보존; 현재 본문은 미추출 |
-| `crawled_at` | 수집 시점 추적 |
+| `attachments` | 첨부 이름·링크 보존; 현재 첨부 본문은 미추출 |
+| `crawled_at` | 수집 시점과 게시일 fallback |
 
-원본은 `data/raw/posts.json`에 UTF-8 JSON으로 저장한다. 벡터 DB를 원본 저장소로 사용하지 않는다.
+정상 수집 원본은 `RAW_POSTS_PATH`가 가리키는 JSON snapshot이며 기본 경로는 `data/raw/posts.json`이다. 이 파일은 운영 원본으로 취급한다. 벡터 DB를 원본 저장소로 사용하지 않고, 부분 결과는 후보 경로에 격리해 raw snapshot의 immutability를 지킨다. 후보를 사람 검토로 승격하거나 게시글을 수정·삭제하면 원본을 갱신하고 전체 인덱스를 다시 만들어 삭제된 청크가 남지 않게 한다.
 
 ## 주제 보강과 최신 게시글 계산
 
-`data/topic_rules.json`은 주제 키(`key`), 화면 표시명(`label`), 분류 키워드(`keywords`), 추천 질문(`suggested_questions`)을 관리하는 단일 유지보수 지점이다. `TOPIC_RULES_PATH`로 다른 파일을 지정할 수 있지만, 운영 규칙은 한 파일에서 관리한다. 제목과 본문에 이미 지정된 `topic_key`가 없으면 가장 긴 일치 키워드를 우선해 분류하고, 일치 항목이 없으면 `default_topic_key`인 `general`을 사용한다.
+`data/topic_rules.json`은 topic key, label, 분류 keyword, suggested question, evidence marker와 retrieval policy를 관리하는 단일 유지보수 지점이다. `TOPIC_RULES_PATH`로 다른 파일을 지정할 수 있지만 운영 규칙은 하나의 파일에서 관리한다. 제목과 본문에 지정된 `topic_key` override가 없으면 가장 긴 일치 keyword를 우선하고, 일치가 없으면 `default_topic_key`인 `general`을 사용한다.
 
-인덱싱 전에 `enrich_posts`가 `topic_key`, `topic_label`, `is_latest_topic`을 파생한다. 주제별 최신 게시글은 다음 우선순위로 결정한다.
+인덱싱 전에 `enrich_posts`가 `topic_key`, `topic_label`, `is_latest_topic`을 파생한다. 같은 topic key 안에서 파싱 가능한 `published_at`을 우선해 가장 늦은 게시글을 선택하고, 게시일이 없거나 파싱되지 않는 게시글은 `crawled_at`으로 비교한다. 같은 날짜라면 `crawled_at`으로 순서를 정한다. 선택 게시글의 모든 청크에 `is_latest_topic=true`가 기록된다.
 
-1. 파싱 가능한 `published_at`이 있는 게시글을 우선한다.
-2. 유효한 게시일끼리는 `published_at`이 가장 늦은 게시글을 선택한다.
-3. 게시일이 없거나 잘못된 형식이면 `crawled_at`을 비교값으로 사용한다.
-4. 같은 시각이면 `crawled_at`으로 순서를 결정한다.
-
-주제마다 한 게시글만 `is_latest_topic=true`가 되며 그 게시글에서 생성된 모든 청크가 같은 값을 갖는다. 같은 주제의 이전 게시글도 원본과 인덱스에는 보존되지만 온라인 답변 검색에서는 제외된다. 원본 게시글 또는 `data/topic_rules.json`을 변경하면 다음 명령으로 전체 인덱스를 재생성해야 한다.
+원본 게시글, topic rules, source 구성 또는 청킹 결과를 변경하면 다음 전체 재인덱싱을 실행한다.
 
 ```powershell
-backend/.venv/Scripts/python -m backend.scripts.index --reset
+backend/.venv/Scripts/python.exe -m backend.scripts.index --reset
 ```
 
 ## 정규화와 청킹
 
-`chunking.py`는 공백과 과도한 줄바꿈을 정리한 뒤 다음 헤더를 본문 앞에 추가한다.
+`chunking.py`는 공백과 과도한 줄바꿈을 정리한 뒤 다음 header를 본문 앞에 추가한다.
 
 ```text
 제목: <게시글 제목>
@@ -60,15 +59,13 @@ backend/.venv/Scripts/python -m backend.scripts.index --reset
 본문: <게시글 본문>
 ```
 
-기본값은 `chunk_size=900`, `overlap=150` 문자다. 청크 경계는 마지막 180자 안에서 줄바꿈, 문장 끝(`. `, `다. `), 공백 순으로 찾는다. 토큰 기반이 아닌 문자 기반을 선택한 이유는 짧은 한국어 공지와 100건 규모에서 구현·디버깅이 단순하기 때문이다.
-
-선택지와 교체 기준:
+문자 기반 청킹은 짧은 한국어 공지와 현재 prototype 규모에서 구현·디버깅이 단순하고 재현 가능하다. 기본 `CHUNK_SIZE`, `CHUNK_OVERLAP`과 경계 규칙은 `.env.example` 및 코드 설정을 따른다. 청크 경계는 가능한 경우 마지막 구간의 줄바꿈, 문장 끝, 공백에서 선택한다.
 
 | 방식 | 장점 | 단점 | 사용 시점 |
 | --- | --- | --- | --- |
-| 현재 문자 청킹 | 빠르고 재현 가능 | 표·목록 문맥이 끊길 수 있음 | 프로토타입 |
+| 현재 문자 청킹 | 빠르고 재현 가능 | 표·목록 문맥이 끊길 수 있음 | 현재 prototype |
 | 토큰 청킹 | 모델 한도를 정확히 관리 | tokenizer 의존성 | 긴 문서 증가 시 |
-| 제목/문단 의미 청킹 | 공지 구조 보존 | 파서 복잡도 증가 | PDF/HWP 포함 시 |
-| 문서 단위 임베딩 | 구현이 가장 단순 | 긴 글 검색 정확도 저하 | 매우 짧은 게시글만 있을 때 |
+| 제목/문단 의미 청킹 | 공지 구조 보존 | parser 복잡도 증가 | PDF/HWP 포함 시 |
+| 문서 단위 임베딩 | 구현이 단순 | 긴 글 검색 정확도 저하 | 매우 짧은 게시글만 있을 때 |
 
-청크 크기·overlap·본문 정제 방식이 바뀌면 전체 인덱스를 재생성한다.
+청크 크기·overlap·본문 정제 방식이 바뀌면 manifest가 달라지므로 전체 재인덱싱한다.
