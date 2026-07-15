@@ -70,14 +70,23 @@ function isPlainTextContentType(contentType: string): boolean {
 }
 
 const HTTP_URL_PATTERN = /https?:\/\/[^\s<>"']+/gi;
-const PUBLIC_ENDPOINT_PATTERN = /\/api\/(?:health|live)(?![A-Za-z0-9_/?#])/gi;
+const PUBLIC_ENDPOINT_TOKEN_PATTERN = /\/api\/(?:health|live)/gi;
+const KOREAN_PARTICLE_PATTERN = /^(?:에서|으로|정도|를|을|은|는|이|가|에|로|와|과|의|도|만)/;
+const SENTENCE_PUNCTUATION_PATTERN = /^[.,!;:。、，．！…]/;
 
-function hasUnsafePosixPath(text: string): boolean {
+function removeSafeHttpUrls(text: string): { text: string; hasUnsafeUrl: boolean } {
   let hasUnsafeUrl = false;
-  const withoutSafeUrls = text.replace(HTTP_URL_PATTERN, (candidate) => {
+  const withoutUrls = text.replace(HTTP_URL_PATTERN, (candidate) => {
     try {
       const url = new URL(candidate);
-      if (url.username || url.password || url.search || url.hash) {
+      if (
+        url.username ||
+        url.password ||
+        url.search ||
+        url.hash ||
+        candidate.includes("?") ||
+        candidate.includes("#")
+      ) {
         hasUnsafeUrl = true;
         return candidate;
       }
@@ -88,9 +97,36 @@ function hasUnsafePosixPath(text: string): boolean {
     }
   });
 
+  return { text: withoutUrls, hasUnsafeUrl };
+}
+
+function isAllowedPublicEndpointSuffix(suffix: string): boolean {
+  const particle = suffix.match(KOREAN_PARTICLE_PATTERN);
+  const remainder = particle ? suffix.slice(particle[0].length) : suffix;
+
+  if (remainder.length === 0 || /^\s/.test(remainder)) return true;
+  if (!SENTENCE_PUNCTUATION_PATTERN.test(remainder)) return false;
+
+  const afterPunctuation = remainder.slice(1);
+  return (
+    afterPunctuation.length === 0 ||
+    /^\s/.test(afterPunctuation) ||
+    /^[가-힣]/.test(afterPunctuation)
+  );
+}
+
+function removeSafePublicEndpointMentions(text: string): string {
+  return text.replace(PUBLIC_ENDPOINT_TOKEN_PATTERN, (token, offset, wholeText) => {
+    const suffix = wholeText.slice(offset + token.length);
+    return isAllowedPublicEndpointSuffix(suffix) ? "" : token;
+  });
+}
+
+function hasUnsafePosixPath(text: string): boolean {
+  const { text: withoutSafeUrls, hasUnsafeUrl } = removeSafeHttpUrls(text);
   if (hasUnsafeUrl) return true;
 
-  const withoutPublicEndpoints = withoutSafeUrls.replace(PUBLIC_ENDPOINT_PATTERN, "");
+  const withoutPublicEndpoints = removeSafePublicEndpointMentions(withoutSafeUrls);
   return /(?:^|[^\w])\/(?!\/)[^\s"'<>)]*/i.test(withoutPublicEndpoints);
 }
 
