@@ -27,7 +27,8 @@
 
 - 임베딩 provider, 임베딩 모델 또는 임베딩 차원을 바꾸면 [`rag/providers.md`](rag/providers.md)를 갱신하고 provider가 일치하는 전체 재인덱싱을 한다.
 - `OPENAI_CHAT_MODEL`처럼 답변 chat model만 바꾸면 임베딩 signature가 바뀌지 않으므로 재인덱싱하지 않는다. 답변 평가와 quota 검증은 별도로 한다.
-- `CHROMA_COLLECTION`, `CHUNK_SIZE`, `CHUNK_OVERLAP`, 정규화·청킹 방식, 원본 source 집합 또는 `data/topic_rules.json`의 topic/source 규칙을 바꾸면 manifest signature가 달라지므로 전체 재인덱싱을 한다.
+- `CHROMA_COLLECTION`, `CHUNK_SIZE`/`CHUNK_OVERLAP` 설정값, 원본 source 집합 또는 `data/topic_rules.json`의 topic/source 규칙을 바꾸면 manifest signature mismatch로 자동 fail closed되므로 전체 재인덱싱을 한다.
+- 현재 정규화·청킹 알고리즘 구현의 code hash/version은 signature에 자동 포함되지 않는다. 알고리즘이 index 의미를 바꾸면 maintainer가 `INDEX_SCHEMA_VERSION`과 `IndexSignature.schema_version`의 Pydantic `Literal[...]`/schema validation을 의도적으로 bump한 뒤 전체 재인덱싱한다. 단순 구현 변경만으로 자동 mismatch가 난다고 주장하지 않는다.
 - 검색 점수, Top-K, threshold, 최신성 필터, 출처 카드 동작을 바꾸면 [`rag/retrieval-answering.md`](rag/retrieval-answering.md)를 갱신한다.
 - 실행 명령, 지원 설정, 평가·감사 기준을 바꾸면 [`rag/operations-evaluation.md`](rag/operations-evaluation.md)를 갱신한다.
 

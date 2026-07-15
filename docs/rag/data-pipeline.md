@@ -68,4 +68,4 @@ backend/.venv/Scripts/python.exe -m backend.scripts.index --reset
 | 제목/문단 의미 청킹 | 공지 구조 보존 | parser 복잡도 증가 | PDF/HWP 포함 시 |
 | 문서 단위 임베딩 | 구현이 단순 | 긴 글 검색 정확도 저하 | 매우 짧은 게시글만 있을 때 |
 
-청크 크기·overlap·본문 정제 방식이 바뀌면 manifest가 달라지므로 전체 재인덱싱한다.
+`CHUNK_SIZE` 또는 `CHUNK_OVERLAP` 설정값을 바꾸면 signature mismatch로 API와 평가가 자동 fail closed되므로 전체 재인덱싱한다. 반면 현재 정규화·청킹 알고리즘 구현 자체의 code hash/version은 signature에 자동 포함되지 않는다. 알고리즘 변경이 index 의미를 바꾸면 maintainer가 `INDEX_SCHEMA_VERSION`과 `IndexSignature.schema_version`의 Pydantic `Literal[...]`/schema validation을 의도적으로 bump한 뒤 전체 `index --reset`을 실행해야 한다. 단순 구현 변경만으로 자동 mismatch가 발생한다고 가정하지 않는다.

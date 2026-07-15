@@ -26,15 +26,17 @@
 
 인덱싱이 성공하면 `CHROMA_PATH/index-manifest.json`에 다음을 기록한다.
 
+- `schema_version`
+- `generated_at` (UTC)
 - 선택된 `provider`
-- effective embedding model과 `embedding_dimensions`
+- `embedding_model`, `embedding_dimensions`
 - `chunk_size`, `chunk_overlap` 청킹 설정
 - `collection` 이름(`CHROMA_COLLECTION`)
 - `raw_posts_sha256`, `topic_rules_sha256`
 - 저장된 `indexed_chunks` 수
 - signature를 canonical JSON으로 해시한 `fingerprint`
 
-fingerprint가 포함하는 signature는 schema version, collection, provider, embedding model/dimension, chunking 설정, raw posts SHA-256, topic rules SHA-256이다. `OPENAI_CHAT_MODEL`은 이 embedding signature에 포함되지 않는다.
+manifest의 전체 필드는 `schema_version`, UTC `generated_at`, `provider`, `embedding_model`, `embedding_dimensions`, `chunk_size`, `chunk_overlap`, `collection`, `raw_posts_sha256`, `topic_rules_sha256`, `indexed_chunks`, `fingerprint`다. fingerprint가 포함하는 signature 필드는 schema version, collection, provider, embedding model/dimension, chunking 설정, raw posts SHA-256, topic rules SHA-256이며 `generated_at`과 `indexed_chunks`는 포함하지 않는다. `generated_at`은 manifest 생성 시각이자 호환 RAG service 세대의 generation identity/기록이고, `indexed_chunks`는 실제 Chroma count와 별도로 비교한다. `OPENAI_CHAT_MODEL`도 이 embedding signature에 포함되지 않는다.
 
 API와 evaluation CLI는 요청·평가 시작 시 현재 설정과 파일을 사용해 signature를 다시 계산하고 manifest의 필드, content hash, 실제 Chroma chunk count를 비교한다. 하나라도 다르면 fail closed하며 provider를 호출하지 않는다. API는 채팅을 차단하고, 평가 CLI는 첫 질문 전에 실행 오류로 종료한다.
 
@@ -47,7 +49,9 @@ backend/.venv/Scripts/python.exe -m backend.scripts.index --reset
 - embedding provider 또는 effective embedding model
 - `EMBEDDING_DIMENSIONS`
 - `CHROMA_COLLECTION`
-- `CHUNK_SIZE`, `CHUNK_OVERLAP`, 정규화·청킹 방식
+- `CHUNK_SIZE`, `CHUNK_OVERLAP` 설정값
 - 원본 게시글 또는 `data/topic_rules.json`의 source/topic 규칙
+
+`CHUNK_SIZE` 또는 `CHUNK_OVERLAP` 설정값을 바꾸면 signature mismatch가 발생해 API와 평가가 자동으로 fail closed한다. 반면 현재 정규화·청킹 알고리즘 구현 자체의 code hash/version은 signature에 자동 포함되지 않는다. 알고리즘 변경이 index의 의미를 바꾸면 maintainer가 `INDEX_SCHEMA_VERSION`과 `IndexSignature.schema_version`의 Pydantic `Literal[...]`/schema validation을 의도적으로 bump한 뒤 전체 재인덱싱해야 한다. 단순한 구현 변경만으로 자동 mismatch가 발생한다고 가정하지 않는다.
 
 `OPENAI_CHAT_MODEL`만 변경하는 경우에는 기존 임베딩과 manifest signature가 유효하므로 재인덱싱하지 않는다. 다만 answer 품질·quota·실패율은 현재 provider와 데이터로 별도 평가한다. OpenAI로 전환할 때는 provider-matched reindex/evaluation을 수행하고 local에서 사용한 threshold를 그대로 가져오지 말고 별도로 calibration한다.
