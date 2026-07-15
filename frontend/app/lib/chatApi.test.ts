@@ -209,6 +209,59 @@ describe("requestChat", () => {
   });
 
   it.each([
+    ["an empty answer", { answer: "   " }],
+    ["an empty source title", { answer: "답변", sources: [{ ...source, title: "  " }] }],
+    ["an empty source URL", { answer: "답변", sources: [{ ...source, url: "" }] }],
+    ["an empty source name", { answer: "답변", sources: [{ ...source, source: "\t" }] }],
+    [
+      "an empty recent notice title",
+      { answer: "답변", recent_notices: [{ ...notice, title: " " }] },
+    ],
+    [
+      "an empty recent notice URL",
+      { answer: "답변", recent_notices: [{ ...notice, url: "" }] },
+    ],
+    [
+      "an empty recent notice name",
+      { answer: "답변", recent_notices: [{ ...notice, source: "\n" }] },
+    ],
+    [
+      "an empty recent notice topic key",
+      { answer: "답변", recent_notices: [{ ...notice, topic_key: "  " }] },
+    ],
+    [
+      "an empty recent notice topic label",
+      { answer: "답변", recent_notices: [{ ...notice, topic_label: "" }] },
+    ],
+    [
+      "an empty published date",
+      { answer: "답변", sources: [{ ...source, published_at: "  " }] },
+    ],
+    ["an empty suggested question", { answer: "답변", suggested_questions: ["  "] }],
+  ])("rejects successful payloads with %s", async (_description, fields) => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      makeResponse(JSON.stringify(fields), true),
+    );
+
+    await expect(
+      requestChat("질문", { apiUrl: "https://api.example.test", fetchImpl }),
+    ).rejects.toMatchObject({
+      kind: "invalid-success",
+      message: "서버 응답 형식을 확인할 수 없습니다.",
+    });
+  });
+
+  it("rejects a successful payload with a non-http source URL", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      makeResponse(JSON.stringify({ answer: "답변", sources: [{ ...source, url: "javascript:alert(1)" }] }), true),
+    );
+
+    await expect(
+      requestChat("질문", { apiUrl: "https://api.example.test", fetchImpl }),
+    ).rejects.toMatchObject({ kind: "invalid-success" });
+  });
+
+  it.each([
     [
       "a JSON traceback detail",
       JSON.stringify({ detail: "Traceback (most recent call last): handler failed" }),
@@ -218,6 +271,19 @@ describe("requestChat", () => {
     ["a multiline technical detail", JSON.stringify({ detail: "첫 줄\nstack trace: 두 번째 줄" }), "application/json"],
     ["a JSON API key detail", JSON.stringify({ detail: "OPENAI_API_KEY: sk-live-value" }), "application/json"],
     ["a plain-text password detail", "PASSWORD = hunter2", "text/plain"],
+    [
+      "a RuntimeError with a Unix path",
+      JSON.stringify({ detail: "RuntimeError: database connection failed at /srv/app/main.py" }),
+      "application/json",
+    ],
+    [
+      "an Authorization bearer credential",
+      JSON.stringify({ detail: "Authorization: Bearer secret-token" }),
+      "application/json",
+    ],
+    ["a Cookie credential", "Cookie: session=secret", "text/plain"],
+    ["a Windows absolute path", "오류 위치: C:\\Users\\app\\main.py", "text/plain"],
+    ["a technical message without Korean", "database connection failed", "text/plain"],
   ])("hides %s behind the HTTP fallback", async (_description, body, contentType) => {
     const fetchImpl = vi.fn().mockResolvedValue(makeResponse(body, false, contentType));
 
@@ -239,6 +305,23 @@ describe("requestChat", () => {
     await expect(
       requestChat("질문", { apiUrl: "https://api.example.test", fetchImpl }),
     ).rejects.toThrow("OPENAI_API_KEY가 필요합니다");
+  });
+
+  it.each([
+    [
+      "the AI provider setup guidance",
+      JSON.stringify({ detail: "AI_PROVIDER=openai 설정에는 OPENAI_API_KEY가 필요합니다." }),
+      "application/json",
+    ],
+    ["the health endpoint guidance", "상태 확인은 /api/health를 호출하세요.", "text/plain"],
+    ["the Python command guidance", "문제 해결은 python -m ... 명령을 실행하세요.", "text/plain"],
+  ])("preserves %s", async (_description, body, contentType) => {
+    const fetchImpl = vi.fn().mockResolvedValue(makeResponse(body, false, contentType, 503));
+
+    const message = body.startsWith("{") ? "AI_PROVIDER=openai 설정에는 OPENAI_API_KEY가 필요합니다." : body;
+    await expect(
+      requestChat("질문", { apiUrl: "https://api.example.test", fetchImpl }),
+    ).rejects.toThrow(message);
   });
 
   it("treats an immediate AbortError as a network failure when the timer did not fire", async () => {

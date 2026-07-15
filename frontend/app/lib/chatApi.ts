@@ -46,6 +46,25 @@ function parseJsonObject(text: string): Record<string, unknown> | null {
   return null;
 }
 
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function isNullableNonEmptyString(value: unknown): value is string | null {
+  return value === null || isNonEmptyString(value);
+}
+
+function isHttpUrl(value: unknown): value is string {
+  if (!isNonEmptyString(value)) return false;
+
+  try {
+    const protocol = new URL(value).protocol;
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 function isPlainTextContentType(contentType: string): boolean {
   return contentType.toLowerCase().includes("text/plain");
 }
@@ -58,7 +77,12 @@ function isSafeErrorMessage(text: string): boolean {
     !/[\r\n]/.test(normalized) &&
     !/<\/?[a-z][^>]*>|<!doctype\s+html/i.test(normalized) &&
     !/\b(?:traceback|stack\s+trace)\b/i.test(normalized) &&
-    !/(?:API_KEY|PASSWORD|SECRET|TOKEN)\s*[:=]\s*\S+/i.test(normalized)
+    !/(?:API_KEY|PASSWORD|SECRET|TOKEN)\s*[:=]\s*\S+/i.test(normalized) &&
+    !/\b(?:[A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception)|Exception)\s*:/i.test(normalized) &&
+    !/\b(?:authorization|cookie)\s*:/i.test(normalized) &&
+    !/\bbearer\s+\S+/i.test(normalized) &&
+    !/(?:[A-Za-z]:[\\/]|\/(?:srv|app|usr|home|var|etc|tmp|opt|root)(?:[\\/]|$))/i.test(normalized) &&
+    /[가-힣]/.test(normalized)
   );
 }
 
@@ -88,31 +112,30 @@ async function readResponseText(response: Response): Promise<string> {
 }
 
 function toChatReply(payload: Record<string, unknown>): ChatReply {
-  if (typeof payload.answer !== "string") {
+  if (!isNonEmptyString(payload.answer)) {
     throw new ChatApiError(INVALID_SUCCESS_MESSAGE, "invalid-success");
   }
 
   const isRecord = (value: unknown): value is Record<string, unknown> =>
     value !== null && typeof value === "object" && !Array.isArray(value);
-  const isNullableString = (value: unknown): value is string | null =>
-    value === null || typeof value === "string";
   const isSource = (value: unknown): value is Source =>
     isRecord(value) &&
-    typeof value.title === "string" &&
-    typeof value.url === "string" &&
-    typeof value.source === "string" &&
-    isNullableString(value.published_at) &&
+    isNonEmptyString(value.title) &&
+    isHttpUrl(value.url) &&
+    isNonEmptyString(value.source) &&
+    isNullableNonEmptyString(value.published_at) &&
     typeof value.score === "number" &&
     Number.isFinite(value.score);
   const isRecentNotice = (value: unknown): value is RecentNotice =>
     isRecord(value) &&
-    typeof value.title === "string" &&
-    typeof value.url === "string" &&
-    typeof value.source === "string" &&
-    isNullableString(value.published_at) &&
-    typeof value.topic_key === "string" &&
-    typeof value.topic_label === "string";
-  const isString = (value: unknown): value is string => typeof value === "string";
+    isNonEmptyString(value.title) &&
+    isHttpUrl(value.url) &&
+    isNonEmptyString(value.source) &&
+    isNullableNonEmptyString(value.published_at) &&
+    isNonEmptyString(value.topic_key) &&
+    isNonEmptyString(value.topic_label);
+  const isNonEmptyStringElement = (value: unknown): value is string =>
+    isNonEmptyString(value);
   const readArray = <T>(key: string, isElement: (value: unknown) => value is T): T[] => {
     const value = payload[key];
     if (value === undefined) return [];
@@ -134,7 +157,7 @@ function toChatReply(payload: Record<string, unknown>): ChatReply {
     content: payload.answer,
     sources: readArray("sources", isSource),
     grounded,
-    suggested_questions: readArray("suggested_questions", isString),
+    suggested_questions: readArray("suggested_questions", isNonEmptyStringElement),
     recent_notices: readArray("recent_notices", isRecentNotice),
   };
 }
