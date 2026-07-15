@@ -25,19 +25,20 @@ docs/                  현재 상태·아키텍처·운영 문서
 - Node.js `^20.19.0 || ^22.13.0 || >=24.0.0` (`frontend/package.json`의 `engines`와 동일)
 - Selenium Python dependency: `backend/requirements-dev.txt`가 참조하는 `backend/requirements.txt`의 `selenium==4.45.0`이므로 기본 개발 설치에 포함되지만, 권한 확보 전에는 SE 수집 실행에 사용하지 않음
 - Chrome/browser 준비와 실제 Selenium 수집 경로 실행: 운영자 서면 허가 범위가 문서화된 뒤에만 필요·허용되며, 승인된 공식 API 경로에는 Chrome이 필요하지 않음
+- Docker 실행: Docker Desktop 또는 Docker Engine과 Compose plugin 필요
 - OpenAI API 키(선택): 키나 할당량이 없으면 로컬 모드 사용 가능
 
 ```powershell
 Copy-Item .env.example .env
-# AI_PROVIDER=auto는 키가 있으면 OpenAI, 없으면 로컬 모드를 선택합니다.
-# 로컬 모드를 강제하려면 AI_PROVIDER=local로 설정합니다.
+# .env.example의 검증된 기본 sample은 AI_PROVIDER=local입니다.
+# auto는 key가 있으면 OpenAI로 전환하므로 OpenAI 임계값 검증 전에는 사용하지 마세요.
 
 py -3 -m venv backend/.venv
 backend/.venv/Scripts/python -m pip install -r backend/requirements-dev.txt
 npm --prefix frontend ci
 ```
 
-OpenAI 모드는 Responses API와 Embeddings API를 사용합니다. 로컬 모드는 문자·단어 해시 벡터와 출처 기반 추출 답변을 사용해 API 비용 없이 실행됩니다. `AI_PROVIDER=local|openai|auto`로 선택합니다.
+복사 직후의 검증된 기본 sample은 `AI_PROVIDER=local`입니다. `auto`는 키가 있으면 OpenAI로 전환하므로 OpenAI 임계값을 provider-matched index/evaluation으로 검증하기 전에는 사용하지 마세요. OpenAI 모드는 Responses API와 Embeddings API를 사용하고, 로컬 모드는 문자·단어 해시 벡터와 출처 기반 추출 답변을 사용해 API 비용 없이 실행됩니다. 지원 값은 `AI_PROVIDER=local|openai|auto`이며, `openai` 또는 `auto`로 전환하기 전 provider별 index/evaluation과 threshold 설정을 완료하세요.
 
 ## 데이터 수집 및 인덱싱
 
@@ -58,7 +59,7 @@ SE 게시판 수집은 현재 비활성화되어 있습니다. 2026-07-14 확인
 
 인덱싱이 성공하면 `chroma_db/index-manifest.json`에 provider·임베딩 모델·차원·청킹 설정·원본 게시글·주제 규칙의 fingerprint와 청크 수가 기록됩니다. 서버는 현재 설정·데이터와 manifest를 비교하고 하나라도 다르면 채팅을 차단합니다.
 
-임베딩 provider·임베딩 모델·`EMBEDDING_DIMENSIONS`·`CHUNK_SIZE`·`CHUNK_OVERLAP`·원본 게시글·`data/topic_rules.json`을 변경하면 `index --reset`으로 전체 인덱스를 다시 만드세요. 이 변경들은 index manifest fingerprint에 포함됩니다. `OPENAI_CHAT_MODEL`처럼 답변 chat model만 변경하는 경우에는 임베딩 signature가 달라지지 않으므로 재인덱싱이 필요하지 않습니다.
+임베딩 provider·임베딩 모델·`EMBEDDING_DIMENSIONS`·`CHUNK_SIZE`·`CHUNK_OVERLAP`·`CHROMA_COLLECTION`·원본 게시글·`data/topic_rules.json`을 변경하면 `index --reset`으로 전체 인덱스를 다시 만드세요. 이 변경들은 index manifest fingerprint에 포함됩니다. `OPENAI_CHAT_MODEL`처럼 답변 chat model만 변경하는 경우에는 임베딩 signature가 달라지지 않으므로 재인덱싱이 필요하지 않습니다.
 
 `data/raw/posts.json`의 현재 건수와 평가·감사 결과는 변동 가능한 운영 상태이므로 [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md)의 실행 snapshot을 기준으로 확인하세요. 중요한 학사 결정은 표시된 원문 링크를 다시 확인해야 합니다.
 
@@ -95,7 +96,7 @@ npm --prefix frontend run dev
 
 ## Docker 실행
 
-`.env`를 만든 뒤 다음을 실행합니다.
+`.env`를 만든 뒤 다음을 실행합니다. Docker Desktop 또는 Docker Engine과 Compose plugin이 필요합니다. 현재 검증 호스트에는 Docker가 설치되어 있지 않아 Compose runtime 검증은 남아 있지만, Docker가 설치된 환경에서는 아래 명령을 그대로 사용할 수 있습니다.
 
 ```powershell
 docker compose up --build
