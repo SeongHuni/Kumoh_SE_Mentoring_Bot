@@ -13,6 +13,7 @@ backend/scripts/       수집·인덱싱 CLI
 backend/tests/         pytest 단위 테스트
 data/raw/              수집된 원본 JSON
 data/evaluation/       평가 질문
+data/audit/            데이터 품질 감사 입력·보고서(보고서는 커밋 제외)
 data/topic_rules.json  주제·키워드·추천 질문 규칙
 chroma_db/             로컬 벡터 인덱스(커밋 제외)
 ```
@@ -47,7 +48,7 @@ backend/.venv/Scripts/python -m backend.scripts.index --reset
 
 원본 게시글이나 `data/topic_rules.json`을 변경한 뒤에는 위의 `--reset` 명령으로 전체 인덱스를 다시 만드세요. 그러지 않으면 이전 주제·최신성 metadata가 Chroma에 남을 수 있습니다. 온라인 검색은 `is_latest_topic=true`를 적용하므로 같은 주제의 이전 게시글은 답변 근거에서 제외됩니다.
 
-SE 게시판은 JavaScript 기반이므로 기본적으로 Selenium을 사용합니다. 공개 JSON API를 확인한 경우 `.env`의 `SEBOARD_API_URL`에 주소를 지정하면 API 수집을 우선합니다. 한 소스가 일시적으로 실패해도 성공한 데이터를 점검하려면 `--allow-partial`을 추가합니다.
+SE 게시판은 JavaScript 기반이므로 기본적으로 Selenium을 사용합니다. 공개 JSON API를 확인한 경우 `.env`의 `SEBOARD_API_URL`에 주소를 지정하면 API 수집을 우선합니다. 한 소스가 일시적으로 실패해도 성공한 데이터를 점검하려면 `--allow-partial`을 추가합니다. 이때 부분 결과는 `data/raw/candidates/posts-partial.json`에만 저장되며 운영 원본 `data/raw/posts.json`을 덮어쓰지 않습니다. 후보를 운영 원본으로 승격하려면 소스·날짜·URL을 검토한 뒤 별도로 반영하고 전체 재인덱싱하세요.
 
 저장소의 `data/raw/posts.json`에는 크롤러 실사이트 검증을 위해 수집한 학과 게시글 46건이 포함되어 있습니다. 약 100건의 최종 데이터셋은 위 명령으로 두 소스를 다시 수집해 생성합니다.
 
@@ -90,6 +91,9 @@ backend/.venv/Scripts/python -m pytest backend/tests
 backend/.venv/Scripts/python -m ruff check backend
 backend/.venv/Scripts/python -m backend.scripts.index --reset
 backend/.venv/Scripts/python -m backend.scripts.evaluate
+backend/.venv/Scripts/python -m backend.scripts.audit_data
+npm --prefix frontend test
+frontend/node_modules/.bin/tsc.cmd -p frontend/tsconfig.json --noEmit --incremental false
 npm --prefix frontend run lint
 npm --prefix frontend run build
 ```
@@ -97,3 +101,5 @@ npm --prefix frontend run build
 자동 평가는 외부 API 비용이 없는 local provider를 기본으로 사용하고 결과를 `data/evaluation/reports/latest.json`, `latest.md`에 저장합니다. 종료 코드 1은 측정된 품질 assertion 실패이며 보고서를 검토해야 한다는 뜻이고, 종료 코드 2는 입력·설정·인덱스 오류로 평가를 완료하지 못했다는 뜻입니다.
 
 평가 시 `data/evaluation/questions.json`을 바탕으로 검색 Top-5 적중 여부, 출처 정확성, 주제 분류, 최신 게시글만 사용했는지, 데이터에 없는 질문의 답변 거절 여부를 기록합니다. 중요한 학사 결정은 항상 원문 공지를 재확인해야 합니다.
+
+데이터 감사는 소스 누락, 오래된 주제, 빈 주제를 검사하고 `data/audit/reports/latest.json`, `latest.md`를 생성합니다. exit 0은 경고 없음, exit 1은 품질 경고 존재, exit 2는 입력·설정 오류입니다. 현재 저장 데이터 기준 감사 결과는 게시글 46건에서 `missing_source`, `stale_topic`, `empty_topic` 각 1건이며, 로컬 RAG 평가는 고정 30문항 전부 통과합니다. 보고서와 벡터 인덱스는 Git에 포함하지 않습니다.

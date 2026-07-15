@@ -1,20 +1,20 @@
 # RAG 품질·데이터 감사 구현 인수인계
 
-작성일: 2026-07-13
+작성 시작: 2026-07-13
+최종 갱신: 2026-07-15
+상태: 로컬 구현·통합 검증 완료, 원격 통합과 외부 데이터 검증 대기
+브랜치: `codex/rag-quality-hardening`
 
-상태: 사용자 요청으로 구현 중단, 재개 준비 완료
+## 1. 다음 작업자 진입점
 
-재개 우선순위: Task 1 코드 품질 리뷰 재실행 → Task 2 시작
-
-## 1. 재개 진입점
-
-다음 작업자는 새 브랜치나 새 worktree를 만들지 말고 아래 기존 worktree에서 이어간다.
+기존 전용 worktree에서 이어간다. 새 worktree를 만들거나 루트 `main`의 미관련 변경을 섞지 않는다.
 
 ```powershell
 Set-Location 'C:\Users\tjdgns\3-2_SummerSIG\Kumoh_SE_Mentoring_Bot\.worktrees\rag-quality-hardening'
 git branch --show-current
 git status --short
-git log -4 --oneline
+git log --oneline -12
+git diff --stat main...HEAD
 ```
 
 예상 상태:
@@ -22,210 +22,172 @@ git log -4 --oneline
 | 항목 | 값 |
 | --- | --- |
 | 작업 브랜치 | `codex/rag-quality-hardening` |
-| 현재 기능 HEAD | `4093c94 feat: validate retrieval evidence policy` |
-| Task 1 기준 커밋 | `93dd6d7 docs: plan rag quality and data audit` |
-| 루트 worktree | `main`, `25bd63b` |
-| 원격 기준 | `origin/main`, `25bd63b` |
-| push/PR | 아직 수행하지 않음 |
+| 로컬 기능 범위 | Task 1~9 완료 |
+| 저장 데이터 | 46 posts (`kumoh=46`, `seboard=0`) |
+| 인덱스 | 79 chunks, local provider |
+| 자동 평가 | 30/30, exit 0 |
+| 데이터 감사 | 3 issues, exit 1 |
+| push/PR/main 병합 | 미수행 |
 
-첫 작업은 아래 범위의 **코드 품질 리뷰를 새 검토자로 다시 실행하는 것**이다.
+최초 재검증:
 
 ```powershell
-git diff --stat 93dd6d7..4093c94
-git diff 93dd6d7..4093c94
-backend/.venv/Scripts/python.exe -m pytest backend/tests/test_topic_rules.py backend/tests/test_topic_classifier.py backend/tests/test_recommendations.py -q
-backend/.venv/Scripts/python.exe -m ruff check backend/app/topic_rules.py backend/tests/test_topic_rules.py
+backend/.venv/Scripts/python.exe -m pytest backend/tests -q
+backend/.venv/Scripts/python.exe -m ruff check backend
+backend/.venv/Scripts/python.exe -m backend.scripts.evaluate
+backend/.venv/Scripts/python.exe -m backend.scripts.audit_data
 ```
 
-Task 1 명세 리뷰는 통과했지만 코드 품질 리뷰는 사용자 중단 요청으로 종료되어 결과가 없다. 따라서 Task 1을 최종 승인 처리하거나 Task 2로 넘어가기 전에 품질 리뷰를 다시 수행해야 한다. Critical/Important 지적이 나오면 같은 Task 1 범위에서 테스트 우선으로 수정하고 재검토한다.
+감사 exit 1은 현재 데이터의 `missing_source`, `stale_topic`, `empty_topic` 경고를 뜻하며 실행 오류가 아니다. 입력 오류는 exit 2다.
 
 ## 2. 기준 문서
 
 - 설계: [`../specs/2026-07-13-rag-quality-data-audit-design.md`](../specs/2026-07-13-rag-quality-data-audit-design.md)
-- 전체 구현 계획: [`../plans/2026-07-13-rag-quality-data-audit-implementation.md`](../plans/2026-07-13-rag-quality-data-audit-implementation.md)
-- 프로젝트 전체 상태: [`../../PROJECT_STATUS.md`](../../PROJECT_STATUS.md)
-- 이전 자동 평가 인수인계: [`2026-07-12-rag-evaluation-handoff.md`](2026-07-12-rag-evaluation-handoff.md)
-
-구현 계획은 Task 1~9의 파일 범위, RED 테스트, 최소 구현, GREEN 명령, 커밋 메시지를 모두 포함한다. 다음 작업자는 계획의 Task 본문을 작업자에게 직접 제공하고, 각 Task마다 구현 → 명세 리뷰 → 코드 품질 리뷰 순서를 유지한다.
+- 구현 계획: [`../plans/2026-07-13-rag-quality-data-audit-implementation.md`](../plans/2026-07-13-rag-quality-data-audit-implementation.md)
+- 현재 프로젝트 상태: [`../../PROJECT_STATUS.md`](../../PROJECT_STATUS.md)
+- 운영·평가 절차: [`../../rag/operations-evaluation.md`](../../rag/operations-evaluation.md)
 
 ## 3. 핵심 결정 3개
 
-1. 기존 `data/evaluation/questions.json` 30문항 기대값을 약화하지 않고 local 평가를 25/30에서 30/30으로 개선한다.
-2. 최신성은 `topic_key`별 최신 1건 정책을 유지하되 질문의 연도·학기 충돌을 거절하고, 제목 marker·동의어가 질문 근거와 연결될 때만 grounded로 인정한다.
-3. 부분 수집 결과는 운영 원본을 덮어쓰지 않고 후보 경로에 저장하며, 데이터 감사와 공식 사이트 live 최신성 검증을 로컬 구현과 외부 검증으로 분리한다.
+1. `data/evaluation/questions.json`의 30개 normative expectation은 약화하거나 변경하지 않는다.
+2. `topic_key`별 최신 1건 정책을 유지하되 질문·문서의 연도/학기 충돌과 제목 marker/동의어 적합성을 근거 게이트로 추가한다.
+3. 부분 수집은 후보 경로, 평가·감사는 ignore된 보고서 경로를 사용해 운영 원본과 Git 추적 파일을 보호한다.
 
-## 4. 이번 세션에서 완료한 작업
+## 4. 구현 커밋
 
-### 설계와 계획
-
-| 커밋 | 내용 |
+| 커밋 | 범위 |
 | --- | --- |
-| `5bfd23b` | 기간 충돌, 제목 근거, 일반 최신 공지, 부분 수집, 데이터 감사 설계 |
-| `93dd6d7` | 9개 Task와 TDD·검토·검증 명령을 포함한 상세 구현 계획 |
+| `5bfd23b` | RAG 품질·데이터 감사 설계 |
+| `93dd6d7` | Task 1~9 TDD 구현 계획 |
+| `4093c94` | Task 1 검색 정책 모델 초기 구현 |
+| `a5b503c` | 중단 시점 인수인계 기록 |
+| `d63da19` | Task 1 주제 규칙 키·배열 타입 엄격화 |
+| `169e1c5` | Task 2 질문 의도 분석 |
+| `1382579` | Task 3 기간·제목 근거 판정 |
+| `b3acc91` | Task 4 RAG 최신성·관련성 회귀 수정 |
+| `91be420` | Task 5 부분 수집 후보 격리 |
+| `d1b5ee8` | Task 6 공용 원자적 보고서 writer |
+| `1451a49` | Task 7 데이터 감사 순수 계층 |
+| `28e4e92` | Task 8 데이터 감사 CLI |
+| `docs: record rag quality hardening` | Task 9 상태·운영·인수인계 문서(이 문서를 포함한 HEAD) |
 
-설계에서 확정한 정책:
+## 5. Task별 RED/GREEN 기록
 
-- `topic_key`별 `is_latest_topic=true` 정책 유지
-- 질문의 연도·학기와 문서 제목이 충돌하면 근거 거절
-- 제목 evidence marker는 질문 표현 또는 alias와 연결되어야 함
-- 일반 “최근 학과 공지”는 게시일 기준 가장 최신 URL을 우선
-- false-positive 3건과 false-negative 2건을 기대값 변경 없이 수정
-- 부분 수집 후보 경로와 운영 원본 분리
-- 감사 JSON·Markdown과 평가 보고서가 공용 원자적 writer 사용
-- 공식 사이트 최신성·실제 양쪽 소스 수집은 외부 검증 대기로 유지
+### Task 1 — 검색 정책 설정 모델
 
-### 격리 worktree와 기준선
+- RED: 비문자열 topic/default key 두 사례가 허용되는 실패를 확인했다.
+- GREEN: `_clean_key`와 문자열 배열 항목 타입 검증을 추가했다.
+- 결과: 관련 테스트와 전체 backend 66 tests, Ruff 통과.
+- 참고: 초기 구현의 명세 리뷰는 통과했다. 독립 코드 품질 리뷰가 중단되어 직접 diff 검토와 엄격 타입 회귀를 추가했다.
 
-- `.worktrees/`의 ignore를 확인하고 전용 worktree를 생성했다.
-- `backend/.venv`에 고정 requirements를 설치했다.
-- `frontend/node_modules`를 `npm ci`로 설치했다.
-- local Chroma 인덱스를 게시글 46건·청크 79개로 재생성했다.
-- 생성된 venv, node_modules, `.next`, Chroma, 평가 보고서는 Git 제외 대상이다.
+### Task 2 — 질문 의도 분석
 
-기준선 검증:
+- RED: `backend.app.query_intent` import 실패.
+- GREEN: 연도·학기·최근성·alias·특징어를 추출하는 결정적 parser와 4 tests 통과.
+- 전체 backend: 70 tests 통과.
 
-| 검증 | 결과 |
-| --- | --- |
-| backend pytest, Task 1 전 | 57 passed |
-| backend Ruff | `All checks passed!` |
-| frontend Vitest | 3 files, 9 tests passed |
-| frontend ESLint | exit 0 |
-| Next.js production build | exit 0, 정적 페이지 4개 |
-| 인덱싱 | 46 posts, 79 chunks, exit 0 |
-| 실제 local 평가 | 30건 중 25건 통과, exit 1 |
+### Task 3 — 근거 관련성 정책
 
-비차단 기준선 경고:
+- RED: `backend.app.evidence_policy` import 실패.
+- GREEN: 기간 충돌과 제목 marker·특징어를 판정하는 순수 계층 5 tests 통과.
+- 전체 backend: 75 tests 통과.
 
-- Vitest 실행 시 Vite CJS Node API deprecation 경고가 있다.
-- `npm ci` 후 audit는 5건(보통 3, 높음 1, 치명적 1)을 보고했다. 자동 수정이나 breaking upgrade는 수행하지 않았다.
+### Task 4 — RAG 연결과 품질 실패 5건
 
-### Task 1 — 검색 정책 설정 모델과 엄격한 로딩
+- RED: false-positive 3건(`registration-period`, `capstone-second-semester`, `scholarship-apply`)과 false-negative 2건(`career-recruitment`, `general-recent-department`)을 정확히 재현했다.
+- GREEN: intent/evidence gate, 일반 최신 게시일 우선, 사람이 관리하는 marker·alias 규칙을 RAG에 연결했다.
+- focused RAG 30 tests, 전체 backend 80 tests, Ruff 통과.
+- 고정 평가셋은 변경하지 않았고 실제 local 평가가 30/30으로 개선됐다.
 
-커밋: `4093c94 feat: validate retrieval evidence policy`
+### Task 5 — 부분 수집 후보 격리
 
-변경 파일:
+- RED: 기존 crawl `main(argv)` 계약 부재로 `TypeError` 확인.
+- GREEN: 전체 성공만 운영 원본에 기록하고 부분 성공은 `data/raw/candidates/posts-partial.json`에 저장한다. 운영 원본과 후보 경로가 같으면 거절한다.
+- focused 4 tests, 전체 backend 82 tests, Ruff 통과.
 
-- `backend/app/topic_rules.py`
-- `backend/tests/test_topic_rules.py`
+### Task 6 — 공용 원자적 보고서 writer
 
-구현 내용:
+- RED: `backend.app.reporting` import 실패.
+- GREEN: JSON·Markdown 쌍 교체, 실패 rollback, 기존 수동 `.bak` 보존을 공용 함수로 구현하고 평가 CLI를 전환했다.
+- focused 12 tests, 전체 backend 84 tests, 실제 평가 30/30 통과.
 
-- immutable `RetrievalPolicy`
-- `TopicRule.evidence_markers`
-- `TopicCatalog.retrieval_policy`
-- 문자열 배열의 빈 값·중복 검증
-- alias group 최소 2개 표현 검증
-- 중복 topic key 거절
-- 기존 `rule_for()`·`classify()`와 positional 생성자 호환 유지
+### Task 7 — 데이터 감사 순수 계층
 
-TDD 증거:
+- RED: `backend.app.data_audit` import 실패.
+- GREEN: source count, topic 최신일, 누락 소스, 오래된 주제, 빈 주제를 집계한다.
+- focused 3 tests, 전체 backend 87 tests, Ruff 통과.
+- JSON·Markdown 모델에 게시글 본문을 포함하지 않는 회귀를 고정했다.
 
-- RED: `test_topic_rules.py` 실행 결과 2 passed, 3 failed
-  - `evidence_markers` 부재 `AttributeError`
-  - 단일 alias group이 거절되지 않음
-  - 중복 topic key가 거절되지 않음
-- GREEN: topic rules/classifier/recommendations 9 passed
-- Task 1 반영 후 전체 backend: 60 passed
-- Ruff: `All checks passed!`
-- 명세 리뷰: `✅ Spec compliant`
-- 코드 품질 리뷰: 실행 중 사용자 요청으로 종료, **재실행 필요**
+### Task 8 — 데이터 감사 CLI
 
-## 5. 활성 품질 실패 5건
+- RED: `backend.scripts.audit_data` import 실패.
+- GREEN: JSON·Markdown 보고서와 exit 0/1/2 계약, 입력 오류 시 기존 보고서 보존을 구현했다.
+- focused 6 tests(공용 writer 포함), 전체 backend 91 tests, Ruff 통과.
+- 실제 감사: 46 posts, 3 issues, exit 1.
 
-현재 normative 30문항은 변경하지 않았다. 실제 평가는 25/30, quality exit 1이다.
+### Task 9 — 통합 검증과 문서화
 
-| 유형 | case ID | 필요한 동작 |
+- normative 평가 파일은 `main` 대비 변경 없음.
+- 재인덱싱: 46 posts, 79 chunks, exit 0.
+- 자동 평가: 30/30, exit 0.
+- 세부 metric: topic 30/30, grounded 30/30, latest-only 30/30, source-title 11/11.
+- backend 91 tests·Ruff 통과.
+- frontend 3 files/9 tests·TypeScript·ESLint·Next.js production build 통과.
+- Next.js build가 변경한 `frontend/next-env.d.ts`는 저장소 기준 내용으로 복구했다.
+- README, 운영 문서, 프로젝트 상태, 이 인수인계를 실제 수치로 갱신했다.
+
+## 6. 생성 보고서와 Git 안전성
+
+| 생성물 | 경로 | Git |
 | --- | --- | --- |
-| false-positive | `registration-period` | 질문 조건과 맞지 않는 최신 주제 문서를 grounded로 채택하지 않음 |
-| false-positive | `capstone-second-semester` | 2학기 질문에 1학기 문서를 근거로 사용하지 않음 |
-| false-positive | `scholarship-apply` | 신청 근거가 없는 문서를 장학금 신청 답변 근거로 사용하지 않음 |
-| false-negative | `career-recruitment` | “채용” 질문이 최신 “초빙” 제목을 동의어 근거로 찾음 |
-| false-negative | `general-recent-department` | 일반 최근 공지에서 게시일이 가장 최신인 학과 URL을 선택함 |
+| Chroma 인덱스 | `chroma_db/` | 제외 |
+| 자동 평가 | `data/evaluation/reports/latest.json`, `latest.md` | 제외 |
+| 데이터 감사 | `data/audit/reports/latest.json`, `latest.md` | 제외 |
+| 부분 수집 후보 | `data/raw/candidates/posts-partial.json` | 제외 |
 
-기준 metric:
+감사 보고서 별도 스캔에서 비밀 패턴과 테스트용 비공개 본문이 검출되지 않았다. 테스트 소스에는 “본문이 보고서에 없어야 한다”는 픽스처가 의도적으로 존재하며 생성 보고서에는 포함되지 않는다.
 
-- topic: 30/30
-- grounded: 25/30
-- latest-only: 28/30
-- source-title: 10/11
+## 7. 현재 데이터 경고
 
-## 6. 남은 작업
-
-### 즉시 재개
-
-1. Task 1 코드 품질 리뷰를 새 검토자로 재실행한다.
-2. Critical/Important가 없으면 Task 1 작업자를 종료하고 Task 2를 시작한다.
-3. 이 문서의 진행 기록에 리뷰 결과와 후속 커밋을 추가한다.
-
-### 구현 계획 Task 2~9
-
-| Task | 상태 | 목적 |
+| 코드 | 대상 | 의미 |
 | --- | --- | --- |
-| Task 2 질문 의도 분석 | 미시작 | 연도·학기·최근성·alias·distinctive term 추출 |
-| Task 3 기간·제목 근거 정책 | 미시작 | 기간 충돌과 제목 marker/특징어 근거를 순수 함수로 판정 |
-| Task 4 RAG 연결과 실패 5건 회귀 | 미시작 | 실제 검색·필터·rerank에 정책 연결, 30문항 기대값 유지 |
-| Task 5 부분 수집 후보 분리 | 미시작 | 부분 성공 데이터를 `data/raw/candidates/`에만 저장 |
-| Task 6 공용 원자적 보고서 writer | 미시작 | 평가·감사의 쌍 보고서 교체/rollback 계약 통합 |
-| Task 7 데이터 감사 순수 계층 | 미시작 | source/topic 최신성·누락·분류 경고 집계 |
-| Task 8 데이터 감사 CLI | 미시작 | JSON·Markdown, exit 0/1/2, 민감정보·본문·절대경로 제외 |
-| Task 9 전체 검증·운영 문서 | 미시작 | 재인덱싱, 실제 30/30, 전체 회귀, 상태·인수인계 완료 |
+| `missing_source` | `seboard` | 저장 데이터에 SE 소스가 없음 |
+| `stale_topic` | `course_openings` | 최신 게시일이 2025-08-07로 180일 기준 초과 |
+| `empty_topic` | `graduation` | 분류된 게시글 없음 |
 
-각 Task의 정확한 테스트와 구현 계약은 전체 구현 계획을 따른다. Task 간 의존성이 있으므로 순서를 바꾸지 않는다.
+이 경고는 기대값을 삭제하거나 임계값을 임의로 낮춰 숨기지 않는다. 공식 사이트를 수집·대조한 후 원본과 규칙을 갱신하고 `index --reset` → `evaluate` → `audit_data` 순서로 재검증한다.
 
-## 7. 외부 검증 대기
+## 8. 외부 검증 대기
 
-다음은 로컬 코드만으로 완료로 표시하면 안 된다.
+로컬 코드만으로 완료 처리하지 않은 항목:
 
-- 학과·SE 공식 사이트의 live crawl 성공
-- 공식 원문 기준 최신 게시일과 source URL 수동 대조
-- `course_openings`의 현재 최신 자료 2025-08-07이 실제 최신인지 확인
-- 실제 운영 OpenAI provider 임계값 재평가
-- GitHub CI가 아직 없으므로 원격 필수 검사 구성
+- 학과·SE 공식 사이트의 live crawl 전체 성공
+- 공식 원문 기준 최신 게시일, 대상, 신청 경로, canonical URL 수동 대조
+- `course_openings` 2025-08-07이 실제 최신인지 확인
+- 졸업 공지 자료 부재 또는 별도 소스 결정
+- 실제 OpenAI provider에서 임계값·답변·비용·지연시간 재평가
+- GitHub CI 필수 검사와 PR 독립 리뷰
 
-부분 수집 기능이 구현되더라도 `--allow-partial` 결과를 운영 `data/raw/posts.json`에 바로 승격하지 않는다.
+독립 하위 에이전트 재리뷰는 2026-07-20까지의 도구 사용량 제한으로 실행하지 못했다. 이를 품질 통과로 간주하지 않으며, PR에서 사람 또는 사용 가능한 독립 에이전트의 diff 리뷰가 필요하다.
 
-## 8. 재개 직후 검증 체크리스트
+## 9. 다음 개발 프로젝트
 
-```powershell
-git status --short
-git branch --show-current
-git diff --check
-backend/.venv/Scripts/python.exe -m pytest backend/tests -q
-backend/.venv/Scripts/python.exe -m ruff check backend
-```
+1. backend line coverage 85% 이상: SE crawler fixture, OpenAI mock, provider factory, `/api/chat`·`/api/health`, index/crawl CLI.
+2. embedding fingerprint: provider·모델·차원·청킹·주제 규칙 버전을 인덱스에 저장하고 불일치 사용 차단.
+3. frontend page fetch E2E와 390px/1280px 접근성 회귀.
+4. GitHub Actions로 backend/frontend 검증과 production build를 PR 필수 검사로 구성.
 
-- [ ] branch가 `codex/rag-quality-hardening`이다.
-- [ ] 계획 밖 추적 변경이 없다.
-- [ ] backend 60개 테스트가 통과한다.
-- [ ] Ruff가 통과한다.
-- [ ] Task 1 품질 리뷰를 다시 수행했다.
-- [ ] Task 2는 새 failing test로 시작한다.
+## 10. 인계 체크리스트
 
-## 9. 최종 완료 조건
+- [x] Task 1~8 기능·테스트 커밋 완료
+- [x] 고정 30문항 불변과 local 30/30 확인
+- [x] 부분 수집 운영 원본 보호 확인
+- [x] 감사 보고서 본문·비밀값·절대경로 제외 확인
+- [x] backend/frontend 전체 로컬 검증 통과
+- [x] 현재 상태와 외부 검증 대기 분리 기록
+- [ ] 기능 브랜치 push
+- [ ] PR 생성 및 독립 리뷰
+- [ ] main 병합 후 재검증
+- [ ] 공식 사이트 live 데이터 감사
 
-- normative 30문항 파일이 `main` 대비 변경되지 않음
-- false-positive 3건은 grounded=false이고 provider answer 미호출
-- false-negative 2건은 최신 URL·게시일을 포함해 grounded=true
-- 실제 local 평가 30/30, exit 0
-- 부분 수집이 운영 원본을 덮어쓰지 않음
-- 감사 JSON·Markdown 생성, 본문·비밀값·로컬 절대경로 미포함
-- backend pytest·Ruff와 frontend test·typecheck·lint·build 모두 통과
-- 로컬 완료와 공식 사이트 외부 검증 대기를 문서에서 구분
-- 기능 브랜치 push와 PR 리뷰 후에만 main 병합
-
-## 10. 진행 기록 템플릿
-
-각 Task 또는 리뷰가 끝날 때 아래 형식으로 이 문서 하단에 추가한다.
-
-```markdown
-### YYYY-MM-DD — Task N / review
-
-- RED: 명령, 실패 수, 기대한 실패 이유
-- GREEN: 구현 파일, 통과 명령, 정확한 테스트 수
-- Review: 명세 결과, 품질 결과, 수정 여부
-- Commit: hash와 메시지
-- Generated reports: 경로와 ignore 확인
-- Next: 다음 시작 테스트 또는 외부 검증
-```
-
-민감정보는 기록하지 않는다. `.env`, API key, password, bearer token, 로컬 비밀 경로가 발견되면 `민감정보 제거됨`으로 대체한다.
+민감정보는 이 문서에 기록하지 않는다. `.env`, API key, password, bearer token이 발견되면 `민감정보 제거됨`으로 대체한다.

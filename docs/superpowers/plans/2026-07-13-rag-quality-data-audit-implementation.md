@@ -268,7 +268,7 @@ git commit -m "feat: validate retrieval evidence policy"
 - Create: `backend/app/query_intent.py`
 - Create: `backend/tests/test_query_intent.py`
 
-- [ ] **Step 1: QueryIntent RED 테스트 작성**
+- [x] **Step 1: QueryIntent RED 테스트 작성**
 
 ```python
 from backend.app.query_intent import analyze_query
@@ -333,7 +333,7 @@ def test_analyze_query_keeps_only_distinctive_terms() -> None:
     assert "신청" not in intent.distinctive_terms
 ```
 
-- [ ] **Step 2: RED 확인**
+- [x] **Step 2: RED 확인**
 
 Run:
 
@@ -343,7 +343,7 @@ backend/.venv/Scripts/python -m pytest backend/tests/test_query_intent.py -q
 
 Expected: `backend.app.query_intent` import 오류로 FAIL.
 
-- [ ] **Step 3: 결정적 parser 구현**
+- [x] **Step 3: 결정적 parser 구현**
 
 `backend/app/query_intent.py`를 다음 내용으로 만든다.
 
@@ -456,7 +456,7 @@ def analyze_query(
     )
 ```
 
-- [ ] **Step 4: GREEN과 경계값 확인**
+- [x] **Step 4: GREEN과 경계값 확인**
 
 계절학기 테스트를 하나 더 추가한다.
 
@@ -481,7 +481,7 @@ backend/.venv/Scripts/python -m ruff check backend/app/query_intent.py backend/t
 
 Expected: 4 tests와 Ruff exit 0.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add backend/app/query_intent.py backend/tests/test_query_intent.py
@@ -494,7 +494,7 @@ git commit -m "feat: analyze rag query intent"
 - Create: `backend/app/evidence_policy.py`
 - Create: `backend/tests/test_evidence_policy.py`
 
-- [ ] **Step 1: EvidencePolicy RED 테스트 작성**
+- [x] **Step 1: EvidencePolicy RED 테스트 작성**
 
 ```python
 from backend.app.domain import RetrievedChunk, TextChunk
@@ -622,7 +622,7 @@ def test_accepts_single_strong_distinctive_title_term() -> None:
     assert decision.reason == "accepted_title_overlap"
 ```
 
-- [ ] **Step 2: RED 확인**
+- [x] **Step 2: RED 확인**
 
 Run:
 
@@ -632,7 +632,7 @@ backend/.venv/Scripts/python -m pytest backend/tests/test_evidence_policy.py -q
 
 Expected: `backend.app.evidence_policy` import 오류로 FAIL.
 
-- [ ] **Step 3: 최소 evidence decision 구현**
+- [x] **Step 3: 최소 evidence decision 구현**
 
 ```python
 from __future__ import annotations
@@ -700,7 +700,7 @@ def decide_evidence(
     return EvidenceDecision(False, "insufficient_title_evidence")
 ```
 
-- [ ] **Step 4: GREEN과 날짜 누락 경계값 확인**
+- [x] **Step 4: GREEN과 날짜 누락 경계값 확인**
 
 다음 테스트를 추가한다.
 
@@ -729,7 +729,7 @@ backend/.venv/Scripts/python -m ruff check backend/app/evidence_policy.py backen
 
 Expected: 5 tests와 Ruff exit 0.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add backend/app/evidence_policy.py backend/tests/test_evidence_policy.py
@@ -743,7 +743,7 @@ git commit -m "feat: validate rag evidence relevance"
 - Modify: `backend/tests/test_rag.py`
 - Modify: `data/topic_rules.json`
 
-- [ ] **Step 1: 실패 5건을 표현하는 RAG RED 테스트 작성**
+- [x] **Step 1: 실패 5건을 표현하는 RAG RED 테스트 작성**
 
 `backend/tests/test_rag.py`에 `pytest`, `RetrievalPolicy` import와 다음 helper·테스트를 추가한다.
 
@@ -902,7 +902,7 @@ def test_rag_prefers_date_for_general_latest_notice_even_with_zero_score() -> No
     }
 ```
 
-- [ ] **Step 2: RED 확인**
+- [x] **Step 2: RED 확인**
 
 Run:
 
@@ -913,7 +913,7 @@ backend/.venv/Scripts/python -m backend.scripts.evaluate
 
 Expected: pytest에서 false-positive 3건은 현재 `grounded=True`, false-negative 2건은 `grounded=False` 또는 URL filter 불일치로 FAIL. 실제 평가는 quality exit 1, 30건 중 25건 통과와 기존 실패 ID 5개를 보고한다.
 
-- [ ] **Step 3: RAG에 intent와 evidence gate 연결**
+- [x] **Step 3: RAG에 intent와 evidence gate 연결**
 
 `backend/app/rag.py`에 다음 import와 helper를 추가하고 `ask()`를 교체한다.
 
@@ -1035,7 +1035,7 @@ from backend.app.query_intent import QueryIntent, analyze_query, compact
         )
 ```
 
-- [ ] **Step 4: 사람이 관리하는 실제 정책 값 추가**
+- [x] **Step 4: 사람이 관리하는 실제 정책 값 추가**
 
 `data/topic_rules.json`을 다음 완전한 구조로 갱신한다.
 
@@ -1106,7 +1106,7 @@ from backend.app.query_intent import QueryIntent, analyze_query, compact
 }
 ```
 
-- [ ] **Step 5: GREEN과 기존 회귀 확인**
+- [x] **Step 5: GREEN과 기존 회귀 확인**
 
 Run:
 
@@ -1117,7 +1117,7 @@ backend/.venv/Scripts/python -m ruff check backend/app/rag.py backend/app/query_
 
 Expected: 모든 대상 테스트와 Ruff exit 0. 기존 topic policy가 없는 fixture는 legacy 경로로 계속 통과.
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add backend/app/rag.py backend/tests/test_rag.py data/topic_rules.json
@@ -1131,7 +1131,7 @@ git commit -m "fix: enforce latest rag evidence relevance"
 - Create: `backend/tests/test_crawl_script.py`
 - Modify: `.gitignore`
 
-- [ ] **Step 1: 운영 원본 보호 RED 테스트 작성**
+- [x] **Step 1: 운영 원본 보호 RED 테스트 작성**
 
 ```python
 from datetime import UTC, datetime
@@ -1230,7 +1230,7 @@ def test_partial_output_cannot_equal_operational_raw_path(
     assert not app_settings.raw_posts_path.exists()
 ```
 
-- [ ] **Step 2: RED 확인**
+- [x] **Step 2: RED 확인**
 
 Run:
 
@@ -1240,7 +1240,7 @@ backend/.venv/Scripts/python -m pytest backend/tests/test_crawl_script.py -q
 
 Expected: `crawl.main()`이 argv를 받지 못하거나 부분 결과가 운영 raw path에 저장되어 FAIL.
 
-- [ ] **Step 3: crawl CLI 출력 경로 분리 구현**
+- [x] **Step 3: crawl CLI 출력 경로 분리 구현**
 
 `backend/scripts/crawl.py`에서 `Path`, `REPOSITORY_ROOT`를 import하고 parser/main을 다음 코드로 바꾼다.
 
@@ -1319,7 +1319,7 @@ def main(argv: list[str] | None = None) -> int:
 data/raw/candidates/
 ```
 
-- [ ] **Step 4: GREEN과 기존 crawler 테스트 확인**
+- [x] **Step 4: GREEN과 기존 crawler 테스트 확인**
 
 Run:
 
@@ -1331,7 +1331,7 @@ git check-ignore -v data/raw/candidates/posts-partial.json
 
 Expected: tests/Ruff exit 0, 마지막 명령이 `.gitignore` 규칙을 출력.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add .gitignore backend/scripts/crawl.py backend/tests/test_crawl_script.py
@@ -1346,7 +1346,7 @@ git commit -m "fix: isolate partial crawl candidates"
 - Modify: `backend/scripts/evaluate.py`
 - Verify: `backend/tests/test_evaluate_script.py`
 
-- [ ] **Step 1: 공용 writer RED 테스트 작성**
+- [x] **Step 1: 공용 writer RED 테스트 작성**
 
 ```python
 from pathlib import Path
@@ -1400,7 +1400,7 @@ def test_write_text_reports_rolls_back_when_second_commit_fails(
     assert markdown_path.read_text(encoding="utf-8") == "old markdown"
 ```
 
-- [ ] **Step 2: RED 확인**
+- [x] **Step 2: RED 확인**
 
 Run:
 
@@ -1410,7 +1410,7 @@ backend/.venv/Scripts/python -m pytest backend/tests/test_reporting.py -q
 
 Expected: `backend.app.reporting` import 오류로 FAIL.
 
-- [ ] **Step 3: writer 구현과 evaluate wrapper 전환**
+- [x] **Step 3: writer 구현과 evaluate wrapper 전환**
 
 `backend/app/reporting.py`를 만든다.
 
@@ -1589,7 +1589,7 @@ def write_reports(report: EvaluationReport, output_dir: Path) -> None:
 
 `evaluate.py`에서 이제 사용하지 않는 `copyfile`, `NamedTemporaryFile`, rollback helper와 class를 제거한다.
 
-- [ ] **Step 4: GREEN과 기존 rollback 계약 확인**
+- [x] **Step 4: GREEN과 기존 rollback 계약 확인**
 
 Run:
 
@@ -1600,7 +1600,7 @@ backend/.venv/Scripts/python -m ruff check backend/app/reporting.py backend/scri
 
 Expected: 신규 2 tests와 기존 평가 script tests 모두 exit 0. commit·rollback 동시 실패 테스트에서 수동 복구용 `.bak` 경로와 원래 commit 오류가 보존된다.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add backend/app/reporting.py backend/scripts/evaluate.py backend/tests/test_reporting.py
@@ -1613,7 +1613,7 @@ git commit -m "refactor: share atomic report writer"
 - Create: `backend/app/data_audit.py`
 - Create: `backend/tests/test_data_audit.py`
 
-- [ ] **Step 1: 감사 집계와 보안 RED 테스트 작성**
+- [x] **Step 1: 감사 집계와 보안 RED 테스트 작성**
 
 ```python
 from datetime import UTC, datetime
@@ -1699,7 +1699,7 @@ def test_audit_rejects_empty_input() -> None:
         )
 ```
 
-- [ ] **Step 2: RED 확인**
+- [x] **Step 2: RED 확인**
 
 Run:
 
@@ -1709,7 +1709,7 @@ backend/.venv/Scripts/python -m pytest backend/tests/test_data_audit.py -q
 
 Expected: `backend.app.data_audit` import 오류로 FAIL.
 
-- [ ] **Step 3: 감사 모델·집계·Markdown 구현**
+- [x] **Step 3: 감사 모델·집계·Markdown 구현**
 
 `backend/app/data_audit.py`를 다음 구조로 구현한다.
 
@@ -1902,7 +1902,7 @@ def render_markdown(report: DataAuditReport) -> str:
     return "\n".join(lines).rstrip() + "\n"
 ```
 
-- [ ] **Step 4: GREEN·Ruff·본문 제외 확인**
+- [x] **Step 4: GREEN·Ruff·본문 제외 확인**
 
 Run:
 
@@ -1913,7 +1913,7 @@ backend/.venv/Scripts/python -m ruff check backend/app/data_audit.py backend/tes
 
 Expected: 3 tests와 Ruff exit 0, JSON/Markdown에 fixture 본문이 없음.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add backend/app/data_audit.py backend/tests/test_data_audit.py
@@ -1927,7 +1927,7 @@ git commit -m "feat: audit rag source data quality"
 - Create: `backend/tests/test_audit_data_script.py`
 - Modify: `.gitignore`
 
-- [ ] **Step 1: CLI exit와 보고서 RED 테스트 작성**
+- [x] **Step 1: CLI exit와 보고서 RED 테스트 작성**
 
 ```python
 import subprocess
@@ -2008,7 +2008,7 @@ def test_main_returns_two_without_replacing_report_on_input_error(
     assert not (tmp_path / "latest.md").exists()
 ```
 
-- [ ] **Step 2: RED 확인**
+- [x] **Step 2: RED 확인**
 
 Run:
 
@@ -2018,7 +2018,7 @@ backend/.venv/Scripts/python -m pytest backend/tests/test_audit_data_script.py -
 
 Expected: `backend.scripts.audit_data` import 오류로 FAIL.
 
-- [ ] **Step 3: 감사 CLI 구현**
+- [x] **Step 3: 감사 CLI 구현**
 
 ```python
 from __future__ import annotations
@@ -2086,7 +2086,7 @@ if __name__ == "__main__":
 data/audit/reports/
 ```
 
-- [ ] **Step 4: GREEN과 실제 현재 데이터 감사**
+- [x] **Step 4: GREEN과 실제 현재 데이터 감사**
 
 Run:
 
@@ -2098,7 +2098,7 @@ backend/.venv/Scripts/python -m backend.scripts.audit_data
 
 Expected: tests/Ruff exit 0. 실제 감사는 현재 `seboard` 누락·오래된 `course_openings`·빈 `graduation` 때문에 보고서를 생성하고 quality exit 1.
 
-- [ ] **Step 5: 보고서 보안·ignore 확인**
+- [x] **Step 5: 보고서 보안·ignore 확인**
 
 Run:
 
@@ -2109,7 +2109,7 @@ rg -n -i "API_KEY|PASSWORD|BEARER|OPENAI_API_KEY|비공개 테스트 본문" dat
 
 Expected: 두 보고서 모두 ignore 규칙 출력. `rg`는 민감정보·본문 패턴을 찾지 못해 exit 1.
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add .gitignore backend/scripts/audit_data.py backend/tests/test_audit_data_script.py
@@ -2124,7 +2124,7 @@ git commit -m "feat: add rag data audit cli"
 - Modify: `docs/PROJECT_STATUS.md`
 - Create: `docs/superpowers/handoffs/2026-07-13-rag-quality-data-audit-handoff.md`
 
-- [ ] **Step 1: normative 평가 데이터 불변 확인**
+- [x] **Step 1: normative 평가 데이터 불변 확인**
 
 Run:
 
@@ -2134,7 +2134,7 @@ git diff --exit-code main -- data/evaluation/questions.json
 
 Expected: 출력 없이 exit 0. Task 4 Step 2에서 기록한 25/30 RED 결과와 실패 ID 5개를 인수인계 문서에 기록한다.
 
-- [ ] **Step 2: 정책 변경 후 인덱스 재생성**
+- [x] **Step 2: 정책 변경 후 인덱스 재생성**
 
 Run:
 
@@ -2144,7 +2144,7 @@ backend/.venv/Scripts/python -m backend.scripts.index --reset
 
 Expected: 게시글 46건, 청크 79개, exit 0.
 
-- [ ] **Step 3: 실제 30문항 GREEN 확인**
+- [x] **Step 3: 실제 30문항 GREEN 확인**
 
 Run:
 
@@ -2154,7 +2154,7 @@ backend/.venv/Scripts/python -m backend.scripts.evaluate
 
 Expected: exit 0, `total=30`, `passed=30`, `failed=0`; topic 30/30, grounded 30/30, latest-only 30/30, source-title 11/11.
 
-- [ ] **Step 4: 전체 backend/frontend 회귀 실행**
+- [x] **Step 4: 전체 backend/frontend 회귀 실행**
 
 Run:
 
@@ -2169,7 +2169,7 @@ npm --prefix frontend run build
 
 Expected: 모든 명령 exit 0. Next.js build가 `frontend/next-env.d.ts`를 바꾸면 build 결과를 확인한 후 저장소 기준 내용으로 복원하고 변경이 없는지 확인한다.
 
-- [ ] **Step 5: 운영 문서와 상태 갱신**
+- [x] **Step 5: 운영 문서와 상태 갱신**
 
 다음 내용을 실제 수치로 기록한다.
 
@@ -2183,7 +2183,7 @@ Expected: 모든 명령 exit 0. Next.js build가 `frontend/next-env.d.ts`를 바
 
 handoff에는 각 task의 RED 이유, GREEN 명령, 커밋 hash, 생성 보고서 경로, 다음 하위 프로젝트 `백엔드 테스트 85%와 임베딩 fingerprint`를 기록한다.
 
-- [ ] **Step 6: Git hygiene와 최종 diff 확인**
+- [x] **Step 6: Git hygiene와 최종 diff 확인**
 
 Run:
 
@@ -2196,7 +2196,7 @@ git check-ignore -v chroma_db data/evaluation/reports/latest.json data/audit/rep
 
 Expected: 추적 변경은 코드·테스트·설정·문서뿐이며 생성물은 모두 ignore. `git diff --check` exit 0.
 
-- [ ] **Step 7: 문서 커밋**
+- [x] **Step 7: 문서 커밋**
 
 ```bash
 git add README.md docs/rag/operations-evaluation.md docs/PROJECT_STATUS.md docs/superpowers/handoffs/2026-07-13-rag-quality-data-audit-handoff.md
@@ -2205,14 +2205,14 @@ git commit -m "docs: record rag quality hardening"
 
 ## 최종 완료 판정
 
-- [ ] 기존 `data/evaluation/questions.json`의 30개 normative expectation이 변경되지 않았다.
-- [ ] false-positive 3건이 `grounded=false`이고 provider answer를 호출하지 않는다.
-- [ ] false-negative 2건이 최신 URL·게시일을 포함한 `grounded=true`다.
-- [ ] 실제 local 평가가 30/30과 exit 0이다.
-- [ ] 부분 수집 실패가 운영 원본을 덮어쓰지 않는다.
-- [ ] 감사 JSON·Markdown이 생성되고 본문·비밀값·로컬 절대 경로를 포함하지 않는다.
-- [ ] backend 전체 pytest·Ruff와 frontend test·type·lint·build가 통과한다.
-- [ ] 상태·인수인계 문서가 로컬 완료와 외부 검증 대기를 구분한다.
+- [x] 기존 `data/evaluation/questions.json`의 30개 normative expectation이 변경되지 않았다.
+- [x] false-positive 3건이 `grounded=false`이고 provider answer를 호출하지 않는다.
+- [x] false-negative 2건이 최신 URL·게시일을 포함한 `grounded=true`다.
+- [x] 실제 local 평가가 30/30과 exit 0이다.
+- [x] 부분 수집 실패가 운영 원본을 덮어쓰지 않는다.
+- [x] 감사 JSON·Markdown이 생성되고 본문·비밀값·로컬 절대 경로를 포함하지 않는다.
+- [x] backend 전체 pytest·Ruff와 frontend test·type·lint·build가 통과한다.
+- [x] 상태·인수인계 문서가 로컬 완료와 외부 검증 대기를 구분한다.
 
 ## 설계 요구사항 자체 검토
 
