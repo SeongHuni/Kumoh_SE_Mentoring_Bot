@@ -46,24 +46,29 @@ function parseJsonObject(text: string): Record<string, unknown> | null {
   return null;
 }
 
-function isSafePlainText(text: string, contentType: string): boolean {
+function isPlainTextContentType(contentType: string): boolean {
+  return contentType.toLowerCase().includes("text/plain");
+}
+
+function isSafeErrorMessage(text: string): boolean {
   const normalized = text.trim();
   return (
-    contentType.toLowerCase().includes("text/plain") &&
     normalized.length > 0 &&
     normalized.length <= 500 &&
-    !/^\s*</.test(normalized)
+    !/[\r\n]/.test(normalized) &&
+    !/<\/?[a-z][^>]*>|<!doctype\s+html/i.test(normalized) &&
+    !/\b(?:traceback|stack\s+trace)\b/i.test(normalized) &&
+    !/(?:API_KEY|PASSWORD|SECRET|TOKEN)\s*[:=]\s*\S+/i.test(normalized)
   );
 }
 
 function getHttpErrorMessage(text: string, contentType: string): string {
   const payload = parseJsonObject(text);
-  if (typeof payload?.detail === "string" && payload.detail.trim().length > 0) {
-    return payload.detail;
-  }
+  const detail = typeof payload?.detail === "string" ? payload.detail : undefined;
+  const candidate = detail ?? (isPlainTextContentType(contentType) ? text : undefined);
 
-  if (isSafePlainText(text, contentType)) {
-    return text.trim();
+  if (candidate !== undefined && isSafeErrorMessage(candidate)) {
+    return candidate.trim();
   }
 
   return HTTP_FALLBACK_MESSAGE;
@@ -87,16 +92,50 @@ function toChatReply(payload: Record<string, unknown>): ChatReply {
     throw new ChatApiError(INVALID_SUCCESS_MESSAGE, "invalid-success");
   }
 
+  const isRecord = (value: unknown): value is Record<string, unknown> =>
+    value !== null && typeof value === "object" && !Array.isArray(value);
+  const isNullableString = (value: unknown): value is string | null =>
+    value === null || typeof value === "string";
+  const isSource = (value: unknown): value is Source =>
+    isRecord(value) &&
+    typeof value.title === "string" &&
+    typeof value.url === "string" &&
+    typeof value.source === "string" &&
+    isNullableString(value.published_at) &&
+    typeof value.score === "number" &&
+    Number.isFinite(value.score);
+  const isRecentNotice = (value: unknown): value is RecentNotice =>
+    isRecord(value) &&
+    typeof value.title === "string" &&
+    typeof value.url === "string" &&
+    typeof value.source === "string" &&
+    isNullableString(value.published_at) &&
+    typeof value.topic_key === "string" &&
+    typeof value.topic_label === "string";
+  const isString = (value: unknown): value is string => typeof value === "string";
+  const readArray = <T>(key: string, isElement: (value: unknown) => value is T): T[] => {
+    const value = payload[key];
+    if (value === undefined) return [];
+    if (!Array.isArray(value) || !value.every(isElement)) {
+      throw new ChatApiError(INVALID_SUCCESS_MESSAGE, "invalid-success");
+    }
+    return value;
+  };
+
+  let grounded: boolean | undefined;
+  if (payload.grounded !== undefined) {
+    if (typeof payload.grounded !== "boolean") {
+      throw new ChatApiError(INVALID_SUCCESS_MESSAGE, "invalid-success");
+    }
+    grounded = payload.grounded;
+  }
+
   return {
     content: payload.answer,
-    sources: Array.isArray(payload.sources) ? (payload.sources as Source[]) : [],
-    grounded: typeof payload.grounded === "boolean" ? payload.grounded : undefined,
-    suggested_questions: Array.isArray(payload.suggested_questions)
-      ? (payload.suggested_questions as string[])
-      : [],
-    recent_notices: Array.isArray(payload.recent_notices)
-      ? (payload.recent_notices as RecentNotice[])
-      : [],
+    sources: readArray("sources", isSource),
+    grounded,
+    suggested_questions: readArray("suggested_questions", isString),
+    recent_notices: readArray("recent_notices", isRecentNotice),
   };
 }
 
@@ -138,7 +177,7 @@ export async function requestChat(
       throw error;
     }
 
-    if (timedOut || (error instanceof DOMException && error.name === "AbortError")) {
+    if (timedOut) {
       throw new ChatApiError(TIMEOUT_MESSAGE, "timeout");
     }
 
