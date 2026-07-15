@@ -1,8 +1,8 @@
 # SE Mentor Bot 프로젝트 상태와 다음 작업
 
 > 기준일: 2026-07-15
-> 기준 브랜치: `main`
-> 통합 범위: 원격 최신 데이터·RAG 수정(`0d766a9`) + RAG 품질·데이터 감사 Task 1~9
+> 기준 브랜치: `codex/backend-quality-gates`
+> 통합 범위: `main` 병합점(`3c016de`) + backend coverage·인덱스 manifest·CI 로컬 구현
 > 상세 이력: [`superpowers/handoffs/2026-07-13-rag-quality-data-audit-handoff.md`](superpowers/handoffs/2026-07-13-rag-quality-data-audit-handoff.md)
 
 이 문서는 현재 유효한 구현 수준, 검증 근거, 외부 확인이 필요한 위험과 다음 우선순위를 관리한다. 과거 세션별 RED/GREEN 및 커밋 기록은 인수인계 문서에 유지한다.
@@ -15,15 +15,17 @@
 - 최신 문서라도 질문의 연도·학기 또는 제목 marker·동의어 근거가 맞지 않으면 `grounded=false`로 거절하고 answer provider를 호출하지 않는다.
 - 부분 수집 결과는 운영 원본이 아닌 `data/raw/candidates/`에 격리한다.
 - 데이터 감사는 현재 게시글 50건에서 실제 데이터 경고 3건을 탐지한다.
-- 백엔드 94개 테스트와 프론트엔드 9개 테스트, Ruff·TypeScript·ESLint·Next.js production build가 병합 결과에서 통과했다.
+- 임베딩·청킹·원본·주제 규칙 fingerprint와 청크 수를 strict manifest로 검증하며, 불일치한 인덱스로는 채팅하지 않는다.
+- 백엔드 153개 테스트와 product-code line coverage 91.12%, 프론트엔드 9개 테스트, Ruff·TypeScript·ESLint·Next.js production build가 기능 브랜치에서 통과했다.
+- GitHub Actions 품질 workflow를 추가했고 동일 명령의 로컬 검증은 통과했지만, 원격 workflow 실행은 push 후 확인해야 한다.
 - SE 게시판은 `robots.txt`가 전체 자동 수집을 금지하므로 운영자 서면 허가 또는 승인된 공식 API 확보 전까지 자동 크롤링하지 않는다.
-- 따라서 로컬 품질 통합은 완료됐지만 SE 데이터 권한, 오래된 개설강좌 자료, 졸업 자료, CI·운영 안전성 때문에 파일럿·운영 준비는 진행 중이다.
+- 따라서 이번 backend 품질 gate의 로컬 구현은 완료 단계지만 SE 데이터 권한, 오래된 개설강좌 자료, 졸업 자료, frontend E2E와 운영 안전성 때문에 파일럿·운영 준비는 진행 중이다.
 
 핵심 결정 3개:
 
 1. 평가 기대값을 낮추지 않고 검색·근거 판정을 개선한다.
 2. `topic_key`별 최신 1건 정책을 유지하되 기간 충돌과 제목 marker·동의어 적합성을 별도 검증한다.
-3. robots.txt를 준수하며 부분 수집 후보, 평가 보고서, 감사 보고서를 운영 원본·Git 추적 파일과 분리한다.
+3. 현재 설정·데이터와 일치하지 않는 인덱스는 fail-closed로 차단하고 전체 재인덱싱으로만 복구한다.
 
 ## 2. 단계별 진행도
 
@@ -35,8 +37,9 @@
 | 데이터 감사 | 로컬 완료 | JSON·Markdown, exit 0/1/2, 원자적 저장, 본문 제외 | 현재 경고 3건 해결·승인 |
 | 자동 평가 | 완료 | 고정 30문항 전체 통과, exit 0 | 데이터 변경 시 공식 원문 재검토 |
 | 프론트엔드 | 완료 | 답변·출처·추천 질문·최근 공지, 9 tests, build | 페이지 fetch E2E·접근성 자동화 |
-| 전체 회귀 | 통과 | backend 94, Ruff, frontend test/type/lint/build | CI 필수 검사 구성 |
-| main 통합 | 완료 | 원격 선행 변경과 품질 브랜치 3-way 병합 및 충돌 회귀 통합 | 원격 push 후 확인 |
+| 전체 회귀 | 로컬 통과 | backend 153·coverage 91.12%, Ruff, frontend test/type/lint/build | 원격 CI 실행 확인 |
+| CI 품질 gate | 로컬 완료 | PR·main workflow와 동일 명령 통과 | branch push 후 GitHub Actions 확인·필수 검사 지정 |
+| main 통합 | 이전 범위 완료 | `3c016de`까지 main 통합 | 현재 기능 브랜치 최종 검증 후 병합·push |
 | 파일럿 준비 | 부분 완료 | 로컬 기능·평가 통과 | P0 데이터 검증과 P1 안전장치 |
 | 운영 준비 | 미착수 | 계획만 존재 | 관측성·rate limit·backup·healthcheck |
 
@@ -47,10 +50,11 @@
 | provider | `local` |
 | embedding | `local-hash-embedding-v1`, 1,536차원 |
 | answer | `local-extractive-answer-v1` |
-| retrieval | `top_k=5`, `min_score=0.09` |
+| retrieval | `top_k=5`, `min_score=0.10` |
 | 저장 데이터 | 게시글 50건, `kumoh=50`, `seboard=0` |
 | 게시일 범위 | 2024-09-04 ~ 2026-06-30 |
-| 로컬 인덱스 | 청크 84개 |
+| 로컬 인덱스 | 청크 84개인 구 인덱스, 새 manifest 기준 재생성 필요 |
+| API index 상태 | `needs_reindex` 예상, Task 7에서 실제 재생성·확인 예정 |
 | 자동 평가 | 30/30, exit 0 |
 | 평가 세부 | topic 30/30, grounded 30/30, latest-only 30/30, source-title 11/11 |
 | 데이터 감사 | 경고 3건, exit 1 |
@@ -75,6 +79,13 @@
 - 평가와 감사의 JSON·Markdown 쌍은 공용 원자적 writer로 교체하고 실패 시 이전 보고서를 복구한다.
 - 감사 보고서에는 게시글 본문, 비밀값, 로컬 절대 경로를 포함하지 않는다.
 - 원본 게시글 또는 주제·근거 규칙 변경 후 `index --reset` → `evaluate` → `audit_data` 순서로 재검증한다.
+
+### 인덱스 호환성
+
+- `index-manifest.json`은 provider·모델·차원·청킹·컬렉션·원본·주제 규칙과 청크 수를 기록한다.
+- manifest 누락·손상, 설정·내용·청크 수 불일치는 `/api/health`의 `needs_reindex`로 드러나며 `/api/chat`은 `409`로 차단한다.
+- 비어 있는 인덱스는 `needs_index`, provider 설정 문제는 `needs_configuration`, 저장소 문제는 `unavailable`로 구분한다.
+- 전체 인덱싱은 임베딩 계산을 먼저 검증한 뒤 기존 컬렉션을 교체하고, 성공한 경우에만 manifest를 기록한다.
 
 ## 5. 데이터 상태와 감사 경고
 
@@ -105,25 +116,23 @@
 - 운영자 서면 허가 또는 공개·승인된 `SEBOARD_API_URL`을 확보하기 전에는 Selenium/API 우회 수집을 시도하지 않는다.
 - `missing_source=seboard` 경고는 허가 문제가 해결될 때까지 숨기지 않는다.
 
-## 6. 병합 결과 검증 기록
+## 6. 기능 브랜치 검증 기록
 
-2026-07-15 `main`에서 실행한 결과:
+2026-07-15 `codex/backend-quality-gates`에서 현재까지 실행한 결과:
 
 | 검증 | 결과 |
 | --- | --- |
-| 원격 동기화 | `origin/main`의 `0d766a9`까지 fast-forward 후 병합 |
+| 기준점 | `main`의 `3c016de`에서 격리 worktree 생성 |
 | normative 평가 데이터 | 기능 브랜치에서 변경 없음 |
-| RAG 충돌 집중 테스트 | 13 tests 통과 |
-| 재인덱싱 | 50 posts, 84 chunks, exit 0 |
-| 실제 local 평가 | 30 passed, 0 failed, exit 0 |
-| backend pytest | 94 tests 통과 |
+| backend pytest | 153 tests 통과 |
+| backend product coverage | 91.12%, 85% gate 통과 |
 | backend Ruff | `All checks passed!` |
 | frontend Vitest | 3 files, 9 tests 통과 |
 | frontend TypeScript | exit 0 |
 | frontend ESLint | exit 0 |
 | Next.js production build | exit 0, 정적 페이지 4개 |
-| 데이터 감사 | 50 posts, 3 issues, exit 1(의도된 품질 경고) |
-| 생성물 ignore | Chroma·평가·감사·부분 후보 모두 제외 |
+| GitHub Actions 구성 | workflow 구조와 로컬 대응 명령 통과, 원격 실행 대기 |
+| 재인덱싱·평가·감사 | 새 manifest 기준 최종 실행 예정 |
 
 비차단 경고:
 
@@ -145,10 +154,10 @@
 
 | ID | 작업 | 완료 조건 |
 | --- | --- | --- |
-| P1-1 | backend line coverage 85%+ | SE fixture, OpenAI mock, provider factory, API endpoint, index/crawl CLI 보강 |
-| P1-2 | 임베딩 fingerprint | provider·모델·차원·청킹·주제 규칙 불일치 시 재인덱싱 안내 |
-| P1-3 | frontend 통합/E2E | fetch 성공·오류·추천 재질문과 390px/1280px 흐름 자동화 |
-| P1-4 | GitHub CI | backend/frontend 검사와 production build가 PR을 차단 |
+| P1-1 | backend line coverage 85%+ | 로컬 완료: 153 tests, 91.12%; 사용자 요청에 따라 SE crawler 제외 |
+| P1-2 | 임베딩 fingerprint | 로컬 완료: strict manifest와 health/chat 차단 회귀 테스트 |
+| P1-3 | frontend 통합/E2E | 미진행: fetch 성공·오류·추천 재질문과 390px/1280px 흐름 자동화 |
+| P1-4 | GitHub CI | workflow·로컬 검증 완료; 원격 실행과 branch protection 확인 필요 |
 
 ### P2 — 운영 안정성
 
@@ -161,13 +170,13 @@
 ## 8. 운영 검증 명령
 
 ```powershell
-backend/.venv/Scripts/python.exe -m pytest backend/tests -q
+backend/.venv/Scripts/python.exe -m pytest -c backend/pyproject.toml backend/tests --cov=backend.app --cov=backend.scripts --cov-config=backend/pyproject.toml --cov-report=term-missing
 backend/.venv/Scripts/python.exe -m ruff check backend
 backend/.venv/Scripts/python.exe -m backend.scripts.index --reset
 backend/.venv/Scripts/python.exe -m backend.scripts.evaluate
 backend/.venv/Scripts/python.exe -m backend.scripts.audit_data
 npm --prefix frontend test
-frontend/node_modules/.bin/tsc.cmd -p frontend/tsconfig.json --noEmit --incremental false
+npm --prefix frontend exec -- tsc --project frontend/tsconfig.json --noEmit
 npm --prefix frontend run lint
 npm --prefix frontend run build
 ```
