@@ -16,13 +16,14 @@ def selected_provider_name(settings: Settings) -> str:
 def create_provider(settings: Settings) -> AIProvider:
     provider_name = selected_provider_name(settings)
     if provider_name == "local":
-        return LocalHashProvider()
+        return LocalHashProvider(dimensions=settings.embedding_dimensions)
     if not settings.openai_api_key:
         raise RuntimeError("AI_PROVIDER=openai에는 OPENAI_API_KEY가 필요합니다.")
     return OpenAIProvider(
         api_key=settings.openai_api_key,
         embedding_model=settings.embedding_model,
         chat_model=settings.chat_model,
+        dimensions=settings.embedding_dimensions,
     )
 
 

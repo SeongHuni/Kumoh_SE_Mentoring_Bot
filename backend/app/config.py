@@ -22,6 +22,14 @@ def _as_bool(value: str | None, default: bool = False) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _as_int(name: str, default: int) -> int:
+    raw = os.getenv(name, str(default))
+    try:
+        return int(raw)
+    except ValueError as exc:
+        raise ValueError(f"{name}는 정수여야 합니다.") from exc
+
+
 @dataclass(frozen=True)
 class Settings:
     ai_provider: str
@@ -39,6 +47,19 @@ class Settings:
     seboard_api_url: str | None
     seboard_headless: bool
     cors_origins: tuple[str, ...]
+    embedding_dimensions: int = 1536
+    chunk_size: int = 900
+    chunk_overlap: int = 150
+
+    def __post_init__(self) -> None:
+        if self.ai_provider not in {"auto", "local", "openai"}:
+            raise ValueError("AI_PROVIDER는 auto, local, openai 중 하나여야 합니다.")
+        if self.embedding_dimensions < 256:
+            raise ValueError("EMBEDDING_DIMENSIONS는 256 이상이어야 합니다.")
+        if self.chunk_size < 200:
+            raise ValueError("CHUNK_SIZE는 200 이상이어야 합니다.")
+        if self.chunk_overlap < 0 or self.chunk_overlap >= self.chunk_size:
+            raise ValueError("CHUNK_OVERLAP은 0 이상 CHUNK_SIZE 미만이어야 합니다.")
 
 
 @lru_cache(maxsize=1)
@@ -64,4 +85,7 @@ def get_settings() -> Settings:
         seboard_api_url=os.getenv("SEBOARD_API_URL") or None,
         seboard_headless=_as_bool(os.getenv("SEBOARD_HEADLESS"), default=True),
         cors_origins=origins,
+        embedding_dimensions=_as_int("EMBEDDING_DIMENSIONS", 1536),
+        chunk_size=_as_int("CHUNK_SIZE", 900),
+        chunk_overlap=_as_int("CHUNK_OVERLAP", 150),
     )

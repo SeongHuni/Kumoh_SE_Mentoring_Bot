@@ -21,11 +21,13 @@ class OpenAIProvider:
         api_key: str,
         embedding_model: str,
         chat_model: str,
+        dimensions: int,
         batch_size: int = 64,
         client: OpenAI | None = None,
     ) -> None:
         self.embedding_model = embedding_model
         self.chat_model = chat_model
+        self.dimensions = dimensions
         self.batch_size = batch_size
         self.client = client or OpenAI(api_key=api_key)
 
@@ -40,6 +42,7 @@ class OpenAIProvider:
                 model=self.embedding_model,
                 input=batch,
                 encoding_format="float",
+                dimensions=self.dimensions,
             )
             ordered = sorted(response.data, key=lambda item: item.index)
             embeddings.extend(item.embedding for item in ordered)
