@@ -8,6 +8,23 @@ import chromadb
 from backend.app.domain import RetrievedChunk, TextChunk
 
 
+def _chunk_metadata(chunk: TextChunk) -> dict[str, str | int | bool]:
+    metadata: dict[str, str | int | bool] = {
+        "post_id": chunk.post_id,
+        "source": chunk.source,
+        "title": chunk.title,
+        "url": chunk.url,
+        "published_at": chunk.published_at or "",
+        "chunk_index": chunk.chunk_index,
+        "topic_key": chunk.topic_key,
+        "topic_label": chunk.topic_label,
+        "is_latest_topic": chunk.is_latest_topic,
+    }
+    if chunk.intent_key is not None:
+        metadata["intent_key"] = chunk.intent_key
+    return metadata
+
+
 class ChromaVectorStore:
     def __init__(self, path: Path, collection_name: str) -> None:
         path.mkdir(parents=True, exist_ok=True)
@@ -41,20 +58,7 @@ class ChromaVectorStore:
             ids=[chunk.id for chunk in chunks],
             documents=[chunk.text for chunk in chunks],
             embeddings=[list(vector) for vector in embeddings],
-            metadatas=[
-                {
-                    "post_id": chunk.post_id,
-                    "source": chunk.source,
-                    "title": chunk.title,
-                    "url": chunk.url,
-                    "published_at": chunk.published_at or "",
-                    "chunk_index": chunk.chunk_index,
-                    "topic_key": chunk.topic_key,
-                    "topic_label": chunk.topic_label,
-                    "is_latest_topic": chunk.is_latest_topic,
-                }
-                for chunk in chunks
-            ],
+            metadatas=[_chunk_metadata(chunk) for chunk in chunks],
         )
 
     def query(
@@ -96,6 +100,7 @@ class ChromaVectorStore:
                         topic_key=str(metadata["topic_key"]),
                         topic_label=str(metadata["topic_label"]),
                         is_latest_topic=bool(metadata["is_latest_topic"]),
+                        intent_key=str(metadata.get("intent_key") or "") or None,
                     ),
                     score=max(0.0, min(1.0, 1.0 - float(distance))),
                 )

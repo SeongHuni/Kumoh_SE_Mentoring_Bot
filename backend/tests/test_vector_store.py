@@ -4,7 +4,11 @@ from backend.app.domain import TextChunk
 from backend.app.vector_store import ChromaVectorStore
 
 
-def make_chunk(chunk_id: str, title: str) -> TextChunk:
+def make_chunk(
+    chunk_id: str,
+    title: str,
+    intent_key: str | None = None,
+) -> TextChunk:
     return TextChunk(
         id=chunk_id,
         post_id=chunk_id,
@@ -16,6 +20,7 @@ def make_chunk(chunk_id: str, title: str) -> TextChunk:
         chunk_index=0,
         topic_key="general",
         topic_label="전체 공지",
+        intent_key=intent_key,
         is_latest_topic=False,
     )
 
@@ -47,6 +52,7 @@ def test_upsert_stores_topic_metadata() -> None:
             chunk_index=0,
             topic_key="course_openings",
             topic_label="개설강좌조회",
+            intent_key="course_openings.lookup",
             is_latest_topic=True,
         )
     ]
@@ -55,6 +61,7 @@ def test_upsert_stores_topic_metadata() -> None:
 
     metadata = store.collection.upsert.call_args.kwargs["metadatas"][0]
     assert metadata["topic_key"] == "course_openings"
+    assert metadata["intent_key"] == "course_openings.lookup"
     assert metadata["is_latest_topic"] is True
 
 
@@ -76,6 +83,7 @@ def test_query_forwards_latest_topic_filter() -> None:
                     "chunk_index": 0,
                     "topic_key": "course_openings",
                     "topic_label": "개설강좌조회",
+                    "intent_key": "course_openings.lookup",
                     "is_latest_topic": True,
                 }
             ]
@@ -83,8 +91,43 @@ def test_query_forwards_latest_topic_filter() -> None:
         "distances": [[0.0]],
     }
 
-    store.query([1.0, 0.0], top_k=3, where={"is_latest_topic": True})
+    results = store.query(
+        [1.0, 0.0],
+        top_k=3,
+        where={"is_latest_topic": True},
+    )
 
     assert store.collection.query.call_args.kwargs["where"] == {
         "is_latest_topic": True
     }
+    assert results[0].chunk.intent_key == "course_openings.lookup"
+
+
+def test_query_reconstructs_legacy_metadata_without_intent_key() -> None:
+    store = ChromaVectorStore.__new__(ChromaVectorStore)
+    store.collection = Mock()
+    store.collection.count.return_value = 1
+    store.collection.query.return_value = {
+        "ids": [["kumoh:legacy:0"]],
+        "documents": [["기존 인덱스"]],
+        "metadatas": [
+            [
+                {
+                    "post_id": "legacy",
+                    "source": "kumoh",
+                    "title": "기존 공지",
+                    "url": "https://example.com/legacy",
+                    "published_at": "2025-01-01",
+                    "chunk_index": 0,
+                    "topic_key": "general",
+                    "topic_label": "전체 공지",
+                    "is_latest_topic": False,
+                }
+            ]
+        ],
+        "distances": [[0.0]],
+    }
+
+    results = store.query([1.0, 0.0], top_k=1)
+
+    assert results[0].chunk.intent_key is None

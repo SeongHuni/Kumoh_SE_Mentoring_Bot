@@ -24,6 +24,7 @@ def test_chunk_post_preserves_source_metadata() -> None:
     assert all(chunk.url == post.url for chunk in chunks)
     assert chunks[0].topic_key == "general"
     assert chunks[0].topic_label == "전체 공지"
+    assert chunks[0].intent_key is None
     assert chunks[0].is_latest_topic is False
     assert chunks[0].text.startswith("제목: 수강신청 안내")
 
@@ -38,6 +39,7 @@ def test_chunk_post_preserves_enriched_topic_metadata() -> None:
         url="https://example.com/posts/43",
         topic_key="course",
         topic_label="수업",
+        intent_key="course_openings.lookup",
         is_latest_topic=True,
     )
 
@@ -45,4 +47,5 @@ def test_chunk_post_preserves_enriched_topic_metadata() -> None:
 
     assert chunk.topic_key == "course"
     assert chunk.topic_label == "수업"
+    assert chunk.intent_key == "course_openings.lookup"
     assert chunk.is_latest_topic is True
