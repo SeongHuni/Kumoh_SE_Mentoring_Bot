@@ -12,19 +12,18 @@ from backend.app.topic_rules import load_topic_catalog
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    settings = get_settings()
     parser = argparse.ArgumentParser(
         description="RAG 원본 데이터의 최신성과 분류를 감사합니다."
     )
     parser.add_argument(
         "--posts",
         type=Path,
-        default=settings.raw_posts_path,
+        default=None,
     )
     parser.add_argument(
         "--topic-rules",
         type=Path,
-        default=settings.topic_rules_path,
+        default=None,
     )
     parser.add_argument(
         "--output-dir",
@@ -33,7 +32,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--stale-after-days", type=int, default=180)
     parser.add_argument("--required-source", action="append", default=None)
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.posts is None or args.topic_rules is None:
+        settings = get_settings()
+        if args.posts is None:
+            args.posts = settings.raw_posts_path
+        if args.topic_rules is None:
+            args.topic_rules = settings.topic_rules_path
+    return args
 
 
 def run_audit(args: argparse.Namespace) -> DataAuditReport:

@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 from datetime import UTC, datetime
@@ -59,6 +60,30 @@ def test_parse_args_explicit_paths_override_settings(
     assert args.topic_rules == explicit_topic_rules_path
 
 
+def test_parse_args_explicit_paths_do_not_load_settings(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_get_settings():
+        raise AssertionError("settings should not be loaded")
+
+    monkeypatch.setattr(audit_data, "get_settings", fail_get_settings)
+    explicit_posts_path = tmp_path / "explicit-posts.json"
+    explicit_topic_rules_path = tmp_path / "explicit-topic-rules.json"
+
+    args = audit_data.parse_args(
+        [
+            "--posts",
+            str(explicit_posts_path),
+            "--topic-rules",
+            str(explicit_topic_rules_path),
+        ]
+    )
+
+    assert args.posts == explicit_posts_path
+    assert args.topic_rules == explicit_topic_rules_path
+
+
 def report(*, issues: int) -> DataAuditReport:
     return DataAuditReport(
         generated_at=datetime(2026, 7, 13, tzinfo=UTC),
@@ -87,11 +112,14 @@ def report(*, issues: int) -> DataAuditReport:
 
 
 def test_module_help_does_not_emit_runtime_warning() -> None:
+    env = os.environ.copy()
+    env["AI_PROVIDER"] = "invalid"
     result = subprocess.run(
         [sys.executable, "-m", "backend.scripts.audit_data", "--help"],
         cwd=REPOSITORY_ROOT,
         capture_output=True,
         check=False,
+        env=env,
     )
 
     assert result.returncode == 0
