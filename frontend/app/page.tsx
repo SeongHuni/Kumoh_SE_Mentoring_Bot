@@ -4,6 +4,7 @@ import { FormEvent, useRef, useState } from "react";
 
 import { ChatMessage } from "./components/ChatMessage";
 import type { AssistantMessage, Message, UserMessage } from "./components/types";
+import { requestChat } from "./lib/chatApi";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const suggestions = [
@@ -16,7 +17,7 @@ const initialMessage: AssistantMessage = {
   id: 0,
   role: "assistant",
   content:
-    "안녕하세요! 학과 공지와 SE 게시판을 바탕으로 학사·진로 정보를 찾아드려요. 궁금한 내용을 질문해 주세요.",
+    "안녕하세요! 현재 금오공대 공식 공지를 바탕으로 학사·진로 정보를 찾아드려요. 중요한 일정은 원문 공지를 다시 확인해 주세요.",
   sources: [],
   suggested_questions: suggestions,
   recent_notices: [],
@@ -38,25 +39,17 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${apiUrl}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: trimmed }),
-      });
-      const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(payload.detail ?? "답변을 불러오지 못했습니다.");
-      }
+      const reply = await requestChat(trimmed, { apiUrl });
       setMessages((current) => [
         ...current,
         {
           id: Date.now() + 1,
           role: "assistant",
-          content: payload.answer,
-          sources: payload.sources ?? [],
-          grounded: payload.grounded,
-          suggested_questions: payload.suggested_questions ?? [],
-          recent_notices: payload.recent_notices ?? [],
+          content: reply.content,
+          sources: reply.sources,
+          grounded: reply.grounded,
+          suggested_questions: reply.suggested_questions,
+          recent_notices: reply.recent_notices,
         },
       ]);
     } catch (error) {
