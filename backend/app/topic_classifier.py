@@ -9,10 +9,20 @@ def enrich_posts(posts: list[BoardPost], catalog: TopicCatalog) -> list[BoardPos
     topicized: list[BoardPost] = []
     for post in posts:
         override = catalog.rule_for(post.topic_key or "")
-        rule = override or catalog.classify(f"{post.title}\n{post.content}")
+        title_rule = catalog.classify(post.title)
+        rule = override or title_rule
+        if override is None and title_rule.key == catalog.default_topic_key:
+            rule = catalog.classify(f"{post.title}\n{post.content}")
+        intent_key = post.intent_key
+        if rule.intents:
+            intent_key = catalog.classify_intent(post.title, rule).key
         topicized.append(
             post.model_copy(
-                update={"topic_key": rule.key, "topic_label": rule.label}
+                update={
+                    "topic_key": rule.key,
+                    "topic_label": rule.label,
+                    "intent_key": intent_key,
+                }
             )
         )
     latest_keys = latest_post_keys(topicized)

@@ -1,8 +1,10 @@
 from datetime import UTC, datetime
+from pathlib import Path
 
+import pytest
 from backend.app.domain import BoardPost
 from backend.app.topic_classifier import enrich_posts
-from backend.app.topic_rules import TopicCatalog, TopicRule
+from backend.app.topic_rules import TopicCatalog, TopicRule, load_topic_catalog
 
 
 def test_enrich_posts_marks_only_latest_post_per_topic() -> None:
@@ -40,3 +42,64 @@ def test_enrich_posts_marks_only_latest_post_per_topic() -> None:
         ("old", "course", False),
         ("new", "course", True),
     ]
+    assert all(item.intent_key is None for item in enriched)
+
+
+def test_enrich_posts_prefers_title_topic_and_assigns_intent() -> None:
+    catalog = load_topic_catalog(Path("data/topic_rules.json"))
+    post = BoardPost(
+        id="registration",
+        source="kumoh",
+        title="2026학년도 수강신청 안내",
+        content="개설강좌 조회 화면도 함께 안내합니다.",
+        url="https://example.com/registration",
+    )
+
+    enriched = enrich_posts([post], catalog)[0]
+
+    assert enriched.topic_key == "registration"
+    assert enriched.intent_key == "registration.main"
+
+
+def test_enrich_posts_uses_content_only_when_title_has_default_topic() -> None:
+    catalog = load_topic_catalog(Path("data/topic_rules.json"))
+    post = BoardPost(
+        id="body-fallback",
+        source="kumoh",
+        title="2026학년도 1학기 안내",
+        content="수강신청 기간과 방법을 안내합니다.",
+        url="https://example.com/body-fallback",
+    )
+
+    enriched = enrich_posts([post], catalog)[0]
+
+    assert enriched.topic_key == "registration"
+    assert enriched.intent_key == "registration.change"
+
+
+@pytest.mark.parametrize(
+    ("title", "intent_key"),
+    [
+        ("2026학년도 수강신청 안내", "registration.main"),
+        ("수강신청 변경 정정 안내", "registration.change"),
+        ("수강꾸러미 신청 안내", "registration.course_basket"),
+        ("조기취업자 출석인정신청", "registration.attendance"),
+    ],
+)
+def test_enrich_posts_assigns_registration_intents_from_title(
+    title,
+    intent_key,
+) -> None:
+    catalog = load_topic_catalog(Path("data/topic_rules.json"))
+    post = BoardPost(
+        id=intent_key,
+        source="kumoh",
+        title=title,
+        content="관련 신청 안내입니다.",
+        url=f"https://example.com/{intent_key}",
+    )
+
+    enriched = enrich_posts([post], catalog)[0]
+
+    assert enriched.topic_key == "registration"
+    assert enriched.intent_key == intent_key

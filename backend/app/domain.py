@@ -22,6 +22,7 @@ class BoardPost(BaseModel):
     crawled_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     topic_key: str | None = None
     topic_label: str | None = None
+    intent_key: str | None = None
     is_latest_topic: bool = False
 
     @field_validator("id", "source", "title", "content", "url")
@@ -45,6 +46,7 @@ class TextChunk(BaseModel):
     topic_key: str
     topic_label: str
     is_latest_topic: bool
+    intent_key: str | None = None
 
 
 class RetrievedChunk(BaseModel):

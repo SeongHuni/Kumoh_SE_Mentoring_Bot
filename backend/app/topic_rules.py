@@ -13,12 +13,23 @@ class RetrievalPolicy:
 
 
 @dataclass(frozen=True)
+class IntentRule:
+    key: str
+    label: str
+    keywords: tuple[str, ...]
+    evidence_markers: tuple[str, ...]
+    exclusion_markers: tuple[str, ...]
+    example: str
+
+
+@dataclass(frozen=True)
 class TopicRule:
     key: str
     label: str
     keywords: tuple[str, ...]
     suggested_questions: tuple[str, ...]
     evidence_markers: tuple[str, ...] = ()
+    intents: tuple[IntentRule, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -45,6 +56,26 @@ class TopicCatalog:
             raise ValueError("default_topic_key에 해당하는 규칙이 없습니다.")
         return default
 
+    def classify_intent(self, text: str, topic: TopicRule) -> IntentRule:
+        if not topic.intents:
+            raise ValueError(f"{topic.key} topic에 intent 규칙이 없습니다.")
+        normalized = " ".join(text.casefold().split())
+        matches: list[tuple[int, int, IntentRule]] = []
+        for order, intent in enumerate(topic.intents):
+            exclusions = (
+                " ".join(marker.casefold().split())
+                for marker in intent.exclusion_markers
+            )
+            if any(marker and marker in normalized for marker in exclusions):
+                continue
+            for keyword in intent.keywords:
+                normalized_keyword = " ".join(keyword.casefold().split())
+                if normalized_keyword and normalized_keyword in normalized:
+                    matches.append((len(normalized_keyword), -order, intent))
+        if matches:
+            return max(matches, key=lambda item: (item[0], item[1]))[2]
+        return topic.intents[0]
+
 
 def _clean_strings(value: object, field_name: str) -> tuple[str, ...]:
     if not isinstance(value, list) or any(
@@ -66,6 +97,33 @@ def _clean_key(value: object, field_name: str) -> str:
     if not cleaned:
         raise ValueError(f"{field_name}는 비어 있을 수 없습니다.")
     return cleaned
+
+
+def _load_intents(value: object, topic_key: str) -> tuple[IntentRule, ...]:
+    if not isinstance(value, list) or any(not isinstance(item, dict) for item in value):
+        raise ValueError(f"{topic_key}.intents는 객체 배열이어야 합니다.")
+    if not value:
+        raise ValueError(f"{topic_key}에는 명시적인 기본 intent가 필요합니다.")
+    return tuple(
+        IntentRule(
+            key=_clean_key(item.get("key"), "intent key"),
+            label=_clean_key(item.get("label"), f"{topic_key}.intent label"),
+            keywords=_clean_strings(
+                item.get("keywords", []),
+                f"{topic_key}.intent keywords",
+            ),
+            evidence_markers=_clean_strings(
+                item.get("evidence_markers", []),
+                f"{topic_key}.intent evidence_markers",
+            ),
+            exclusion_markers=_clean_strings(
+                item.get("exclusion_markers", []),
+                f"{topic_key}.intent exclusion_markers",
+            ),
+            example=_clean_key(item.get("example"), f"{topic_key}.intent example"),
+        )
+        for item in value
+    )
 
 
 def _load_retrieval_policy(value: object) -> RetrievalPolicy:
@@ -99,6 +157,11 @@ def load_topic_catalog(path: Path) -> TopicCatalog:
     keys = tuple(_clean_key(item.get("key"), "topic key") for item in topic_items)
     if len(keys) != len(set(keys)):
         raise ValueError("중복 topic key가 있습니다.")
+    default_topic_key = _clean_key(
+        payload.get("default_topic_key", "general"),
+        "default_topic_key",
+    )
+    retrieval_policy = _load_retrieval_policy(payload.get("retrieval_policy"))
     rules = tuple(
         TopicRule(
             key=keys[index],
@@ -112,17 +175,17 @@ def load_topic_catalog(path: Path) -> TopicCatalog:
                 item.get("evidence_markers", []),
                 f"{keys[index]}.evidence_markers",
             ),
+            intents=_load_intents(item.get("intents"), keys[index]),
         )
         for index, item in enumerate(topic_items)
     )
-    default_topic_key = _clean_key(
-        payload.get("default_topic_key", "general"),
-        "default_topic_key",
-    )
+    intent_keys = tuple(intent.key for rule in rules for intent in rule.intents)
+    if len(intent_keys) != len(set(intent_keys)):
+        raise ValueError("중복 intent key가 있습니다.")
     catalog = TopicCatalog(
         default_topic_key=default_topic_key,
         rules=rules,
-        retrieval_policy=_load_retrieval_policy(payload.get("retrieval_policy")),
+        retrieval_policy=retrieval_policy,
     )
     if catalog.rule_for(catalog.default_topic_key) is None:
         raise ValueError("default_topic_key에 해당하는 규칙이 없습니다.")
