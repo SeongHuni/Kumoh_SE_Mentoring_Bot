@@ -280,6 +280,12 @@ describe("requestChat", () => {
     ["a mounted data path", "오류 위치: /mnt/data", "text/plain"],
     ["a custom absolute path", "오류 위치: /custom/path", "text/plain"],
     ["a traversal from a public endpoint", "오류 위치: /api/health/../../etc", "text/plain"],
+    ["a public endpoint with a query", "오류 위치: /api/health?auth=secret", "text/plain"],
+    ["a public endpoint with a fragment", "오류 위치: /api/live#debug", "text/plain"],
+    ["a public endpoint with an extra path", "오류 위치: /api/health/extra", "text/plain"],
+    ["a credential URL", "문서 안내: https://user:pass@kumoh.ac.kr/help", "text/plain"],
+    ["a URL with a query", "문서 안내: https://kumoh.ac.kr/help?auth=secret", "text/plain"],
+    ["a URL with a fragment", "문서 안내: https://kumoh.ac.kr/help#debug", "text/plain"],
     [
       "a generic Error detail",
       JSON.stringify({ detail: "Error: 데이터베이스 연결 실패" }),
@@ -330,6 +336,8 @@ describe("requestChat", () => {
     ["a normal Korean error detail", JSON.stringify({ detail: "오류: 데이터베이스 연결 실패" }), "application/json"],
     ["the health endpoint guidance", "상태 확인은 /api/health를 호출하세요.", "text/plain"],
     ["the live endpoint guidance", "상태 확인은 /api/live를 호출하세요.", "text/plain"],
+    ["a safe HTTP URL", "문서 안내: http://kumoh.ac.kr/help", "text/plain"],
+    ["a safe HTTPS URL", "문서 안내: https://kumoh.ac.kr/help", "text/plain"],
     ["the Python command guidance", "문제 해결은 python -m ... 명령을 실행하세요.", "text/plain"],
   ])("preserves %s", async (_description, body, contentType) => {
     const fetchImpl = vi.fn().mockResolvedValue(makeResponse(body, false, contentType, 503));

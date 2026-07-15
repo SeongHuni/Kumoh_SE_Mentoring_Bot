@@ -69,8 +69,33 @@ function isPlainTextContentType(contentType: string): boolean {
   return contentType.toLowerCase().includes("text/plain");
 }
 
+const HTTP_URL_PATTERN = /https?:\/\/[^\s<>"']+/gi;
+const PUBLIC_ENDPOINT_PATTERN = /\/api\/(?:health|live)(?![A-Za-z0-9_/?#])/gi;
+
 function hasUnsafePosixPath(text: string): boolean {
-  return /(?:^|[^\w])\/(?!\/)(?!api\/(?:health|live)(?=$|[^\w/]))[^\s"'<>)]*/i.test(text);
+  let hasUnsafeUrl = false;
+  const withoutSafeUrls = text.replace(HTTP_URL_PATTERN, (candidate) => {
+    try {
+      const url = new URL(candidate);
+      if (url.username || url.password || url.search || url.hash) {
+        hasUnsafeUrl = true;
+        return candidate;
+      }
+      return "";
+    } catch {
+      hasUnsafeUrl = true;
+      return candidate;
+    }
+  });
+
+  if (hasUnsafeUrl) return true;
+
+  const withoutPublicEndpoints = withoutSafeUrls.replace(PUBLIC_ENDPOINT_PATTERN, "");
+  return /(?:^|[^\w])\/(?!\/)[^\s"'<>)]*/i.test(withoutPublicEndpoints);
+}
+
+function hasUnsafeWindowsPath(text: string): boolean {
+  return /(?:^|[^\w])[A-Za-z]:[\\/]/i.test(text);
 }
 
 function isSafeErrorMessage(text: string): boolean {
@@ -85,7 +110,7 @@ function isSafeErrorMessage(text: string): boolean {
     !/\b(?:Error|Exception|[A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception))\s*:/i.test(normalized) &&
     !/\b(?:authorization|cookie)\s*:/i.test(normalized) &&
     !/\bbearer\s+\S+/i.test(normalized) &&
-    !/(?:[A-Za-z]:[\\/]|\/(?:srv|app|usr|home|var|etc|tmp|opt|root)(?:[\\/]|$))/i.test(normalized) &&
+    !hasUnsafeWindowsPath(normalized) &&
     !hasUnsafePosixPath(normalized) &&
     /[가-힣]/.test(normalized)
   );
