@@ -276,6 +276,10 @@ describe("requestChat", () => {
       JSON.stringify({ detail: "RuntimeError: database connection failed at /srv/app/main.py" }),
       "application/json",
     ],
+    ["a workspace absolute path", "오류 위치: /workspace/service/main.py", "text/plain"],
+    ["a mounted data path", "오류 위치: /mnt/data", "text/plain"],
+    ["a custom absolute path", "오류 위치: /custom/path", "text/plain"],
+    ["a traversal from a public endpoint", "오류 위치: /api/health/../../etc", "text/plain"],
     [
       "a generic Error detail",
       JSON.stringify({ detail: "Error: 데이터베이스 연결 실패" }),
@@ -325,6 +329,7 @@ describe("requestChat", () => {
     ],
     ["a normal Korean error detail", JSON.stringify({ detail: "오류: 데이터베이스 연결 실패" }), "application/json"],
     ["the health endpoint guidance", "상태 확인은 /api/health를 호출하세요.", "text/plain"],
+    ["the live endpoint guidance", "상태 확인은 /api/live를 호출하세요.", "text/plain"],
     ["the Python command guidance", "문제 해결은 python -m ... 명령을 실행하세요.", "text/plain"],
   ])("preserves %s", async (_description, body, contentType) => {
     const fetchImpl = vi.fn().mockResolvedValue(makeResponse(body, false, contentType, 503));

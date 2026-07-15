@@ -69,6 +69,10 @@ function isPlainTextContentType(contentType: string): boolean {
   return contentType.toLowerCase().includes("text/plain");
 }
 
+function hasUnsafePosixPath(text: string): boolean {
+  return /(?:^|[^\w])\/(?!\/)(?!api\/(?:health|live)(?=$|[^\w/]))[^\s"'<>)]*/i.test(text);
+}
+
 function isSafeErrorMessage(text: string): boolean {
   const normalized = text.trim();
   return (
@@ -82,6 +86,7 @@ function isSafeErrorMessage(text: string): boolean {
     !/\b(?:authorization|cookie)\s*:/i.test(normalized) &&
     !/\bbearer\s+\S+/i.test(normalized) &&
     !/(?:[A-Za-z]:[\\/]|\/(?:srv|app|usr|home|var|etc|tmp|opt|root)(?:[\\/]|$))/i.test(normalized) &&
+    !hasUnsafePosixPath(normalized) &&
     /[가-힣]/.test(normalized)
   );
 }
