@@ -14,7 +14,17 @@ from backend.app.storage import deduplicate_posts, save_posts
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="공개 게시글을 JSON으로 수집합니다.")
     parser.add_argument("--kumoh-limit", type=int, default=50)
-    parser.add_argument("--seboard-limit", type=int, default=50)
+    parser.add_argument(
+        "--seboard-limit",
+        type=int,
+        default=0,
+        help="SE 게시판 수집 건수(기본값: 0, 수집 비활성화)",
+    )
+    parser.add_argument(
+        "--seboard-permission-confirmed",
+        action="store_true",
+        help="운영자 서면 허가 또는 승인된 공식 API 사용 권한을 확인했음을 명시",
+    )
     parser.add_argument(
         "--allow-partial",
         action="store_true",
@@ -32,6 +42,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     settings = get_settings()
+    if args.seboard_limit > 0 and not args.seboard_permission_confirmed:
+        print(
+            "오류 - SE 게시판 수집에는 운영자 서면 허가 또는 승인된 공식 API가 필요합니다.",
+            file=sys.stderr,
+        )
+        return 2
     if (
         args.allow_partial
         and args.partial_output.resolve() == settings.raw_posts_path.resolve()

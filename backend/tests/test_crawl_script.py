@@ -40,6 +40,38 @@ def settings(tmp_path: Path) -> Settings:
     )
 
 
+def test_parse_args_disables_seboard_by_default() -> None:
+    args = crawl.parse_args([])
+
+    assert args.seboard_limit == 0
+    assert args.seboard_permission_confirmed is False
+
+
+def test_seboard_limit_requires_permission_before_crawler_creation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    app_settings = settings(tmp_path)
+    constructor_calls: list[dict[str, object]] = []
+
+    class RecordingSeBoardCrawler:
+        def __init__(self, **kwargs: object) -> None:
+            constructor_calls.append(kwargs)
+
+        def crawl(self, _limit: int) -> list[BoardPost]:
+            return []
+
+    monkeypatch.setattr(crawl, "get_settings", lambda: app_settings)
+    monkeypatch.setattr(crawl, "SeBoardCrawler", RecordingSeBoardCrawler)
+
+    exit_code = crawl.main(["--kumoh-limit", "0", "--seboard-limit", "1"])
+
+    assert exit_code == 2
+    assert constructor_calls == []
+    assert "서면 허가" in capsys.readouterr().err
+
+
 def test_allow_partial_writes_candidate_without_overwriting_raw_posts(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -73,6 +105,7 @@ def test_allow_partial_writes_candidate_without_overwriting_raw_posts(
             "1",
             "--seboard-limit",
             "1",
+            "--seboard-permission-confirmed",
             "--allow-partial",
             "--partial-output",
             str(partial_path),
