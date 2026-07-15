@@ -47,15 +47,24 @@ class TopicCatalog:
 
 
 def _clean_strings(value: object, field_name: str) -> tuple[str, ...]:
-    if value is None:
-        return ()
-    if not isinstance(value, list):
+    if not isinstance(value, list) or any(
+        not isinstance(item, str) for item in value
+    ):
         raise ValueError(f"{field_name}은 문자열 배열이어야 합니다.")
-    cleaned = tuple(str(item).strip() for item in value)
+    cleaned = tuple(item.strip() for item in value)
     if any(not item for item in cleaned):
         raise ValueError(f"{field_name}에는 빈 문자열을 둘 수 없습니다.")
     if len(cleaned) != len(set(cleaned)):
         raise ValueError(f"{field_name}에는 중복 값을 둘 수 없습니다.")
+    return cleaned
+
+
+def _clean_key(value: object, field_name: str) -> str:
+    if not isinstance(value, str):
+        raise ValueError(f"{field_name}는 문자열이어야 합니다.")
+    cleaned = value.strip()
+    if not cleaned:
+        raise ValueError(f"{field_name}는 비어 있을 수 없습니다.")
     return cleaned
 
 
@@ -85,29 +94,33 @@ def load_topic_catalog(path: Path) -> TopicCatalog:
     if not isinstance(payload, dict) or not isinstance(payload.get("topics"), list):
         raise ValueError("주제 규칙은 topics 배열을 포함해야 합니다.")
     topic_items = payload["topics"]
-    keys = [str(item.get("key", "")).strip() for item in topic_items if isinstance(item, dict)]
-    if len(keys) != len(topic_items) or any(not key for key in keys):
-        raise ValueError("모든 topic은 비어 있지 않은 key를 포함해야 합니다.")
+    if any(not isinstance(item, dict) for item in topic_items):
+        raise ValueError("모든 topic은 객체여야 합니다.")
+    keys = tuple(_clean_key(item.get("key"), "topic key") for item in topic_items)
     if len(keys) != len(set(keys)):
         raise ValueError("중복 topic key가 있습니다.")
     rules = tuple(
         TopicRule(
-            key=str(item["key"]).strip(),
+            key=keys[index],
             label=str(item["label"]).strip(),
-            keywords=_clean_strings(item.get("keywords", []), f"{item['key']}.keywords"),
+            keywords=_clean_strings(item.get("keywords", []), f"{keys[index]}.keywords"),
             suggested_questions=_clean_strings(
                 item.get("suggested_questions", []),
-                f"{item['key']}.suggested_questions",
+                f"{keys[index]}.suggested_questions",
             ),
             evidence_markers=_clean_strings(
                 item.get("evidence_markers", []),
-                f"{item['key']}.evidence_markers",
+                f"{keys[index]}.evidence_markers",
             ),
         )
-        for item in topic_items
+        for index, item in enumerate(topic_items)
+    )
+    default_topic_key = _clean_key(
+        payload.get("default_topic_key", "general"),
+        "default_topic_key",
     )
     catalog = TopicCatalog(
-        default_topic_key=str(payload.get("default_topic_key", "general")).strip(),
+        default_topic_key=default_topic_key,
         rules=rules,
         retrieval_policy=_load_retrieval_policy(payload.get("retrieval_policy")),
     )
