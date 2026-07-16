@@ -36,14 +36,16 @@ backend/.venv/Scripts/python.exe -m backend.scripts.crawl --kumoh-limit 50 --seb
 | `url` | 사용자에게 제공할 canonical 출처 |
 | `attachments` | 첨부 이름·링크 보존; 현재 첨부 본문은 미추출 |
 | `crawled_at` | 수집 시점과 게시일 fallback |
+| `topic_key`, `topic_label`, `intent_key` | 원본 override 또는 인덱싱 전 파생 분류 metadata |
+| `is_latest_topic` | 최근 공지 보조 목록용 topic 최신 표시; 답변 검색의 단독 필터가 아님 |
 
 정상 수집 원본은 `RAW_POSTS_PATH`가 가리키는 JSON snapshot이며 기본 경로는 `data/raw/posts.json`이다. 이 파일은 운영 원본으로 취급한다. 벡터 DB를 원본 저장소로 사용하지 않고, 부분 결과는 후보 경로에 격리해 raw snapshot의 immutability를 지킨다. 후보를 사람 검토로 승격하거나 게시글을 수정·삭제하면 원본을 갱신하고 전체 인덱스를 다시 만들어 삭제된 청크가 남지 않게 한다.
 
 ## 주제 보강과 최신 게시글 계산
 
-`data/topic_rules.json`은 topic key, label, 분류 keyword, suggested question, evidence marker와 retrieval policy를 관리하는 단일 유지보수 지점이다. `TOPIC_RULES_PATH`로 다른 파일을 지정할 수 있지만 운영 규칙은 하나의 파일에서 관리한다. 제목과 본문에 지정된 `topic_key` override가 없으면 가장 긴 일치 keyword를 우선하고, 일치가 없으면 `default_topic_key`인 `general`을 사용한다.
+`data/topic_rules.json`은 topic key/label, 하위 intent key/label/example, 분류 keyword, evidence/exclusion marker, suggested question과 retrieval policy를 관리하는 단일 유지보수 지점이다. `TOPIC_RULES_PATH`로 다른 파일을 지정할 수 있지만 운영 규칙은 하나의 파일에서 관리한다. `topic_key` override가 없으면 제목의 가장 긴 일치 keyword를 먼저 사용하고, 제목이 general이면 제목+본문을 다시 분류한다. 일치가 없으면 `default_topic_key=general`을 사용한다. intent도 override → 제목 → 제목+본문 → topic별 fallback 순으로 정한다.
 
-인덱싱 전에 `enrich_posts`가 `topic_key`, `topic_label`, `is_latest_topic`을 파생한다. 같은 topic key 안에서 파싱 가능한 `published_at`을 우선해 가장 늦은 게시글을 선택하고, 게시일이 없거나 파싱되지 않는 게시글은 `crawled_at`으로 비교한다. 같은 날짜라면 `crawled_at`으로 순서를 정한다. 선택 게시글의 모든 청크에 `is_latest_topic=true`가 기록된다.
+인덱싱 전에 `enrich_posts`가 `topic_key`, `topic_label`, `intent_key`, `is_latest_topic`을 파생한다. 같은 topic key 안에서 파싱 가능한 `published_at`을 우선해 가장 늦은 게시글을 계산하고, 게시일이 없거나 파싱되지 않는 게시글은 `crawled_at`으로 비교한다. 이 `is_latest_topic`은 최근 공지 보조 목록에 사용한다. 답변 검색은 과거 청크도 topic 후보군에 포함한 뒤 관련성 판정 후 `intent_key` 단위로 최신 게시글을 다시 선택하므로 `is_latest_topic=true`만으로 검색 범위를 제한하지 않는다.
 
 원본 게시글, topic rules, source 구성 또는 청킹 결과를 변경하면 다음 전체 재인덱싱을 실행한다.
 
@@ -70,4 +72,4 @@ backend/.venv/Scripts/python.exe -m backend.scripts.index --reset
 | 제목/문단 의미 청킹 | 공지 구조 보존 | parser 복잡도 증가 | PDF/HWP 포함 시 |
 | 문서 단위 임베딩 | 구현이 단순 | 긴 글 검색 정확도 저하 | 매우 짧은 게시글만 있을 때 |
 
-`CHUNK_SIZE` 또는 `CHUNK_OVERLAP` 설정값을 바꾸면 signature mismatch로 API와 평가가 자동 fail closed되므로 전체 재인덱싱한다. 반면 현재 정규화·청킹 알고리즘 구현 자체의 code hash/version은 signature에 자동 포함되지 않는다. 알고리즘 변경이 index 의미를 바꾸면 maintainer가 `INDEX_SCHEMA_VERSION`과 `IndexSignature.schema_version`의 Pydantic `Literal[...]`/schema validation을 의도적으로 bump한 뒤 전체 `index --reset`을 실행해야 한다. 단순 구현 변경만으로 자동 mismatch가 발생한다고 가정하지 않는다.
+`CHUNK_SIZE` 또는 `CHUNK_OVERLAP` 설정값을 바꾸면 signature mismatch로 API와 평가가 자동 fail closed되므로 전체 재인덱싱한다. 현재 schema v2 청크는 `intent_key`를 보존한다. 정규화·청킹·metadata 계약 변경이 index 의미를 바꾸면 maintainer가 `INDEX_SCHEMA_VERSION`과 `IndexSignature.schema_version`의 Pydantic `Literal[...]`/schema validation을 의도적으로 bump한 뒤 전체 `index --reset`을 실행해야 한다. 단순 구현 변경만으로 자동 mismatch가 발생한다고 가정하지 않는다.

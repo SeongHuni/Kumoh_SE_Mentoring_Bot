@@ -1,8 +1,8 @@
 # SE Mentor Bot
 
-현재 추적 스냅샷의 금오공과대학교 소프트웨어전공 공식 공지 50건만 검색하며, 검색된 게시글만 근거로 답변하는 RAG 챗봇 프로토타입입니다. 답변에는 사용한 게시글의 제목·작성일·원문 링크와 함께 추천 질문·최근 공지가 표시됩니다. SE 게시판 데이터는 운영자 허가 또는 승인된 공식 API가 확보되기 전까지 제공하지 않습니다.
+현재 추적 스냅샷의 금오공과대학교 소프트웨어전공 공식 공지 50건만 검색하는 정확도 우선 RAG 챗봇입니다. 첫 질문에서는 해석한 의도와 예시 선택지를 먼저 보여주고, 사용자가 의도를 확인한 뒤 BM25+dense hybrid 검색·재정렬·관련성·날짜 최신성 검사를 모두 통과한 게시글만 근거로 답합니다. 답변에는 제목·작성일·원문 링크와 추천 질문·최근 공지가 표시됩니다. SE 게시판 데이터는 운영자 허가 또는 승인된 공식 API가 확보되기 전까지 제공하지 않습니다.
 
-현재 수치·준비도·우선순위 TODO·검증 기준은 [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md)를 기준으로 합니다. RAG 단계별 흐름과 변경 시 재인덱싱 기준은 [`docs/RAG_ARCHITECTURE.md`](docs/RAG_ARCHITECTURE.md), 운영 명령과 평가 기준은 [`docs/rag/operations-evaluation.md`](docs/rag/operations-evaluation.md)를 참고하세요.
+현재 수치·준비도·우선순위 TODO·검증 기준은 [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md)를 기준으로 합니다. 다음 작업자는 [`docs/HANDOFF.md`](docs/HANDOFF.md)에서 시작하세요. RAG 단계별 흐름과 변경 시 재인덱싱 기준은 [`docs/RAG_ARCHITECTURE.md`](docs/RAG_ARCHITECTURE.md), 운영 명령과 평가 기준은 [`docs/rag/operations-evaluation.md`](docs/rag/operations-evaluation.md)를 참고하세요.
 
 ## 구성
 
@@ -53,9 +53,9 @@ SE 게시판 수집은 현재 비활성화되어 있습니다. 2026-07-14 확인
 
 한 소스가 일시적으로 실패해도 성공한 데이터를 점검하려면 `--allow-partial`을 추가합니다. 이때 부분 결과는 `data/raw/candidates/posts-partial.json`에만 저장되며 운영 원본 `data/raw/posts.json`을 덮어쓰지 않습니다. 후보를 운영 원본으로 승격하려면 소스·날짜·URL을 검토한 뒤 별도로 반영하고 전체 재인덱싱하세요.
 
-`data/topic_rules.json`은 주제 키·표시명·분류 키워드·추천 질문·근거 규칙을 관리하는 단일 유지보수 지점입니다. 인덱싱 시 제목과 본문을 이 규칙으로 분류하고, 같은 주제에서는 유효한 `published_at`이 가장 최신인 게시글만 답변 검색 대상으로 표시합니다. 게시일이 없거나 형식이 올바르지 않으면 `crawled_at`을 최신성 비교에 사용합니다. 따라서 최신성은 수집 시점이 아니라 게시일을 우선하는 날짜 기반 동작이며, 저장 snapshot보다 공식 사이트에 더 최신 자료가 있을 가능성은 별도로 확인해야 합니다.
+`data/topic_rules.json`은 주제·하위 intent·표시명·분류 키워드·근거/제외 marker·추천 질문을 관리하는 단일 유지보수 지점입니다. 인덱싱 시 제목과 본문을 이 규칙으로 분류하고 모든 게시글을 intent metadata와 함께 보존합니다. 온라인 질의에서는 관련성 판정 후 같은 intent의 `published_at`이 가장 최신인 근거를 선택합니다. 게시일이 없거나 형식이 올바르지 않으면 `crawled_at`을 최신성 비교에 사용합니다. 최신 intent 글이 사용자의 세부 요청과 맞지 않으면 이전 유사 글로 후퇴하지 않고 근거 없음으로 답합니다.
 
-온라인 검색은 `is_latest_topic=true`를 적용하므로 같은 주제의 이전 게시글은 답변 근거에서 제외됩니다. 답변은 검색된 근거의 제목·작성일·canonical URL을 출처로 표시하고, 해당 주제의 추천 질문과 최근 공지를 함께 제공합니다. 수집 대상은 로그인 없는 공개 글로 제한하며 요청 간 기본 1초 간격을 유지하고, 운영 전 각 사이트의 이용정책과 `robots.txt`를 다시 확인합니다. 첨부파일은 이름과 링크만 저장하고 파일 본문은 분석하지 않습니다.
+온라인 검색은 확인된 topic의 과거·현재 후보를 BM25와 dense 검색으로 넓게 수집한 뒤 RRF, intent-aware reranker, CRAG식 관련성 판정, 점수 gate를 적용합니다. 그다음 같은 intent의 최신 게시글을 날짜로 확정하고, 최신 글이 질문의 구체 요청어를 직접 지지하는지 검사합니다. 답변은 최종 근거의 제목·작성일·canonical URL을 출처로 표시하고, 해당 주제의 추천 질문과 별도 최근 공지 목록을 함께 제공합니다. 수집 대상은 로그인 없는 공개 글로 제한하며 요청 간 기본 1초 간격을 유지하고, 운영 전 각 사이트의 이용정책과 `robots.txt`를 다시 확인합니다. 첨부파일은 이름과 링크만 저장하고 파일 본문은 분석하지 않습니다.
 
 인덱싱이 성공하면 `chroma_db/index-manifest.json`에 provider·임베딩 모델·차원·청킹 설정·원본 게시글·주제 규칙의 fingerprint와 청크 수가 기록됩니다. 서버는 현재 설정·데이터와 manifest를 비교하고 하나라도 다르면 채팅을 차단합니다.
 
@@ -81,6 +81,8 @@ npm --prefix frontend run dev
 - `/api/live`: 프로세스 liveness 확인
 - `/api/health`: 인덱스와 provider를 포함한 RAG readiness 확인
 - API 문서: <http://localhost:8000/docs>
+
+첫 질문의 정상 응답은 답변이 아니라 `response_type=clarification`일 수 있습니다. UI에서 의도 선택지를 누르면 동일 질문과 `confirmed_intent_key`를 다시 보내며, 확인된 intent가 현재 질문의 선택지와 일치할 때만 검색합니다.
 
 `/api/health`의 `status`는 다음처럼 해석합니다.
 
@@ -113,7 +115,7 @@ backend/.venv/Scripts/python.exe -m pytest -c backend/pyproject.toml backend/tes
 backend/.venv/Scripts/python.exe -m ruff check backend
 $env:AI_PROVIDER="local"
 backend/.venv/Scripts/python.exe -m backend.scripts.index --reset
-backend/.venv/Scripts/python.exe -m backend.scripts.evaluate --provider configured
+backend/.venv/Scripts/python.exe -m backend.scripts.evaluate --provider configured --minimum-cases 31
 backend/.venv/Scripts/python.exe -m backend.scripts.audit_data
 npm --prefix frontend test
 npm --prefix frontend run typecheck
@@ -125,8 +127,8 @@ npm audit
 Pop-Location
 ```
 
-provider-matched local 평가의 핵심 순서는 `AI_PROVIDER=local` 설정, 같은 설정으로 `index --reset`, `--provider configured` 평가입니다. 평가 CLI는 현재 설정과 strict index manifest가 맞는지 먼저 확인하므로 provider·임베딩 모델·차원·데이터·청킹이 어긋나면 평가를 완료하지 못합니다. `data/evaluation/questions.json`의 최소 케이스 수와 현재 통과 수치는 [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md)를 기준으로 하며, 데이터/provider 변경 뒤에는 최소 30문항을 다시 평가하세요.
+provider-matched local 평가의 핵심 순서는 `AI_PROVIDER=local` 설정, 같은 설정으로 `index --reset`, `--provider configured --minimum-cases 31` 평가입니다. 평가 CLI는 현재 설정과 strict index manifest가 맞는지 먼저 확인하므로 provider·임베딩 모델·차원·데이터·청킹이 어긋나면 평가를 완료하지 못합니다. `data/evaluation/questions.json`의 최소 케이스 수와 현재 통과 수치는 [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md)를 기준으로 하며, 데이터/provider 변경 뒤에는 현재 31문항 이상을 다시 평가하세요.
 
-자동 평가는 검색 Top-5 적중 여부, 출처 정확성, 주제 분류, 최신 게시글만 사용했는지, 데이터에 없는 질문의 답변 거절 여부를 기록합니다. 종료 코드 1은 측정된 품질 assertion 실패이며 보고서를 검토해야 한다는 뜻이고, 종료 코드 2는 입력·설정·인덱스 오류로 평가를 완료하지 못했다는 뜻입니다. 중요한 학사 결정은 항상 원문 공지를 재확인해야 합니다.
+자동 평가는 topic·확인 intent·응답 intent 일치, source intent 일치, intent별 최신 URL, 출처 제목, 근거 유무와 범위 밖 질문 거절을 기록합니다. 종료 코드 1은 측정된 품질 assertion 실패이며 보고서를 검토해야 한다는 뜻이고, 종료 코드 2는 입력·설정·인덱스 오류로 평가를 완료하지 못했다는 뜻입니다. 중요한 학사 결정은 항상 원문 공지를 재확인해야 합니다.
 
 데이터 감사는 소스 누락, 오래된 주제, 빈 주제를 검사하고 `data/audit/reports/latest.json`, `latest.md`를 생성합니다. exit 0은 경고 없음, exit 1은 품질 경고 존재, exit 2는 입력·설정 오류입니다. 현재 데이터의 감사 경고와 평가 세부 수치는 변동 가능하므로 PROJECT_STATUS와 생성 보고서를 함께 확인하세요. 보고서와 벡터 인덱스는 Git에 포함하지 않습니다.

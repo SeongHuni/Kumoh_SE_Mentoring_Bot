@@ -8,6 +8,7 @@
 - `backend/tests/`: pytest 단위·통합 테스트.
 - `data/raw/posts.json`: 현재 canonical source snapshot; 생성 후보, 보고서, 인덱스는 추적하지 않는다.
 - `docs/PROJECT_STATUS.md`: 현재 건수, 준비도, 위험, 남은 검증의 기준 문서.
+- `docs/HANDOFF.md`: 다음 작업자의 시작 명령과 변경 금지선.
 - `docs/RAG_ARCHITECTURE.md`: 안정적인 RAG 문서 목차와 불변 조건.
 - `docs/rag/operations-evaluation.md`: 운영 명령과 평가 절차의 권위 있는 기준.
 - `docs/superpowers/**` 및 `docs/reference/**`: 날짜가 있는 역사 자료이며 현재 운영 문서보다 우선하지 않는다.

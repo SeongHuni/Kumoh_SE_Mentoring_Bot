@@ -17,6 +17,7 @@
 | 문서 | 다루는 내용 |
 | --- | --- |
 | [`PROJECT_STATUS.md`](PROJECT_STATUS.md) | 현재 진행도, 위험, 변동 가능한 수치와 검증 snapshot |
+| [`HANDOFF.md`](HANDOFF.md) | 다음 작업자의 시작 명령, 완료 범위와 변경 금지선 |
 | [`rag/overview.md`](rag/overview.md) | 안정적인 전체 흐름과 아직 구현되지 않은 확장 우선순위 |
 | [`rag/data-pipeline.md`](rag/data-pipeline.md) | 게시판 수집, 원본 스키마, 최신성, 정규화와 청킹 |
 | [`rag/providers.md`](rag/providers.md) | provider 선택, 임베딩/답변 구현, manifest 불변조건 |
@@ -27,9 +28,9 @@
 
 - 임베딩 provider, 임베딩 모델 또는 임베딩 차원을 바꾸면 [`rag/providers.md`](rag/providers.md)를 갱신하고 provider가 일치하는 전체 재인덱싱을 한다.
 - `OPENAI_CHAT_MODEL`처럼 답변 chat model만 바꾸면 임베딩 signature가 바뀌지 않으므로 재인덱싱하지 않는다. 답변 평가와 quota 검증은 별도로 한다.
-- `CHROMA_COLLECTION`, `CHUNK_SIZE`/`CHUNK_OVERLAP` 설정값, 원본 source 집합 또는 `data/topic_rules.json`의 topic/source 규칙을 바꾸면 manifest signature mismatch로 자동 fail closed되므로 전체 재인덱싱을 한다.
+- `CHROMA_COLLECTION`, `CHUNK_SIZE`/`CHUNK_OVERLAP` 설정값, 원본 source 집합 또는 `data/topic_rules.json`의 topic/intent/source 규칙을 바꾸면 manifest signature mismatch로 자동 fail closed되므로 전체 재인덱싱을 한다.
 - 현재 정규화·청킹 알고리즘 구현의 code hash/version은 signature에 자동 포함되지 않는다. 알고리즘이 index 의미를 바꾸면 maintainer가 `INDEX_SCHEMA_VERSION`과 `IndexSignature.schema_version`의 Pydantic `Literal[...]`/schema validation을 의도적으로 bump한 뒤 전체 재인덱싱한다. 단순 구현 변경만으로 자동 mismatch가 난다고 주장하지 않는다.
-- 검색 점수, Top-K, threshold, 최신성 필터, 출처 카드 동작을 바꾸면 [`rag/retrieval-answering.md`](rag/retrieval-answering.md)를 갱신한다.
+- 의도 확인 계약, query rewrite/HyDE, BM25+dense RRF, reranker, CRAG gate, 최신성·구체 요청 근거 판정, context compression, 출처 카드 동작을 바꾸면 [`rag/retrieval-answering.md`](rag/retrieval-answering.md)를 갱신한다.
 - 실행 명령, 지원 설정, 평가·감사 기준을 바꾸면 [`rag/operations-evaluation.md`](rag/operations-evaluation.md)를 갱신한다.
 
 전체 재인덱싱 명령은 다음과 같다.
@@ -39,3 +40,5 @@ backend/.venv/Scripts/python.exe -m backend.scripts.index --reset
 ```
 
 질의와 평가는 현재 설정으로 manifest signature를 다시 계산해 일치 여부를 먼저 검사한다. 불일치한 인덱스에서는 provider를 호출하지 않고 fail closed한다.
+
+현재 `INDEX_SCHEMA_VERSION=2`는 청크의 intent metadata를 인덱스 계약에 포함한다. v1 인덱스는 정확도 우선 검색과 호환되지 않으므로 전체 재인덱싱 없이는 API와 평가가 진행되지 않는다.

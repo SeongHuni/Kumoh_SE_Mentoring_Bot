@@ -1,154 +1,96 @@
-# SE Mentor Bot 프로젝트 상태와 다음 작업
+# SE Mentor Bot 프로젝트 상태
 
 > 기준일: 2026-07-16
-> 기준 브랜치: `codex/maintainability-audit`
-> 검증 기준 base: `b99f997`
-> 최신 인수인계: [`superpowers/handoffs/2026-07-15-maintainability-operational-safety-handoff.md`](superpowers/handoffs/2026-07-15-maintainability-operational-safety-handoff.md)
+>
+> 기준 구현: accuracy-first RAG, index schema v2
+>
+> 다음 작업자 진입점: [`HANDOFF.md`](HANDOFF.md)
 
-이 문서는 Task 10 전체 gate 이후의 현재 구현·검증 상태와 외부 확인이 필요한 운영 위험을 관리한다. 로컬 코드 gate와 외부 데이터·Docker·브라우저·원격 CI 검증은 서로 분리해 기록한다. 현재 브랜치가 push되었거나 merge되었다고 주장하지 않는다.
+이 문서는 변동 가능한 데이터 건수, 구현 준비도, 검증 결과와 남은 위험의 단일 기준이다. 실행 명령은 [`rag/operations-evaluation.md`](rag/operations-evaluation.md), 구조적 불변조건은 [`RAG_ARCHITECTURE.md`](RAG_ARCHITECTURE.md)를 따른다.
 
-## 1. 현재 결론
+## 현재 결론
 
-- 백엔드 전체 pytest는 `171 passed`, 총 coverage는 `92.59%`로 85% gate를 넘었고 Ruff도 통과했다.
-- 프론트엔드는 Vitest `5 files / 83 tests` 통과, TypeScript·ESLint·Next production build 통과, production/development 의존성 audit 모두 `0 vulnerabilities`다.
-- strict index manifest는 평가에서 provider를 만들거나 첫 질문을 처리하기 전에 확인된다. provider·모델·차원·원본·주제 규칙·청크 수가 맞지 않으면 fail-closed로 중단한다.
-- `audit_data`는 기본적으로 설정된 `RAW_POSTS_PATH`와 `TOPIC_RULES_PATH`를 사용하며, `--posts`·`--topic-rules` 명시값이 있으면 각각의 override가 우선한다.
-- SE public crawl은 기본값이 `0`이고 양수 limit에는 acknowledgement가 필요하다. 이 기술적 guard는 실제 운영자 허가나 API 사용 권한 자체를 검증하지 않는다.
-- frontend chat client는 15초 timeout, network/non-JSON/detail 처리, runtime payload 및 link safety 검사를 적용하며 `sources`·`suggested_questions`·`recent_notices` 필드를 보존한다.
-- `/api/live`는 process liveness, `/api/health`는 index/provider readiness로 분리되어 있다. Compose는 process health ordering과 build-time `NEXT_PUBLIC_API_URL`을 사용한다.
-- fetch integration, dependency review, Compose static health contracts는 로컬에서 완료됐다. Docker executable이 없는 현재 호스트에서는 static 확인만 했으며 실제 runtime 증거는 없다.
-- 기존 데이터 수치(50 posts, 84 chunks, 30 eval, 3 audit warnings)는 기존 검증 snapshot으로만 보존한다. Task 10에서는 raw data·index·evaluation·audit를 재실행하지 않았다.
-- 이 브랜치의 검증 결론은 로컬 worktree 범위다. branch push, merge, remote GitHub Actions, branch protection은 확인하지 않았다.
+- 첫 질문은 곧바로 검색하지 않고 `clarification` 응답으로 해석한 의도와 최대 3개 예시 선택지를 제시한다. 사용자가 고른 `confirmed_intent_key`가 질문 분석 결과의 선택지와 일치할 때만 검색한다.
+- 검색은 원질문·규칙 기반 rewrite·HyDE 문장을 사용한 BM25와 dense 검색을 함께 실행하고 RRF로 합친다. 이후 intent-aware reranker, CRAG식 관련성 판정, 점수 gate, intent별 날짜 최신성, 구체 요청 근거 gate, context compression 순으로 처리한다.
+- 같은 intent에서는 게시일이 가장 최신인 근거를 먼저 확정한다. 최신 글이 사용자의 세부 요청과 맞지 않으면 오래된 유사 글로 후퇴하지 않고 `no_answer`를 반환한다.
+- `최근 수강신청 공지` + `registration.main`은 더 최신인 출석인정 글을 배제하고 2026-02-11 일반 수강신청 안내만 사용한다. `컴퓨터 소프트웨어 공학과에 대해 알려줘`는 교원 초빙 글을 학과 소개 근거로 사용하지 않는다.
+- 답변에는 출처·게시일·원문 링크, 다음 질문, 최근 공지가 표시된다. 최근 공지는 답변 출처와 별도 목록임을 UI에서 명시하고, 근거 없음 응답에서는 더욱 강한 참고용 라벨을 사용한다.
+- SE 게시판은 운영자 서면 허가 또는 승인된 공식 API가 문서화되기 전까지 수집·제공하지 않는다.
 
 핵심 결정 3개:
 
-1. 로컬 code gate의 수치와 기존 data snapshot을 분리해 기록하고, 재실행하지 않은 데이터 수치로 최신 상태를 주장하지 않는다.
-2. SE 수집은 기본 비활성·명시 acknowledgement로 막되, acknowledgement를 실제 권한 증명으로 오해하지 않으며 승인된 API 또는 서면 허가를 별도 조건으로 둔다.
-3. manifest/readiness와 frontend 오류·링크 안전성은 fail-closed로 유지하고, Docker·브라우저·원격 CI 검증은 별도 환경에서 증거를 추가한다.
+1. 속도보다 정확도를 우선해 모든 질문에 의도 확인 단계를 두고, 확인되지 않은 intent에서는 provider와 저장소를 호출하지 않는다.
+2. “최신”은 topic 전체가 아니라 확인된 intent 안의 `published_at` 기준으로 판정하며, 최신 근거가 질문과 불일치하면 과거 자료로 대체하지 않는다.
+3. 생성 답변보다 검색 근거 계약을 우선해 hybrid retrieval → reranker → CRAG → freshness → request-evidence → compression을 모두 통과한 문서만 provider에 전달한다.
 
-## 2. 단계별 진행도
+## 구현 및 검증 진행도
 
-| 영역 | 상태 | 현재 근거 | 남은 조건 |
+| 영역 | 상태 | 2026-07-16 근거 | 남은 조건 |
 | --- | --- | --- | --- |
-| 백엔드 RAG·manifest | 로컬 검증 통과 | 171 tests, 92.59% coverage, Ruff, strict manifest 회귀 | provider-matched 실제 평가 재실행과 threshold calibration |
-| 데이터 수집 안전성 | 로컬 guard 완료 | SE default 0, positive acknowledgement gate, partial 후보 격리 | SE permission/approved API, 최신성·소스 검증 |
-| 데이터 감사 | 로컬 동작 검증 완료 | configured path defaults와 explicit overrides 테스트 | stale course_openings, empty graduation, 실제 snapshot 재검증 |
-| frontend | 로컬 gate 통과 | 5 files/83 tests, typecheck, lint, build | 390px/1280px browser E2E와 visual regression |
-| 배포 계약 | static 검증 완료 | focused deployment pytest 7 tests, liveness health contracts | Docker-enabled host의 config/build/start/healthy transitions |
-| 의존성 | 로컬 audit 통과 | `npm audit --omit=dev`와 full `npm audit` 모두 0 | 정기 review 및 remote CI 확인 |
-| CI·branch protection | 미확인 | 로컬 명령만 실행 | push 후 GitHub Actions와 required checks/branch protection |
-| branch handoff | 문서 기록 완료 | Task 10 initial target `55cb283`, final review-fix verification target `f5ccdb2`; current HEAD/count는 `git rev-parse HEAD`와 `git rev-list --count b99f997..HEAD`로 확인 | 사용자의 push/merge 절차에서 원격 상태 확인 |
-| 운영 안정성 | 미착수 | 계획과 정적 계약만 존재 | observability, rate limit, backup/restore, incremental ingestion |
+| 의도 확인 API | 완료 | `clarification` / `answer` / `no_answer`, confirmed intent 검증 | 실제 사용자 질문 로그 기반 intent catalog 확장 |
+| 정확도 우선 RAG | 완료 | BM25+dense RRF, deterministic reranker, CRAG, 최신성, compression | OpenAI provider 별도 평가·calibration |
+| 로컬 인덱스 | 완료 | schema v2, 50 posts → 84 chunks, fingerprint prefix `b107d8be2408` | 원본·규칙·provider 변경 시 재생성 |
+| 평가 | 로컬 통과 | 31/31, topic 31/31, intent 31/31, grounded 31/31, latest-only 31/31 | 질문 다양성·실사용 로그 기반 세트 확대 |
+| 백엔드 품질 gate | 통과 | 406 tests, 93.86% coverage, Ruff 통과 | 운영 부하·장애 주입 테스트 |
+| 프론트엔드 품질 gate | 통과 | 6 files / 90 tests, typecheck, ESLint, Next production build | 390px 모바일 visual regression 자동화 |
+| 브라우저 통합 검증 | 통과 | 의도 카드 → 선택 → 최신 근거 답변, 자동 스크롤, 출처·추천·최근 공지, console error 0 | 자동화된 cross-browser E2E |
+| 데이터 감사 | 경고 있음 | 50 posts, 3 warnings, exit 1 | SE source 미수집, course_openings·graduation 비어 있음 |
+| 의존성 | 통과 | `npm audit --omit=dev`: 0 vulnerabilities | 정기 재검증 |
+| Docker runtime | 미검증 | 현재 호스트에 Docker executable 없음 | Docker host에서 config/build/health 검증 |
+| 원격 CI·배포 | 미확인 | 로컬 검증만 수행 | push 후 GitHub Actions와 branch protection 확인 |
 
-## 3. Task 10 code gate 측정값
+## 현재 데이터 snapshot
 
-| 검증 | 정확한 결과 |
+| 항목 | 값 |
 | --- | --- |
-| backend pytest + coverage | `171 passed in 20.32s`; TOTAL `1659` statements, `123` missed, `93%` table coverage; final `92.59%`; required `85.0%` reached |
-| backend Ruff | `All checks passed!` |
-| frontend Vitest | `Test Files 5 passed (5)`; `Tests 83 passed (83)`; duration `4.46s` |
-| frontend typecheck | exit 0 |
-| frontend lint | exit 0 |
-| frontend production build | exit 0; Next `15.5.20`; static routes `/`와 `/_not-found`, 4 pages generated |
-| frontend production audit | `found 0 vulnerabilities` |
-| frontend full audit | `found 0 vulnerabilities` |
-| focused deployment pytest | `....... [100%]` — 7 static Compose/Docker contract tests |
-| `git diff --check` | exit 0 |
-| canonical stale search | Re-runnable canonical obsolete search is recorded below; its pattern excludes `46건`, and empty output with `rg` exit 1 is success. Source guidance intentionally retains historical threshold context in `.env.example` (two lines) and `docs/rag/operations-evaluation.md` (one line); status/handoff self-reference is excluded. |
-| Docker | executable unavailable; `docker compose config`, build, ps, start, and health transition not run |
+| canonical 원본 | `data/raw/posts.json` |
+| 게시글 | 50 (`kumoh=50`, `seboard=0`) |
+| 인덱스 | local hash, schema v2, 84 chunks |
+| 인덱스 생성 시각 | 2026-07-16T07:10:26Z |
+| 평가 | 31/31, exit 0 |
+| 데이터 감사 | 3 warnings, exit 1 |
 
-Next build가 `frontend/next-env.d.ts`를 생성 변경했다. pre-build SHA-256 `A3EA130D80CDE31C5180AF37457E5D1318A1E30888C14BA4624F117E382987C4`, post-build `85AE5AEE75F011967CF2D25CBC342F62D69314E9D925F7F4AA3456FC2CFFCCA6`를 확인했고, 생성 변경은 원복했다. 최종 worktree에서 tracked 변경은 이 문서와 handoff만 남긴다.
+감사 기준 topic 분포는 `registration=13`, `capstone=2`, `career=14`, `scholarship=6`, `general=15`, `course_openings=0`, `graduation=0`이다. 감사 경고는 다음과 같다.
 
-## 4. 기존 데이터 검증 snapshot
+- `missing_source`: SE 게시판 미수집. 현재는 의도된 안전 제한이지만 데이터 범위는 좁다.
+- `empty_topic`: `course_openings` 직접 근거 없음.
+- `empty_topic`: `graduation` 직접 근거 없음.
 
-다음 수치는 **기존 검증 snapshot**이다. 출처는 2026-07-15 이전 `PROJECT_STATUS.md`의 last measured snapshot이며 Task 10에서 재실행하지 않았다. code gate 측정값과 혼동하지 않는다.
+이 snapshot은 저장된 원본의 상태일 뿐 공식 사이트의 실시간 최신성을 보증하지 않는다. 중요한 일정은 응답의 canonical URL과 게시일을 원문에서 다시 확인한다.
 
-| 항목 | 기존 snapshot 값 |
-| --- | --- |
-| 저장 게시글 | 50 posts (`kumoh=50`, `seboard=0`) |
-| 게시일 범위 | 2024-09-04 ~ 2026-06-30 |
-| 로컬 인덱스 | 84 chunks, prior manifest fingerprint prefix `9fe1fee46fbf` |
-| 평가 | 30/30, exit 0 |
-| 데이터 감사 | Prior snapshot: 3 warnings, exit 1; exit 1 means quality warnings, not command failure. Task 10 did not rerun it and a new run may differ. |
+## 실제 회귀 시나리오
 
-기존 topic snapshot: `general` 15 (2026-06-17), `career` 14 (2026-06-30), `registration` 12 (2026-06-16), `scholarship` 6 (2026-06-17), `capstone` 2 (2026-03-19), `course_openings` 1 (2025-08-07), `graduation` 0 (없음). 이 날짜와 건수는 현재 live source의 최신성을 증명하지 않는다.
+| 질문 | 확인 intent | 기대 결과 |
+| --- | --- | --- |
+| 최근 수강신청 공지를 알려줘 | `registration.main` | 2026-02-11 일반 수강신청 안내, 출석인정 글 배제 |
+| 최근 수강변경 공지를 알려줘 | `registration.change` | 2026-02-26 변경·정정 안내 |
+| 2026학년도 2학기 캡스톤디자인 공지 | `capstone.general` | 현재 1학기 근거뿐이므로 `no_answer` |
+| 최근 취업 프로그램을 알려줘 | `career.general` | 최신 career 글이 교원 초빙이므로 과거 프로그램으로 후퇴하지 않고 `no_answer` |
+| 장학금 신청 공지를 알려줘 | `scholarship.general` | 최신 scholarship 글에 신청 직접 근거가 없어 `no_answer` |
+| 오늘 학생식당 메뉴를 알려줘 | `general.recent` | 수집 범위 밖이므로 `no_answer` |
+| 컴퓨터 소프트웨어 공학과에 대해 알려줘 | `department.overview` | 학과 소개 직접 근거가 없어 `no_answer` |
 
-## 5. 유지된 운영 정책
+## API와 UI 계약
 
-### 질문·근거·provider 순서
+- 최초 `/api/chat` 요청은 `confirmed_intent_key`가 없으면 `response_type=clarification`, `grounded=false`, 빈 `sources`, `interpreted_intent`, `clarification_options`를 반환한다.
+- 선택 후 동일 질문과 `confirmed_intent_key`를 보내며 사용자 질문 말풍선을 중복 추가하지 않는다.
+- 근거가 있으면 `answer`, 없으면 `no_answer`; `no_answer`는 항상 빈 `sources`를 유지한다.
+- frontend는 API payload와 HTTP/HTTPS 링크를 runtime에서 검증하며 timeout·network·non-JSON 오류를 사용자용 문장으로 바꾼다.
+- 새 assistant 결과가 생기면 채팅 컨테이너를 결과의 시작 위치로 이동해 답변 첫 줄이 바로 보인다.
+- `recent_notices`는 답변 근거와 별도 보조 정보다. 같은 URL이 포함되더라도 source card의 근거 계약을 대신하지 않는다.
 
-- 평가 CLI는 `--provider configured`로 현재 `AI_PROVIDER` 설정과 인덱싱 provider를 맞출 수 있다. `--provider local`은 local 인덱스로 평가할 때만 사용한다.
-- 평가와 chat은 strict manifest를 먼저 확인한다. 불일치 시 provider 생성 또는 첫 질문 전에 중단하며, 인덱스 재생성 없이는 질문을 진행하지 않는다.
-- 기간·학기·제목 marker·동의어 근거가 맞지 않으면 `grounded=false`로 거절하고 answer provider를 호출하지 않는다.
-- raw candidate는 운영 원본 `RAW_POSTS_PATH`를 덮어쓰지 않고 `data/raw/candidates/`에 격리한다.
+## 남은 우선순위
 
-### SE 게시판
+1. 공식 source 보강: `course_openings`, `graduation`의 승인된 원문을 확보하고 intent 규칙·평가를 함께 갱신한다.
+2. OpenAI provider 검증: provider-matched reindex → 31건 이상 평가 → raw candidate 분포 수집 → threshold calibration을 수행한다.
+3. 운영 검증: Docker Compose runtime, 원격 CI, 390px 모바일·다른 브라우저 E2E를 증거와 함께 기록한다.
+4. 운영성: 개인정보 없는 검색 지연·intent·거절 사유 telemetry, rate limit, backup/restore, 증분 update/delete를 설계한다.
+5. 데이터 권한: SE 게시판은 서면 허가 또는 승인된 공식 API가 확보된 뒤에만 별도 source 계약 테스트와 함께 활성화한다.
 
-- `--seboard-limit` 기본값은 0이다.
-- 양수 limit에는 `--seboard-permission-confirmed`가 필요하지만, 이 flag는 실제 서면 허가·승인된 API 권한의 존재를 자동 증명하지 않는다.
-- 승인 전에는 Selenium/API 수집을 실행하지 않는다. 로그인 우회·CAPTCHA 무력화·접근제어 회피는 범위 밖이다.
+## 유지보수 규칙
 
-### frontend·deployment
-
-- 15초 timeout과 abort, network/non-JSON/HTTP detail fallback을 제공한다.
-- 성공 payload의 answer, HTTP/HTTPS source URL, source/recent metadata, suggestions를 runtime에서 검증한다.
-- 오류 detail은 HTML, traceback, secret/path, unsafe endpoint/link를 제거하거나 generic fallback으로 대체한다.
-- Compose backend healthcheck는 `/api/live`, frontend healthcheck는 process HTTP 응답을 확인하며 frontend는 backend `service_healthy`를 기다린다.
-- `NEXT_PUBLIC_API_URL`은 Docker build-time에 image에 삽입되므로 변경 후 frontend image 재빌드가 필요하다. 이는 runtime health proof가 아니다.
-
-## 6. 현재 검증 명령과 운영 명령
-
-Task 10에서 실행한 gate는 handoff에 명령별 exact evidence로 기록했다. 운영 재검증 시 provider를 맞추는 권장 순서는 다음과 같다.
-
-```powershell
-$env:AI_PROVIDER="local"
-backend/.venv/Scripts/python.exe -m backend.scripts.index --reset
-backend/.venv/Scripts/python.exe -m backend.scripts.evaluate --provider configured
-backend/.venv/Scripts/python.exe -m backend.scripts.audit_data
-```
-
-`--provider configured`는 현재 `AI_PROVIDER` 설정을 사용해 provider·모델이 맞는 인덱스를 평가한다. 데이터·provider·embedding·chunk 설정을 바꾸면 index → evaluate → audit 순서로 다시 실행한다.
-
-`audit_data` exit 1은 명령 자체의 실행 실패가 아니라 품질 warning이 존재한다는 뜻이다. Prior snapshot은 3 warnings/exit 1이었지만 Task 10에서는 audit를 재실행하지 않았으며, 새 실행 결과는 달라질 수 있다.
-
-Task10 canonical obsolete search는 다음처럼 재실행한다. 이 pattern에는 `46건`을 넣지 않는다. 대상 파일에서 empty output과 `rg` exit 1이면 성공이며, exit 0은 stale match, exit 2 이상은 search error다.
-
-```powershell
-rg -n "약 100건|--seboard-limit 50|현재 79청크|fingerprint를 검증하지 않는다|No application manifest|Git history is not available|npm --prefix frontend install" README.md AGENTS.md .env.example docs/RAG_ARCHITECTURE.md docs/rag
-if ($LASTEXITCODE -eq 1) { 'canonical obsolete search: no matches' }
-elseif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-```
-
-Historical threshold guidance is searched separately with `rg -n "46건" .env.example docs/rag/operations-evaluation.md`; its intentional references are not current post/index counts. This source-only search excludes these status and handoff documents to avoid self-reference.
-
-```powershell
-npm --prefix frontend audit --omit=dev
-npm --prefix frontend audit
-docker compose config
-docker compose up -d --build
-docker compose ps
-$backendPort = (docker compose port backend 8000).Trim().Split(':')[-1]
-$frontendPort = (docker compose port frontend 3000).Trim().Split(':')[-1]
-Invoke-RestMethod "http://localhost:$backendPort/api/live"
-Invoke-RestMethod "http://localhost:$backendPort/api/health"
-Invoke-WebRequest "http://localhost:$frontendPort" -UseBasicParsing
-```
-
-Compose 검증은 published port를 `docker compose port`로 조회한 뒤 실제 backend/frontend port를 사용한다. 현재 호스트에서는 Docker가 없어 static Compose contract만 검증됐고 runtime은 미검증이다.
-
-## 7. Open only
-
-1. Docker enabled host에서 actual `docker compose config`, image build, start, `docker compose ps`, backend/frontend healthy transitions와 `/api/live`·`/api/health` 결과를 기록한다. static contract를 runtime proof로 바꾸지 않는다.
-2. 390px/1280px browser E2E와 visual regression을 success, server error, timeout, suggestion, source, recent 흐름으로 실행한다.
-3. push 후 remote GitHub Actions와 branch protection required checks를 확인한다. 이 branch가 merged/pushed라고 말하지 않는다.
-4. SE permission/approved API를 확보하고, robots·사용 범위·canonical source를 문서화한다. acknowledgement flag만으로 권한을 대체하지 않는다.
-5. `course_openings`의 stale source와 `graduation`의 empty source를 공식 원문 또는 명시적 empty UX로 처리한다.
-6. raw candidate score diagnostic을 수집해 threshold를 보정한다. 기존 eval pass는 calibration 근거가 아니다.
-7. observability, rate limit, backup/restore, incremental ingestion을 운영 범위로 설계·검증한다.
-
-## 8. 문서 유지 규칙
-
-- 현재 결론·volatile gate 수치는 이 문서를 status authority로 갱신한다. handoff에는 해당 세션의 immutable evidence만 남긴다.
-- data/index/evaluation/audit 수치를 재실행하지 않았으면 반드시 기존 검증 snapshot으로 표시한다.
-- 로컬 코드 통과와 공식 source 권한·Docker runtime·브라우저·원격 CI 확인을 같은 완료 주장으로 합치지 않는다.
-- `.env`, API key, password, bearer token은 기록하지 않고 `민감정보 제거됨`으로 대체한다. 파일 경로는 기록할 수 있지만 `.env` 내용은 기록하지 않는다.
+- intent, topic keyword, evidence/exclusion marker, 추천 질문은 `data/topic_rules.json`에서 함께 관리한다.
+- intent 또는 topic 규칙, 원본, 임베딩 provider/model/dimension, collection, 청킹 설정을 바꾸면 `index --reset` 후 평가·감사를 다시 실행한다.
+- 인덱스 의미를 바꾸는 metadata/청킹 계약 변경은 `INDEX_SCHEMA_VERSION`과 Pydantic `Literal[...]`을 함께 올린다.
+- 데이터·평가·테스트 수치를 재실행하지 않았으면 최신 값처럼 문서에 쓰지 않는다.
+- `.env`, API key, password, bearer token은 커밋·문서·로그에 기록하지 않는다.

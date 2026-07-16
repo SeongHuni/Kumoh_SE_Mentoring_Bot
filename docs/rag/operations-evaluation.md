@@ -19,7 +19,7 @@
 | `CHROMA_COLLECTION` | `se_mentor_posts` | `backend/app/config.py` -> `se_mentor_posts` | Chroma collection 이름 |
 | `RAW_POSTS_PATH` | `./data/raw/posts.json` | `backend/app/config.py` -> `./data/raw/posts.json` | 원본 JSON snapshot |
 | `TOPIC_RULES_PATH` | `./data/topic_rules.json` | `backend/app/config.py` -> `./data/topic_rules.json` | topic·keyword·evidence 규칙 |
-| `RAG_TOP_K` | `5` | `backend/app/config.py` -> `5` | 초기 vector 검색 수 |
+| `RAG_TOP_K` | `5` | `backend/app/config.py` -> `5` | 최종 context/source 최대 수; hybrid 후보군은 내부적으로 최소 50개 |
 | `RAG_MIN_SCORE` | `0.10` | `backend/app/config.py` -> `0.10` | 최종 검색 절대 threshold |
 | `CRAWLER_DELAY_SECONDS` | `1.0` | `backend/app/config.py` -> `1.0` | 요청 간격 |
 | `CRAWLER_TIMEOUT_SECONDS` | `20.0` | `backend/app/config.py` -> `20.0` | crawler 요청 timeout |
@@ -33,6 +33,8 @@
 `NEXT_PUBLIC_API_URL`은 Next.js frontend 이미지 빌드 시 삽입되는 build-time 값이다. 값을 바꾸면 frontend 이미지를 반드시 rebuild해야 하며, 실행 중 컨테이너 환경변수만 바꾸어 이미 빌드된 UI의 API 주소를 변경할 수 없다.
 
 `CHROMA_PATH/index-manifest.json`은 provider, embedding model/dimension, chunking, collection, raw/topic SHA-256, chunk count와 signature fingerprint를 기록한다. provider·모델·차원·collection·chunking·원본·topic rules가 바뀌면 `index --reset`을 실행하고, `OPENAI_CHAT_MODEL`만 바뀌면 재인덱싱하지 않는다.
+
+현재 index schema는 v2이며 청크의 `intent_key` metadata를 전제로 한다. v1 index는 API와 평가에서 `needs_reindex`로 거절한다.
 
 ## 운영 절차
 
@@ -59,6 +61,22 @@ backend/.venv/Scripts/python.exe -m backend.scripts.index --reset
 | `/api/health` → `unavailable` / `index_unavailable` | 저장소를 열 수 없음 | 경로·권한·Chroma 상태 복구 |
 
 호환되지 않는 index는 `/api/chat`에서 provider 호출 전에 차단된다. `needs_index`·`needs_reindex`는 `409`, provider 설정·저장소 문제는 `503`, OpenAI 호출 실패는 `502`다.
+
+## 채팅 요청 순서
+
+첫 요청은 질문만 보낸다.
+
+```json
+{"question": "최근 수강신청 공지를 알려줘"}
+```
+
+정상적인 첫 응답은 `response_type=clarification`이며 `interpreted_intent`와 `clarification_options`를 포함한다. 사용자가 선택한 뒤 같은 질문에 확인 key를 추가한다.
+
+```json
+{"question": "최근 수강신청 공지를 알려줘", "confirmed_intent_key": "registration.main"}
+```
+
+확인 key가 현재 질문의 선택지와 일치하지 않으면 검색하지 않고 clarification을 다시 반환한다. 최종 응답은 근거가 있으면 `answer`, 없으면 `no_answer`다. `no_answer`의 `sources`는 항상 비어 있어야 한다.
 
 ## Compose 검증
 
@@ -89,7 +107,7 @@ backend/.venv/Scripts/python.exe -m backend.scripts.audit_data
 
 데이터 감사는 명시 옵션이 없으면 설정된 `RAW_POSTS_PATH`와 `TOPIC_RULES_PATH`를 읽고 `data/audit/reports/latest.json`, `latest.md`에 보고서를 쓴다. 기본 required source는 `kumoh`와 `seboard`이며 `--posts`, `--topic-rules`, `--output-dir`, `--stale-after-days`, `--required-source`로 조정할 수 있다.
 
-`audit_data` exit 1은 command failure가 아니라 품질 warning 존재를 뜻한다. Prior snapshot은 3 warnings/exit 1이었지만 Task 10에서는 audit를 재실행하지 않았고, 새 실행 결과는 달라질 수 있다.
+`audit_data` exit 1은 command failure가 아니라 품질 warning 존재를 뜻한다. 2026-07-16 snapshot은 50 posts, 3 warnings/exit 1이며 SE source 누락과 `course_openings`·`graduation` 빈 topic이 원인이다. 최신 수치는 [`../PROJECT_STATUS.md`](../PROJECT_STATUS.md)를 우선한다.
 
 | exit | 의미 | 조치 |
 | ---: | --- | --- |
@@ -106,7 +124,7 @@ provider-matched 평가의 정확한 순서는 다음과 같다.
 ```powershell
 $env:AI_PROVIDER="local"
 backend/.venv/Scripts/python.exe -m backend.scripts.index --reset
-backend/.venv/Scripts/python.exe -m backend.scripts.evaluate --provider configured
+backend/.venv/Scripts/python.exe -m backend.scripts.evaluate --provider configured --minimum-cases 31
 ```
 
 `--provider configured`는 현재 설정에서 선택된 provider를 사용한다. `AI_PROVIDER=auto`라면 key 유무로 실제 selected provider가 정해진다. `--provider local`은 local 설정으로 만든 local index만 평가할 때 사용한다. 평가 CLI는 첫 질문을 실행하거나 provider를 생성하기 전에 strict manifest를 검사하며, provider·model·dimension·collection·chunking·content 또는 chunk count가 일치하지 않으면 exit 2로 종료한다.
@@ -121,8 +139,8 @@ backend/.venv/Scripts/python.exe -m backend.scripts.evaluate --provider configur
 
 `RAG_MIN_SCORE=0.10`은 local hash embedding의 과거 46건 historical tuning snapshot에서만 조정된 값이며 OpenAI embedding에 검증되지 않았다. 이 숫자를 OpenAI의 기본 threshold나 현재 status로 해석하지 않는다.
 
-현재 evaluate report는 threshold를 통과해 최종 답변의 `sources`가 된 score만 `EvaluationResult.sources`에 기록하며, threshold에서 탈락한 raw candidate와 rejected score distribution은 기록하지 않는다. 따라서 현재 evaluate CLI의 30문항 pass만으로 false-positive 최고점·true-positive 최저점 기반 threshold 재보정을 했다고 주장할 수 없다.
+현재 evaluate report는 threshold를 통과해 최종 답변의 `sources`가 된 score만 `EvaluationResult.sources`에 기록하며, threshold에서 탈락한 raw candidate와 rejected score distribution은 기록하지 않는다. 따라서 현재 evaluate CLI의 31문항 pass만으로 false-positive 최고점·true-positive 최저점 기반 threshold 재보정을 했다고 주장할 수 없다.
 
-provider 또는 데이터가 바뀌면 우선 provider-matched 30문항 회귀평가를 실행한다. threshold를 실제로 변경하려면 별도의 retrieval diagnostic/raw candidate score instrumentation으로 positive/negative 분포를 수집해야 한다. 이 instrumentation과 diagnostic 도구는 현재 미구현 open item이다. 구현되기 전에는 운영자가 `0.20` 등 추정값을 production validated threshold로 사용하거나 기록하지 않는다. OpenAI로 전환할 때도 provider-matched reindex/evaluation 후 별도 분포 수집과 calibration을 거쳐야 한다.
+provider 또는 데이터가 바뀌면 우선 provider-matched 31문항 이상 회귀평가를 실행한다. threshold를 실제로 변경하려면 별도의 retrieval diagnostic/raw candidate score instrumentation으로 positive/negative 분포를 수집해야 한다. 이 instrumentation과 diagnostic 도구는 현재 미구현 open item이다. 구현되기 전에는 운영자가 `0.20` 등 추정값을 production validated threshold로 사용하거나 기록하지 않는다. OpenAI로 전환할 때도 provider-matched reindex/evaluation 후 별도 분포 수집과 calibration을 거쳐야 한다.
 
-평가 질문은 기대 topic, Top-K 문서 포함 여부, latest-only, grounded 거절, source metadata와 날짜·대상·신청 경로 일치 여부를 확인해야 한다. 세부 수치와 현재 snapshot은 [`../PROJECT_STATUS.md`](../PROJECT_STATUS.md) 및 생성 report를 참조한다.
+평가 질문은 기대 topic, confirmed/actual intent, source intent, intent별 latest-only URL, grounded 거절, source 제목·날짜·대상·신청 경로 일치 여부를 확인해야 한다. 세부 수치와 현재 snapshot은 [`../PROJECT_STATUS.md`](../PROJECT_STATUS.md) 및 생성 report를 참조한다.
