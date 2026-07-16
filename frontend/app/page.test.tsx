@@ -10,6 +10,7 @@ vi.mock("./lib/chatApi", () => ({
 }));
 
 const mockedRequestChat = vi.mocked(requestChat);
+const scrollToMock = vi.fn();
 
 const reply: ChatReply = {
   content: "수강신청은 포털에서 진행합니다.",
@@ -42,6 +43,10 @@ const reply: ChatReply = {
 describe("Home", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(HTMLElement.prototype, "scrollTo", {
+      configurable: true,
+      value: scrollToMock,
+    });
     vi.stubGlobal(
       "requestAnimationFrame",
       vi.fn((callback: FrameRequestCallback) => {
@@ -102,6 +107,25 @@ describe("Home", () => {
     expect(
       await screen.findByText("답변 요청 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요."),
     ).toBeInTheDocument();
+  });
+
+  it("scrolls the conversation to the newest assistant result", async () => {
+    mockedRequestChat.mockResolvedValueOnce(reply);
+    render(<Home />);
+    scrollToMock.mockClear();
+
+    fireEvent.change(screen.getByRole("textbox", { name: "질문 입력" }), {
+      target: { value: "수강신청 방법" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "질문 보내기" }));
+
+    expect(await screen.findByText(reply.content)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(scrollToMock).toHaveBeenLastCalledWith({
+        top: expect.any(Number),
+        behavior: "smooth",
+      });
+    });
   });
 
   it("resends the original question with the selected intent without duplicating it", async () => {

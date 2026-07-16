@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { ChatMessage } from "./components/ChatMessage";
 import type {
@@ -36,6 +36,26 @@ export default function Home() {
   const [question, setQuestion] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const messageListRef = useRef<HTMLDivElement>(null);
+  const latestMessageRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const messageList = messageListRef.current;
+    const latestMessage = latestMessageRef.current;
+    if (!messageList || !latestMessage) return;
+    const frame = requestAnimationFrame(() => {
+      const top = Math.max(
+        0,
+        latestMessage.offsetTop - messageList.offsetTop - 16,
+      );
+      if (typeof messageList.scrollTo === "function") {
+        messageList.scrollTo({ top, behavior: "smooth" });
+      } else {
+        messageList.scrollTop = top;
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [messages, isLoading]);
 
   async function submitQuestion(
     rawQuestion: string,
@@ -143,11 +163,19 @@ export default function Home() {
           <p>검색된 게시글만 근거로 답하고 원문 링크를 함께 제공합니다.</p>
         </div>
 
-        <div className="message-list" aria-live="polite">
-          {messages.map((message) => (
+        <div
+          ref={messageListRef}
+          className="message-list"
+          aria-label="대화 내용"
+          aria-live="polite"
+        >
+          {messages.map((message, index) => (
             <ChatMessage
               key={message.id}
               message={message}
+              messageRef={
+                index === messages.length - 1 ? latestMessageRef : undefined
+              }
               isLoading={isLoading}
               onSuggestion={(suggestion) => void submitQuestion(suggestion)}
               onIntentSelect={handleIntentSelect}

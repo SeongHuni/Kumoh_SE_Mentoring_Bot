@@ -7,7 +7,7 @@ describe("RecentNoticeList", () => {
   it("renders nothing when there are no notices", () => {
     render(<RecentNoticeList notices={[]} responseType="answer" />);
 
-    expect(screen.queryByRole("region", { name: "관련 최근 공지" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "최근 공지" })).not.toBeInTheDocument();
   });
 
   it("renders a notice title, topic label, date, and canonical link", () => {
@@ -27,9 +27,12 @@ describe("RecentNoticeList", () => {
       />,
     );
 
-    expect(screen.getByRole("region", { name: "관련 최근 공지" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "최근 공지" })).toBeInTheDocument();
     expect(
-      screen.getByText("관련 최근 공지", { selector: ".notice-heading" }),
+      screen.getByText("최근 공지", { selector: ".notice-heading" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("답변 출처와 별도로 제공하는 게시판 최신 공지입니다."),
     ).toBeInTheDocument();
     expect(screen.getByText("2026학년도 개설강좌 안내")).toBeInTheDocument();
     expect(screen.getByText("개설강좌조회 · 2026-03-20")).toBeInTheDocument();

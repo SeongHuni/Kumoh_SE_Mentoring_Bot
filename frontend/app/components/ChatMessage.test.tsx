@@ -50,9 +50,9 @@ describe("ChatMessage", () => {
     expect(screen.getByText("개설강좌 안내")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "수강신청 기간은?" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "다음 질문 추천" })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "관련 최근 공지" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "최근 공지" })).toBeInTheDocument();
     expect(
-      screen.getByText("관련 최근 공지", { selector: ".notice-heading" }),
+      screen.getByText("최근 공지", { selector: ".notice-heading" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /최근 개설강좌 공지/ })).toBeInTheDocument();
   });
@@ -123,7 +123,7 @@ describe("ChatMessage", () => {
       ).toBeInTheDocument();
       expect(
         within(responseMessage as HTMLElement).getByRole("region", {
-          name: "관련 최근 공지",
+          name: "최근 공지",
         }),
       ).toBeInTheDocument();
     } finally {

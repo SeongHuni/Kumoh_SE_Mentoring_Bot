@@ -1,5 +1,7 @@
 "use client";
 
+import type { Ref } from "react";
+
 import { IntentClarification } from "./IntentClarification";
 import { RecommendationChips } from "./RecommendationChips";
 import { RecentNoticeList } from "./RecentNoticeList";
@@ -10,6 +12,7 @@ type Props = {
   isLoading: boolean;
   onSuggestion: (question: string) => void;
   onIntentSelect?: (question: string, option: ClarificationOption) => void;
+  messageRef?: Ref<HTMLElement>;
 };
 
 function isAssistantMessage(message: Message): message is AssistantMessage {
@@ -21,6 +24,7 @@ export function ChatMessage({
   isLoading,
   onSuggestion,
   onIntentSelect,
+  messageRef,
 }: Props) {
   const assistant = isAssistantMessage(message);
   const lines = message.content.split("\n");
@@ -28,7 +32,7 @@ export function ChatMessage({
   const originalQuestion = assistant ? message.originalQuestion : undefined;
 
   return (
-    <article className={`message-row ${message.role}`}>
+    <article ref={messageRef} className={`message-row ${message.role}`}>
       <div className="avatar" aria-hidden="true">
         {assistant ? "SE" : "나"}
       </div>
