@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from numbers import Real
 
-from backend.app.domain import TextChunk
+from backend.app.domain import RetrievedChunk, TextChunk
 from backend.app.hybrid_retriever import HybridCandidate, reciprocal_rank
 from backend.app.intent_analysis import IntentOption
 from backend.app.query_intent import TERM_PATTERNS, QueryIntent
@@ -210,6 +210,26 @@ def _validate_finite_score(value: object, name: str) -> None:
     numeric = float(value)
     if not math.isfinite(numeric) or numeric < 0:
         raise ValueError(f"{name} must be a finite nonnegative real number")
+
+
+def to_retrieved(
+    candidates: Sequence[RerankedCandidate],
+) -> list[RetrievedChunk]:
+    if isinstance(candidates, (str, bytes, bytearray)) or not isinstance(candidates, Sequence):
+        raise TypeError("candidates must be a Sequence of RerankedCandidate")
+
+    retrieved: list[RetrievedChunk] = []
+    for candidate in candidates:
+        if not isinstance(candidate, RerankedCandidate):
+            raise TypeError("candidates must contain RerankedCandidate items")
+        _validate_finite_score(candidate.score, "score")
+        retrieved.append(
+            RetrievedChunk(
+                chunk=candidate.candidate.chunk,
+                score=candidate.score,
+            )
+        )
+    return retrieved
 
 
 def _validate_rank(value: object, name: str) -> None:

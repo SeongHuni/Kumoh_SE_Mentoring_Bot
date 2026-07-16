@@ -2,10 +2,14 @@ import math
 from dataclasses import FrozenInstanceError, replace
 
 import pytest
+from backend.app import reranker as reranker_module
+from backend.app.context_compressor import compress_contexts
 from backend.app.domain import TextChunk
+from backend.app.freshness_selector import select_freshest
 from backend.app.hybrid_retriever import HybridCandidate, reciprocal_rank
 from backend.app.intent_analysis import IntentOption
 from backend.app.query_intent import QueryIntent
+from backend.app.relevance_gate import evaluate_candidates, relevant_candidates
 from backend.app.reranker import RerankedCandidate, rerank
 from backend.app.topic_rules import IntentRule
 
@@ -595,3 +599,114 @@ def test_rerank_uses_deterministic_id_ties_without_publication_boost() -> None:
 
 def test_rerank_empty_list() -> None:
     assert rerank([], confirmed_intent(), query_intent()) == []
+
+
+def test_to_retrieved_preserves_order_exact_chunk_and_verified_score() -> None:
+    first = RerankedCandidate(
+        candidate=make_candidate(make_chunk("first", "첫 제목", "첫 본문")),
+        score=0.25,
+        title_marker_match=False,
+        body_marker_match=True,
+        temporal_match=True,
+        has_intent_conflict=False,
+    )
+    second = RerankedCandidate(
+        candidate=make_candidate(make_chunk("second", "둘째 제목", "둘째 본문")),
+        score=1.75,
+        title_marker_match=True,
+        body_marker_match=False,
+        temporal_match=True,
+        has_intent_conflict=False,
+    )
+    candidates = [first, second]
+    before = list(candidates)
+
+    retrieved = reranker_module.to_retrieved(candidates)
+
+    assert [item.chunk.id for item in retrieved] == ["first", "second"]
+    assert retrieved[0].chunk is first.candidate.chunk
+    assert retrieved[1].chunk is second.candidate.chunk
+    assert [item.score for item in retrieved] == [first.score, second.score]
+    assert candidates == before
+
+
+@pytest.mark.parametrize("score", [math.nan, math.inf, -math.inf, -0.01])
+def test_to_retrieved_rejects_nonfinite_or_negative_reranker_scores(score: float) -> None:
+    candidate = RerankedCandidate(
+        candidate=make_candidate(make_chunk("invalid-score", "제목", "본문")),
+        score=score,
+        title_marker_match=False,
+        body_marker_match=False,
+        temporal_match=True,
+        has_intent_conflict=False,
+    )
+
+    with pytest.raises(ValueError, match="score"):
+        reranker_module.to_retrieved([candidate])
+
+
+@pytest.mark.parametrize(
+    "candidates",
+    ["not-a-sequence", iter(()), [object()], ["not-a-candidate"]],
+)
+def test_to_retrieved_rejects_invalid_inputs(candidates: object) -> None:
+    with pytest.raises(TypeError, match="RerankedCandidate"):
+        reranker_module.to_retrieved(candidates)  # type: ignore[arg-type]
+
+
+def test_to_retrieved_empty_input_returns_empty_list() -> None:
+    assert reranker_module.to_retrieved([]) == []
+
+
+def test_selected_evidence_composes_into_compressed_context_without_metadata_loss() -> None:
+    old = RerankedCandidate(
+        candidate=make_candidate(
+            make_chunk(
+                "old",
+                "수강신청 일정",
+                "본문: 수강신청 기간은 1월입니다. 신청 방법은 포털입니다.",
+                published_at="2026-01-01",
+            )
+        ),
+        score=2.0,
+        title_marker_match=True,
+        body_marker_match=True,
+        temporal_match=True,
+        has_intent_conflict=False,
+    )
+    newest = RerankedCandidate(
+        candidate=make_candidate(
+            make_chunk(
+                "newest",
+                "수강신청 일정",
+                "제목: 수강신청 일정\n"
+                "작성일: 2026-07-15\n"
+                "본문: 수강신청 기간은 7월입니다.\n"
+                "신청 방법은 포털입니다.\n"
+                "무관한 안내입니다.",
+                published_at="2026-07-15",
+            )
+        ),
+        score=1.0,
+        title_marker_match=True,
+        body_marker_match=True,
+        temporal_match=True,
+        has_intent_conflict=False,
+    )
+
+    decisions = evaluate_candidates([old, newest])
+    relevant = relevant_candidates(decisions)
+    fresh = select_freshest(relevant)
+    contexts = compress_contexts(
+        reranker_module.to_retrieved(fresh), terms=("수강신청 기간", "신청 방법")
+    )
+
+    assert [candidate.candidate.chunk.id for candidate in fresh] == ["newest"]
+    assert contexts[0].score == newest.score
+    assert contexts[0].chunk.id == newest.candidate.chunk.id
+    assert contexts[0].chunk.url == newest.candidate.chunk.url
+    assert contexts[0].chunk.source == newest.candidate.chunk.source
+    assert contexts[0].chunk.published_at == newest.candidate.chunk.published_at
+    assert contexts[0].chunk.text == (
+        "수강신청 기간은 7월입니다.\n신청 방법은 포털입니다."
+    )
