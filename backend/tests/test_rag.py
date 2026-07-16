@@ -130,6 +130,18 @@ def older_career_program() -> TextChunk:
     )
 
 
+def newer_ambiguous_career_notice() -> TextChunk:
+    return chunk(
+        "career-ambiguous",
+        title="소프트웨어전공 행사 일정",
+        text="제목: 소프트웨어전공 행사 일정\n본문: 교내 행사의 장소를 안내합니다.",
+        published_at="2026-07-01",
+        topic_key="career",
+        intent_key="career.general",
+        latest=True,
+    )
+
+
 def scholarship_bootcamp() -> TextChunk:
     return chunk(
         "scholarship-bootcamp",
@@ -425,6 +437,11 @@ def test_broad_intents_keep_exact_or_board_scope_evidence(
             "장학금 신청 공지를 알려줘",
             "scholarship.general",
             [scholarship_bootcamp(), older_scholarship_application()],
+        ),
+        (
+            "최근 취업 프로그램을 알려줘",
+            "career.general",
+            [newer_ambiguous_career_notice(), older_career_program()],
         ),
     ],
 )

@@ -34,3 +34,16 @@ def latest_post_keys(posts: list[BoardPost]) -> set[tuple[str, str]]:
         if current is None or freshness_key(post) > freshness_key(current):
             latest[post.topic_key or "general"] = post
     return {(post.source, post.id) for post in latest.values()}
+
+
+def latest_intent_post(
+    posts: list[BoardPost],
+    intent_key: str,
+) -> BoardPost | None:
+    latest: BoardPost | None = None
+    for post in posts:
+        if post.intent_key != intent_key:
+            continue
+        if latest is None or freshness_key(post) > freshness_key(latest):
+            latest = post
+    return latest

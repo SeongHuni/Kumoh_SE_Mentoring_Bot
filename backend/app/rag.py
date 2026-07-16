@@ -6,6 +6,7 @@ from numbers import Real
 
 from backend.app.context_compressor import compress_contexts
 from backend.app.domain import AnswerSource, BoardPost, RetrievedChunk
+from backend.app.freshness import latest_intent_post
 from backend.app.freshness_selector import select_freshest
 from backend.app.hybrid_retriever import HybridRetriever
 from backend.app.intent_analysis import (
@@ -161,6 +162,13 @@ class RAGService:
             relevant,
             require_dated=query_intent.recency_requested,
         )
+        canonical_latest = latest_intent_post(self.posts, confirmed.intent_key)
+        if canonical_latest is not None:
+            freshest = [
+                candidate
+                for candidate in freshest
+                if candidate.candidate.chunk.url == canonical_latest.url
+            ]
         selected = [
             candidate
             for candidate in freshest
