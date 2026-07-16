@@ -36,6 +36,52 @@ const notice: RecentNotice = {
 };
 
 describe("requestChat", () => {
+  it("parses clarification options and sends a confirmed intent when selected", async () => {
+    const clarification = {
+      response_type: "clarification",
+      answer: "질문 의도를 이렇게 이해했습니다. 무엇을 찾을지 선택해 주세요.",
+      sources: [],
+      grounded: false,
+      interpreted_intent: {
+        topic_key: "registration",
+        intent_key: "registration.main",
+        label: "일반 수강신청 일정과 공지",
+        example: "2026학년도 수강신청 일정과 유의사항",
+      },
+      clarification_options: [
+        {
+          topic_key: "registration",
+          intent_key: "registration.main",
+          label: "일반 수강신청 일정과 공지",
+          example: "2026학년도 수강신청 일정과 유의사항",
+        },
+      ],
+      suggested_questions: [],
+      recent_notices: [],
+    };
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(makeResponse(JSON.stringify(clarification), true));
+
+    const reply = await requestChat("최근 수강신청 공지를 알려줘", {
+      apiUrl: "https://api.example.test",
+      confirmedIntentKey: "registration.main",
+      fetchImpl,
+    });
+
+    expect(reply.responseType).toBe("clarification");
+    expect(reply.clarificationOptions[0].intent_key).toBe("registration.main");
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://api.example.test/api/chat",
+      expect.objectContaining({
+        body: JSON.stringify({
+          question: "최근 수강신청 공지를 알려줘",
+          confirmed_intent_key: "registration.main",
+        }),
+      }),
+    );
+  });
+
   it("normalizes the API URL and maps a successful chat response", async () => {
     const fetchImpl = vi.fn().mockResolvedValue(
       makeResponse(
@@ -66,8 +112,11 @@ describe("requestChat", () => {
     );
     expect(reply).toEqual({
       content: "수강신청은 포털에서 진행합니다.",
+      responseType: "answer",
       sources: [source],
       grounded: true,
+      interpretedIntent: null,
+      clarificationOptions: [],
       suggested_questions: ["신청 기간은 언제야?"],
       recent_notices: [notice],
     });
@@ -160,8 +209,11 @@ describe("requestChat", () => {
       requestChat("질문", { apiUrl: "https://api.example.test", fetchImpl }),
     ).resolves.toEqual({
       content: "답변입니다.",
+      responseType: "answer",
       sources: [],
       grounded: undefined,
+      interpretedIntent: null,
+      clarificationOptions: [],
       suggested_questions: [],
       recent_notices: [],
     });
@@ -178,6 +230,7 @@ describe("requestChat", () => {
   });
 
   it.each([
+    ["an unknown response type", { response_type: "unsupported" }],
     ["a null source", { sources: [null] }],
     ["a numeric source", { sources: [42] }],
     [
@@ -195,6 +248,18 @@ describe("requestChat", () => {
       },
     ],
     ["a non-string suggested question", { suggested_questions: [42] }],
+    [
+      "a malformed clarification option",
+      {
+        clarification_options: [
+          {
+            topic_key: "registration",
+            intent_key: "registration.main",
+            label: "수강신청",
+          },
+        ],
+      },
+    ],
   ])("rejects successful payloads with %s", async (_description, fields) => {
     const fetchImpl = vi.fn().mockResolvedValue(
       makeResponse(JSON.stringify({ answer: "답변입니다.", ...fields }), true),

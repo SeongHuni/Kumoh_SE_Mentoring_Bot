@@ -1,22 +1,31 @@
 "use client";
 
+import { IntentClarification } from "./IntentClarification";
 import { RecommendationChips } from "./RecommendationChips";
 import { RecentNoticeList } from "./RecentNoticeList";
-import type { AssistantMessage, Message } from "./types";
+import type { AssistantMessage, ClarificationOption, Message } from "./types";
 
 type Props = {
   message: Message;
   isLoading: boolean;
   onSuggestion: (question: string) => void;
+  onIntentSelect?: (question: string, option: ClarificationOption) => void;
 };
 
 function isAssistantMessage(message: Message): message is AssistantMessage {
   return message.role === "assistant";
 }
 
-export function ChatMessage({ message, isLoading, onSuggestion }: Props) {
+export function ChatMessage({
+  message,
+  isLoading,
+  onSuggestion,
+  onIntentSelect,
+}: Props) {
   const assistant = isAssistantMessage(message);
   const lines = message.content.split("\n");
+  const responseType = assistant ? message.responseType ?? "answer" : "answer";
+  const originalQuestion = assistant ? message.originalQuestion : undefined;
 
   return (
     <article className={`message-row ${message.role}`}>
@@ -24,14 +33,27 @@ export function ChatMessage({ message, isLoading, onSuggestion }: Props) {
         {assistant ? "SE" : "나"}
       </div>
       <div className="message-stack">
-        <div className="message-bubble">
+        <div className={`message-bubble ${responseType}`}>
           {lines.map((line, index) => (
-            <span key={`${message.id}-${index}`}>
+            <span
+              className={line.trim() ? "answer-line" : "answer-spacer"}
+              key={`${message.id}-${index}`}
+            >
               {line}
               {index < lines.length - 1 && <br />}
             </span>
           ))}
         </div>
+        {assistant &&
+          responseType === "clarification" &&
+          originalQuestion &&
+          onIntentSelect && (
+            <IntentClarification
+              options={message.clarificationOptions ?? []}
+              disabled={isLoading}
+              onSelect={(option) => onIntentSelect(originalQuestion, option)}
+            />
+          )}
         {assistant && message.sources.length > 0 && (
           <div className="source-panel">
             <p className="source-heading">참고한 게시글</p>
@@ -67,7 +89,10 @@ export function ChatMessage({ message, isLoading, onSuggestion }: Props) {
               disabled={isLoading}
               onSelect={onSuggestion}
             />
-            <RecentNoticeList notices={message.recent_notices} />
+            <RecentNoticeList
+              notices={message.recent_notices}
+              responseType={responseType}
+            />
           </>
         )}
       </div>

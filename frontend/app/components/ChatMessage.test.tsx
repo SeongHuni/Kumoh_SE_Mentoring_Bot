@@ -50,8 +50,10 @@ describe("ChatMessage", () => {
     expect(screen.getByText("개설강좌 안내")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "수강신청 기간은?" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "다음 질문 추천" })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "최근 공지" })).toBeInTheDocument();
-    expect(screen.getByText("최근 공지", { selector: ".notice-heading" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "관련 최근 공지" })).toBeInTheDocument();
+    expect(
+      screen.getByText("관련 최근 공지", { selector: ".notice-heading" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /최근 개설강좌 공지/ })).toBeInTheDocument();
   });
 
@@ -71,7 +73,7 @@ describe("ChatMessage", () => {
     expect(screen.getByText("개설강좌를 알려줘")).toBeInTheDocument();
     expect(screen.queryByText("참고한 게시글")).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "다음 질문 추천" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: "최근 공지" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "관련 최근 공지" })).not.toBeInTheDocument();
   });
 
   it("renders recommendations and recent notices returned by the chat API", async () => {
@@ -120,7 +122,9 @@ describe("ChatMessage", () => {
         }),
       ).toBeInTheDocument();
       expect(
-        within(responseMessage as HTMLElement).getByRole("region", { name: "최근 공지" }),
+        within(responseMessage as HTMLElement).getByRole("region", {
+          name: "관련 최근 공지",
+        }),
       ).toBeInTheDocument();
     } finally {
       vi.unstubAllGlobals();

@@ -246,6 +246,20 @@ a {
   box-shadow: 0 7px 22px rgba(16, 37, 31, 0.05);
 }
 
+.message-bubble.no_answer {
+  border-color: rgba(150, 96, 32, 0.22);
+  background: #fffdf7;
+}
+
+.answer-line {
+  display: inline;
+}
+
+.answer-spacer {
+  display: block;
+  height: 5px;
+}
+
 .user .message-bubble {
   color: white;
   border-color: var(--green);
@@ -323,6 +337,91 @@ a {
   margin-top: 12px;
 }
 
+.intent-panel {
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid rgba(0, 102, 79, 0.2);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(183, 237, 207, 0.2), rgba(255, 255, 255, 0.94));
+}
+
+.intent-panel-heading {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: start;
+  margin-bottom: 10px;
+}
+
+.intent-panel-heading > span {
+  color: var(--green);
+  font-family: Georgia, serif;
+  font-size: 18px;
+}
+
+.intent-panel-heading strong {
+  font-size: 13px;
+}
+
+.intent-panel-heading p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.intent-options {
+  display: grid;
+  gap: 7px;
+}
+
+.intent-options button {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 11px 38px 11px 12px;
+  color: var(--ink);
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+}
+
+.intent-options button:hover:not(:disabled),
+.intent-options button:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(0, 102, 79, 0.5);
+  background: white;
+  outline: none;
+}
+
+.intent-options button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.intent-options button strong {
+  color: var(--green-dark);
+  font-size: 13px;
+}
+
+.intent-options button span:not(.intent-arrow) {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.intent-arrow {
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  color: var(--green);
+  transform: translateY(-50%);
+}
+
 .recent-notice-section {
   margin-top: 12px;
 }
@@ -334,6 +433,13 @@ a {
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
+}
+
+.notice-description {
+  margin: -3px 0 8px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
 }
 
 .recommendation-chips {

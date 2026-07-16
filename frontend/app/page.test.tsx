@@ -13,6 +13,7 @@ const mockedRequestChat = vi.mocked(requestChat);
 
 const reply: ChatReply = {
   content: "수강신청은 포털에서 진행합니다.",
+  responseType: "answer",
   sources: [
     {
       title: "수강신청 안내",
@@ -23,6 +24,8 @@ const reply: ChatReply = {
     },
   ],
   grounded: true,
+  interpretedIntent: null,
+  clarificationOptions: [],
   suggested_questions: ["신청 기간은 언제야?"],
   recent_notices: [
     {
@@ -99,5 +102,56 @@ describe("Home", () => {
     expect(
       await screen.findByText("답변 요청 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요."),
     ).toBeInTheDocument();
+  });
+
+  it("resends the original question with the selected intent without duplicating it", async () => {
+    const clarification = {
+      content: "질문 의도를 이렇게 이해했습니다. 무엇을 찾을지 선택해 주세요.",
+      responseType: "clarification" as const,
+      sources: [],
+      grounded: false,
+      interpretedIntent: {
+        topic_key: "registration",
+        intent_key: "registration.main",
+        label: "일반 수강신청 일정과 공지",
+        example: "2026학년도 수강신청 일정과 유의사항",
+      },
+      clarificationOptions: [
+        {
+          topic_key: "registration",
+          intent_key: "registration.main",
+          label: "일반 수강신청 일정과 공지",
+          example: "2026학년도 수강신청 일정과 유의사항",
+        },
+      ],
+      suggested_questions: [],
+      recent_notices: [],
+    };
+    mockedRequestChat.mockResolvedValueOnce(clarification).mockResolvedValueOnce({
+      ...reply,
+      responseType: "answer",
+      interpretedIntent: clarification.interpretedIntent,
+      clarificationOptions: [],
+    });
+    render(<Home />);
+
+    fireEvent.change(screen.getByRole("textbox", { name: "질문 입력" }), {
+      target: { value: "최근 수강신청 공지를 알려줘" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "질문 보내기" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: /일반 수강신청 일정과 공지/ }),
+    );
+
+    await waitFor(() => expect(mockedRequestChat).toHaveBeenCalledTimes(2));
+    expect(mockedRequestChat).toHaveBeenLastCalledWith(
+      "최근 수강신청 공지를 알려줘",
+      {
+        apiUrl: "http://localhost:8000",
+        confirmedIntentKey: "registration.main",
+      },
+    );
+    expect(document.querySelectorAll(".message-row.user")).toHaveLength(1);
+    expect(await screen.findByText(reply.content)).toBeInTheDocument();
   });
 });

@@ -3,7 +3,12 @@
 import { FormEvent, useRef, useState } from "react";
 
 import { ChatMessage } from "./components/ChatMessage";
-import type { AssistantMessage, Message, UserMessage } from "./components/types";
+import type {
+  AssistantMessage,
+  ClarificationOption,
+  Message,
+  UserMessage,
+} from "./components/types";
 import { requestChat } from "./lib/chatApi";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -18,7 +23,10 @@ const initialMessage: AssistantMessage = {
   role: "assistant",
   content:
     "안녕하세요! 현재 금오공대 공식 공지를 바탕으로 학사·진로 정보를 찾아드려요. 중요한 일정은 원문 공지를 다시 확인해 주세요.",
+  responseType: "answer",
   sources: [],
+  interpretedIntent: null,
+  clarificationOptions: [],
   suggested_questions: suggestions,
   recent_notices: [],
 };
@@ -29,25 +37,40 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  async function submitQuestion(rawQuestion: string) {
+  async function submitQuestion(
+    rawQuestion: string,
+    options: { confirmedIntentKey?: string; appendUser?: boolean } = {},
+  ) {
     const trimmed = rawQuestion.trim();
     if (trimmed.length < 2 || isLoading) return;
 
-    const userMessage: UserMessage = { id: Date.now(), role: "user", content: trimmed };
-    setMessages((current) => [...current, userMessage]);
+    if (options.appendUser !== false) {
+      const userMessage: UserMessage = { id: Date.now(), role: "user", content: trimmed };
+      setMessages((current) => [...current, userMessage]);
+    }
     setQuestion("");
     setIsLoading(true);
 
     try {
-      const reply = await requestChat(trimmed, { apiUrl });
+      const reply = await requestChat(trimmed, {
+        apiUrl,
+        ...(options.confirmedIntentKey
+          ? { confirmedIntentKey: options.confirmedIntentKey }
+          : {}),
+      });
       setMessages((current) => [
         ...current,
         {
           id: Date.now() + 1,
           role: "assistant",
           content: reply.content,
+          responseType: reply.responseType,
           sources: reply.sources,
           grounded: reply.grounded,
+          interpretedIntent: reply.interpretedIntent,
+          clarificationOptions: reply.clarificationOptions,
+          originalQuestion:
+            reply.responseType === "clarification" ? trimmed : undefined,
           suggested_questions: reply.suggested_questions,
           recent_notices: reply.recent_notices,
         },
@@ -62,8 +85,11 @@ export default function Home() {
             error instanceof Error
               ? error.message
               : "서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.",
+          responseType: "no_answer",
           sources: [],
           grounded: false,
+          interpretedIntent: null,
+          clarificationOptions: [],
           suggested_questions: [],
           recent_notices: [],
         },
@@ -77,6 +103,16 @@ export default function Home() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     void submitQuestion(question);
+  }
+
+  function handleIntentSelect(
+    originalQuestion: string,
+    option: ClarificationOption,
+  ) {
+    void submitQuestion(originalQuestion, {
+      confirmedIntentKey: option.intent_key,
+      appendUser: false,
+    });
   }
 
   return (
@@ -114,6 +150,7 @@ export default function Home() {
               message={message}
               isLoading={isLoading}
               onSuggestion={(suggestion) => void submitQuestion(suggestion)}
+              onIntentSelect={handleIntentSelect}
             />
           ))}
 

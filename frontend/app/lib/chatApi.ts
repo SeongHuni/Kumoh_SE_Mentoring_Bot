@@ -1,4 +1,9 @@
-import type { RecentNotice, Source } from "../components/types";
+import type {
+  ClarificationOption,
+  RecentNotice,
+  ResponseType,
+  Source,
+} from "../components/types";
 
 export const DEFAULT_TIMEOUT_MS = 15_000;
 
@@ -9,14 +14,18 @@ const HTTP_FALLBACK_MESSAGE = "답변을 불러오지 못했습니다.";
 
 export type ChatReply = {
   content: string;
+  responseType: ResponseType;
   sources: Source[];
   grounded?: boolean;
+  interpretedIntent: ClarificationOption | null;
+  clarificationOptions: ClarificationOption[];
   suggested_questions: string[];
   recent_notices: RecentNotice[];
 };
 
 export type RequestChatOptions = {
   apiUrl: string;
+  confirmedIntentKey?: string;
   timeoutMs?: number;
   fetchImpl?: typeof fetch;
 };
@@ -52,6 +61,14 @@ function isNonEmptyString(value: unknown): value is string {
 
 function isNullableNonEmptyString(value: unknown): value is string | null {
   return value === null || isNonEmptyString(value);
+}
+
+function readResponseType(value: unknown): ResponseType {
+  if (value === undefined) return "answer";
+  if (value === "clarification" || value === "answer" || value === "no_answer") {
+    return value;
+  }
+  throw new ChatApiError(INVALID_SUCCESS_MESSAGE, "invalid-success");
 }
 
 function isHttpUrl(value: unknown): value is string {
@@ -206,6 +223,12 @@ function toChatReply(payload: Record<string, unknown>): ChatReply {
     isNullableNonEmptyString(value.published_at) &&
     isNonEmptyString(value.topic_key) &&
     isNonEmptyString(value.topic_label);
+  const isClarificationOption = (value: unknown): value is ClarificationOption =>
+    isRecord(value) &&
+    isNonEmptyString(value.topic_key) &&
+    isNonEmptyString(value.intent_key) &&
+    isNonEmptyString(value.label) &&
+    isNonEmptyString(value.example);
   const isNonEmptyStringElement = (value: unknown): value is string =>
     isNonEmptyString(value);
   const readArray = <T>(key: string, isElement: (value: unknown) => value is T): T[] => {
@@ -225,10 +248,40 @@ function toChatReply(payload: Record<string, unknown>): ChatReply {
     grounded = payload.grounded;
   }
 
+  const responseType = readResponseType(payload.response_type);
+
+  let interpretedIntent: ClarificationOption | null = null;
+  if (payload.interpreted_intent !== undefined && payload.interpreted_intent !== null) {
+    if (!isClarificationOption(payload.interpreted_intent)) {
+      throw new ChatApiError(INVALID_SUCCESS_MESSAGE, "invalid-success");
+    }
+    interpretedIntent = payload.interpreted_intent;
+  }
+  const sources = readArray("sources", isSource);
+  const clarificationOptions = readArray(
+    "clarification_options",
+    isClarificationOption,
+  );
+  if (
+    responseType === "clarification" &&
+    (grounded !== false ||
+      sources.length > 0 ||
+      interpretedIntent === null ||
+      clarificationOptions.length === 0)
+  ) {
+    throw new ChatApiError(INVALID_SUCCESS_MESSAGE, "invalid-success");
+  }
+  if (responseType === "no_answer" && (grounded === true || sources.length > 0)) {
+    throw new ChatApiError(INVALID_SUCCESS_MESSAGE, "invalid-success");
+  }
+
   return {
     content: payload.answer,
-    sources: readArray("sources", isSource),
+    responseType,
+    sources,
     grounded,
+    interpretedIntent,
+    clarificationOptions,
     suggested_questions: readArray("suggested_questions", isNonEmptyStringElement),
     recent_notices: readArray("recent_notices", isRecentNotice),
   };
@@ -236,7 +289,12 @@ function toChatReply(payload: Record<string, unknown>): ChatReply {
 
 export async function requestChat(
   question: string,
-  { apiUrl, timeoutMs = DEFAULT_TIMEOUT_MS, fetchImpl = fetch }: RequestChatOptions,
+  {
+    apiUrl,
+    confirmedIntentKey,
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    fetchImpl = fetch,
+  }: RequestChatOptions,
 ): Promise<ChatReply> {
   const controller = new AbortController();
   let timedOut = false;
@@ -246,10 +304,14 @@ export async function requestChat(
   }, timeoutMs);
 
   try {
+    const body = {
+      question,
+      ...(confirmedIntentKey ? { confirmed_intent_key: confirmedIntentKey } : {}),
+    };
     const response = await fetchImpl(`${apiUrl.replace(/\/+$/, "")}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify(body),
       signal: controller.signal,
     });
     const text = await readResponseText(response);
