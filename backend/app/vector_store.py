@@ -25,6 +25,60 @@ def _chunk_metadata(chunk: TextChunk) -> dict[str, str | int | bool]:
     return metadata
 
 
+def _text_chunk(
+    chunk_id: str,
+    document: str | None,
+    metadata: dict[str, object] | None,
+) -> TextChunk:
+    values = metadata or {}
+    if not isinstance(values, dict):
+        raise ValueError("Chroma metadata must be an object.")
+    return TextChunk(
+        id=chunk_id,
+        post_id=str(values.get("post_id", "")),
+        source=str(values.get("source", "unknown")),
+        title=str(values.get("title", "제목 없음")),
+        text=document or "",
+        url=str(values.get("url", "")),
+        published_at=str(values.get("published_at") or "") or None,
+        chunk_index=int(values.get("chunk_index", 0)),
+        topic_key=str(values.get("topic_key", "general")),
+        topic_label=str(values.get("topic_label", "전체 공지")),
+        is_latest_topic=bool(values.get("is_latest_topic", False)),
+        intent_key=str(values.get("intent_key") or "") or None,
+    )
+
+
+def _result_array(result: dict[str, object], key: str, *, nested: bool) -> list[object]:
+    value = result.get(key)
+    if value is None:
+        return []
+    if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
+        raise ValueError(f"Chroma result array {key!r} is malformed.")
+    if nested:
+        if not value:
+            return []
+        if len(value) != 1:
+            raise ValueError(f"Chroma result array {key!r} must contain one query row.")
+        value = value[0]
+        if value is None:
+            return []
+        if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
+            raise ValueError(f"Chroma result array {key!r} is malformed.")
+    return list(value)
+
+
+def _validate_result_lengths(arrays: dict[str, list[object]]) -> int:
+    lengths = {key: len(value) for key, value in arrays.items()}
+    if not lengths:
+        return 0
+    distinct_lengths = set(lengths.values())
+    if len(distinct_lengths) != 1:
+        detail = ", ".join(f"{key}={length}" for key, length in lengths.items())
+        raise ValueError(f"Chroma result arrays have mismatched lengths: {detail}")
+    return next(iter(distinct_lengths))
+
+
 class ChromaVectorStore:
     def __init__(self, path: Path, collection_name: str) -> None:
         path.mkdir(parents=True, exist_ok=True)
@@ -48,6 +102,25 @@ class ChromaVectorStore:
 
     def count(self) -> int:
         return self.collection.count()
+
+    def list_chunks(self, where: dict[str, object] | None = None) -> list[TextChunk]:
+        get_kwargs: dict[str, object] = {"include": ["documents", "metadatas"]}
+        if where is not None:
+            get_kwargs["where"] = where
+        result = self.collection.get(**get_kwargs)
+        arrays = {
+            key: _result_array(result, key, nested=False)
+            for key in ("ids", "documents", "metadatas")
+        }
+        row_count = _validate_result_lengths(arrays)
+        return [
+            _text_chunk(
+                chunk_id=str(arrays["ids"][index]),
+                document=arrays["documents"][index],
+                metadata=arrays["metadatas"][index],
+            )
+            for index in range(row_count)
+        ]
 
     def upsert(self, chunks: Sequence[TextChunk], embeddings: Sequence[Sequence[float]]) -> None:
         if len(chunks) != len(embeddings):
@@ -77,32 +150,24 @@ class ChromaVectorStore:
         if where is not None:
             query_kwargs["where"] = where
         result = self.collection.query(**query_kwargs)
-        ids = result.get("ids", [[]])[0]
-        documents = result.get("documents", [[]])[0]
-        metadatas = result.get("metadatas", [[]])[0]
-        distances = result.get("distances", [[]])[0]
+        arrays = {
+            key: _result_array(result, key, nested=True)
+            for key in ("ids", "documents", "metadatas", "distances")
+        }
+        row_count = _validate_result_lengths(arrays)
         retrieved: list[RetrievedChunk] = []
-        for chunk_id, document, metadata, distance in zip(
-            ids, documents, metadatas, distances, strict=True
-        ):
-            metadata = metadata or {}
+        for index in range(row_count):
             retrieved.append(
                 RetrievedChunk(
-                    chunk=TextChunk(
-                        id=chunk_id,
-                        post_id=str(metadata.get("post_id", "")),
-                        source=str(metadata.get("source", "unknown")),
-                        title=str(metadata.get("title", "제목 없음")),
-                        text=document or "",
-                        url=str(metadata.get("url", "")),
-                        published_at=str(metadata.get("published_at") or "") or None,
-                        chunk_index=int(metadata.get("chunk_index", 0)),
-                        topic_key=str(metadata["topic_key"]),
-                        topic_label=str(metadata["topic_label"]),
-                        is_latest_topic=bool(metadata["is_latest_topic"]),
-                        intent_key=str(metadata.get("intent_key") or "") or None,
+                    chunk=_text_chunk(
+                        chunk_id=str(arrays["ids"][index]),
+                        document=arrays["documents"][index],
+                        metadata=arrays["metadatas"][index],
                     ),
-                    score=max(0.0, min(1.0, 1.0 - float(distance))),
+                    score=max(
+                        0.0,
+                        min(1.0, 1.0 - float(arrays["distances"][index])),
+                    ),
                 )
             )
         return retrieved
