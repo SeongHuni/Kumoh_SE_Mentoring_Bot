@@ -1,3 +1,4 @@
+from math import inf, nan
 from unittest.mock import Mock
 
 import pytest
@@ -24,6 +25,23 @@ def make_chunk(
         intent_key=intent_key,
         is_latest_topic=False,
     )
+
+
+def query_result(*, latest: object = False, distance: object = 0.0) -> dict:
+    return {
+        "ids": [["one"]],
+        "documents": [["본문"]],
+        "metadatas": [[{"is_latest_topic": latest}]],
+        "distances": [[distance]],
+    }
+
+
+def make_query_store(result: dict) -> ChromaVectorStore:
+    store = ChromaVectorStore.__new__(ChromaVectorStore)
+    store.collection = Mock()
+    store.collection.count.return_value = 1
+    store.collection.query.return_value = result
+    return store
 
 
 def test_vector_store_returns_nearest_chunk(tmp_path) -> None:
@@ -232,3 +250,95 @@ def test_query_forwards_only_supplied_topic_filter() -> None:
     assert store.collection.query.call_args.kwargs["where"] == {
         "topic_key": "registration"
     }
+
+
+@pytest.mark.parametrize(
+    ("latest", "expected"),
+    [(True, True), (False, False), ("TRUE", True), ("false", False)],
+)
+def test_query_parses_boolean_and_legacy_string_latest_metadata(
+    latest: object,
+    expected: bool,
+) -> None:
+    results = make_query_store(query_result(latest=latest)).query([1.0], top_k=1)
+
+    assert results[0].chunk.is_latest_topic is expected
+
+
+@pytest.mark.parametrize("latest", ["yes", 2, [], object()])
+def test_query_rejects_unknown_latest_metadata(latest: object) -> None:
+    with pytest.raises(ValueError, match="is_latest_topic"):
+        make_query_store(query_result(latest=latest)).query([1.0], top_k=1)
+
+
+@pytest.mark.parametrize("distance", [nan, inf, -inf])
+def test_query_rejects_nonfinite_distances(distance: float) -> None:
+    with pytest.raises(ValueError, match="distance.*finite"):
+        make_query_store(query_result(distance=distance)).query([1.0], top_k=1)
+
+
+@pytest.mark.parametrize(
+    ("distance", "expected_score"),
+    [(-0.5, 1.0), (0.25, 0.75), (1.5, 0.0)],
+)
+def test_query_clamps_finite_cosine_distance_to_score(
+    distance: float,
+    expected_score: float,
+) -> None:
+    results = make_query_store(query_result(distance=distance)).query([1.0], top_k=1)
+
+    assert results[0].score == expected_score
+
+
+@pytest.mark.parametrize("top_k", [0, -1, True, 1.0])
+def test_query_rejects_invalid_top_k_even_when_collection_is_empty(top_k: object) -> None:
+    store = ChromaVectorStore.__new__(ChromaVectorStore)
+    store.collection = Mock()
+    store.collection.count.return_value = 0
+
+    with pytest.raises(ValueError, match="top_k.*positive integer"):
+        store.query([1.0], top_k=top_k)  # type: ignore[arg-type]
+    store.collection.query.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "embedding",
+    [[], "abc", [True], [1.0, "x"], [nan], [inf], None],
+)
+def test_query_rejects_invalid_embeddings_even_when_collection_is_empty(
+    embedding: object,
+) -> None:
+    store = ChromaVectorStore.__new__(ChromaVectorStore)
+    store.collection = Mock()
+    store.collection.count.return_value = 0
+
+    with pytest.raises(ValueError, match="embedding"):
+        store.query(embedding, top_k=1)  # type: ignore[arg-type]
+    store.collection.query.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "embeddings",
+    [[[]], [[True]], [["x"]], [[nan]], [[inf]], [[1.0], [2.0, 3.0]]],
+)
+def test_upsert_rejects_invalid_or_inconsistent_embeddings(embeddings: object) -> None:
+    store = ChromaVectorStore.__new__(ChromaVectorStore)
+    store.collection = Mock()
+
+    with pytest.raises(ValueError, match="embedding|dimension"):
+        store.upsert([make_chunk("one", "공지")] * len(embeddings), embeddings)  # type: ignore[arg-type]
+    store.collection.upsert.assert_not_called()
+
+
+def test_upsert_validates_vectors_without_mutating_original_embeddings() -> None:
+    store = ChromaVectorStore.__new__(ChromaVectorStore)
+    store.collection = Mock()
+    embeddings = [[1.0, 2.0], [3.0, 4.0]]
+
+    store.upsert([make_chunk("one", "공지"), make_chunk("two", "다른 공지")], embeddings)
+
+    stored = store.collection.upsert.call_args.kwargs["embeddings"]
+    assert embeddings == [[1.0, 2.0], [3.0, 4.0]]
+    assert stored == embeddings
+    assert stored is not embeddings
+    assert stored[0] is not embeddings[0]

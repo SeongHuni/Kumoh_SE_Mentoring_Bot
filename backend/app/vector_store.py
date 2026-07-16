@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
+from numbers import Real
 from pathlib import Path
 
 import chromadb
@@ -25,12 +27,50 @@ def _chunk_metadata(chunk: TextChunk) -> dict[str, str | int | bool]:
     return metadata
 
 
+def _finite_real(value: object, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, Real):
+        raise ValueError(f"{name} must be a finite real number.")
+    numeric = float(value)
+    if not math.isfinite(numeric):
+        raise ValueError(f"{name} must be a finite real number.")
+    return numeric
+
+
+def _embedding_values(embedding: object, name: str) -> list[float]:
+    if isinstance(embedding, (str, bytes)) or not isinstance(embedding, Sequence):
+        raise ValueError(f"{name} must be a nonempty sequence of finite real numbers.")
+    values = list(embedding)
+    if not values:
+        raise ValueError(f"{name} must be a nonempty sequence of finite real numbers.")
+    return [_finite_real(value, f"{name} value") for value in values]
+
+
+def _positive_integer(value: object, name: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise ValueError(f"{name} must be a positive integer.")
+    return value
+
+
+def _is_latest_topic(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().casefold()
+        if normalized == "true":
+            return True
+        if normalized == "false":
+            return False
+    raise ValueError(
+        "is_latest_topic must be a boolean or a case-insensitive 'true'/'false' string."
+    )
+
+
 def _text_chunk(
     chunk_id: str,
     document: str | None,
     metadata: dict[str, object] | None,
 ) -> TextChunk:
-    values = metadata or {}
+    values = {} if metadata is None else metadata
     if not isinstance(values, dict):
         raise ValueError("Chroma metadata must be an object.")
     return TextChunk(
@@ -44,7 +84,7 @@ def _text_chunk(
         chunk_index=int(values.get("chunk_index", 0)),
         topic_key=str(values.get("topic_key", "general")),
         topic_label=str(values.get("topic_label", "전체 공지")),
-        is_latest_topic=bool(values.get("is_latest_topic", False)),
+        is_latest_topic=_is_latest_topic(values.get("is_latest_topic", False)),
         intent_key=str(values.get("intent_key") or "") or None,
     )
 
@@ -127,10 +167,17 @@ class ChromaVectorStore:
             raise ValueError("청크 수와 임베딩 수가 일치하지 않습니다.")
         if not chunks:
             return
+        validated_embeddings = [
+            _embedding_values(embedding, f"embedding[{index}]")
+            for index, embedding in enumerate(embeddings)
+        ]
+        dimension = len(validated_embeddings[0])
+        if any(len(embedding) != dimension for embedding in validated_embeddings):
+            raise ValueError("all embeddings must have the same dimension.")
         self.collection.upsert(
             ids=[chunk.id for chunk in chunks],
             documents=[chunk.text for chunk in chunks],
-            embeddings=[list(vector) for vector in embeddings],
+            embeddings=validated_embeddings,
             metadatas=[_chunk_metadata(chunk) for chunk in chunks],
         )
 
@@ -140,11 +187,14 @@ class ChromaVectorStore:
         top_k: int,
         where: dict[str, object] | None = None,
     ) -> list[RetrievedChunk]:
-        if self.count() == 0:
+        validated_top_k = _positive_integer(top_k, "top_k")
+        validated_embedding = _embedding_values(embedding, "embedding")
+        collection_count = self.count()
+        if collection_count == 0:
             return []
         query_kwargs: dict[str, object] = {
-            "query_embeddings": [list(embedding)],
-            "n_results": min(top_k, self.count()),
+            "query_embeddings": [validated_embedding],
+            "n_results": min(validated_top_k, collection_count),
             "include": ["documents", "metadatas", "distances"],
         }
         if where is not None:
@@ -166,7 +216,11 @@ class ChromaVectorStore:
                     ),
                     score=max(
                         0.0,
-                        min(1.0, 1.0 - float(arrays["distances"][index])),
+                        min(
+                            1.0,
+                            1.0
+                            - _finite_real(arrays["distances"][index], "distance"),
+                        ),
                     ),
                 )
             )
