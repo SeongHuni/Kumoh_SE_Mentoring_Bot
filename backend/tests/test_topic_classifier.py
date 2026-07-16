@@ -74,7 +74,7 @@ def test_enrich_posts_uses_content_only_when_title_has_default_topic() -> None:
     enriched = enrich_posts([post], catalog)[0]
 
     assert enriched.topic_key == "registration"
-    assert enriched.intent_key == "registration.change"
+    assert enriched.intent_key == "registration.main"
 
 
 @pytest.mark.parametrize(
@@ -103,3 +103,66 @@ def test_enrich_posts_assigns_registration_intents_from_title(
 
     assert enriched.topic_key == "registration"
     assert enriched.intent_key == intent_key
+
+
+def test_enrich_posts_uses_body_for_intent_when_title_has_no_intent_match() -> None:
+    catalog = load_topic_catalog(Path("data/topic_rules.json"))
+    post = BoardPost(
+        id="body-intent",
+        source="kumoh",
+        title="학사 행정 안내",
+        content="조기취업자 출석인정 신청 방법을 안내합니다.",
+        url="https://example.com/body-intent",
+    )
+
+    enriched = enrich_posts([post], catalog)[0]
+
+    assert enriched.topic_key == "registration"
+    assert enriched.intent_key == "registration.attendance"
+
+
+def test_enrich_posts_falls_back_to_general_recent_for_unmatched_general_post() -> None:
+    catalog = load_topic_catalog(Path("data/topic_rules.json"))
+    post = BoardPost(
+        id="unrelated-general",
+        source="kumoh",
+        title="학사 행정 안내",
+        content="학생 지원 관련 내용을 확인해 주세요.",
+        url="https://example.com/unrelated-general",
+    )
+
+    enriched = enrich_posts([post], catalog)[0]
+
+    assert enriched.topic_key == "general"
+    assert enriched.intent_key == "general.recent"
+
+
+def test_enrich_posts_prefers_title_intent_over_conflicting_body() -> None:
+    catalog = load_topic_catalog(Path("data/topic_rules.json"))
+    post = BoardPost(
+        id="title-wins",
+        source="kumoh",
+        title="수강신청 변경 정정 안내",
+        content="수강꾸러미 신청 일정도 함께 안내합니다.",
+        url="https://example.com/title-wins",
+    )
+
+    enriched = enrich_posts([post], catalog)[0]
+
+    assert enriched.intent_key == "registration.change"
+
+
+def test_enrich_posts_preserves_explicit_valid_intent_key() -> None:
+    catalog = load_topic_catalog(Path("data/topic_rules.json"))
+    post = BoardPost(
+        id="explicit-intent",
+        source="kumoh",
+        title="수강신청 안내",
+        content="일반 수강신청 일정입니다.",
+        url="https://example.com/explicit-intent",
+        intent_key="registration.attendance",
+    )
+
+    enriched = enrich_posts([post], catalog)[0]
+
+    assert enriched.intent_key == "registration.attendance"

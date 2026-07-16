@@ -56,7 +56,7 @@ class TopicCatalog:
             raise ValueError("default_topic_key에 해당하는 규칙이 없습니다.")
         return default
 
-    def classify_intent(self, text: str, topic: TopicRule) -> IntentRule:
+    def match_intent(self, text: str, topic: TopicRule) -> IntentRule | None:
         if not topic.intents:
             raise ValueError(f"{topic.key} topic에 intent 규칙이 없습니다.")
         normalized = " ".join(text.casefold().split())
@@ -74,6 +74,14 @@ class TopicCatalog:
                     matches.append((len(normalized_keyword), -order, intent))
         if matches:
             return max(matches, key=lambda item: (item[0], item[1]))[2]
+        return None
+
+    def classify_intent(self, text: str, topic: TopicRule) -> IntentRule:
+        match = self.match_intent(text, topic)
+        if match is not None:
+            return match
+        if not topic.intents:
+            raise ValueError(f"{topic.key} topic에 intent 규칙이 없습니다.")
         return topic.intents[0]
 
 
@@ -104,26 +112,31 @@ def _load_intents(value: object, topic_key: str) -> tuple[IntentRule, ...]:
         raise ValueError(f"{topic_key}.intents는 객체 배열이어야 합니다.")
     if not value:
         raise ValueError(f"{topic_key}에는 명시적인 기본 intent가 필요합니다.")
-    return tuple(
-        IntentRule(
-            key=_clean_key(item.get("key"), "intent key"),
-            label=_clean_key(item.get("label"), f"{topic_key}.intent label"),
-            keywords=_clean_strings(
-                item.get("keywords", []),
-                f"{topic_key}.intent keywords",
-            ),
-            evidence_markers=_clean_strings(
-                item.get("evidence_markers", []),
-                f"{topic_key}.intent evidence_markers",
-            ),
-            exclusion_markers=_clean_strings(
-                item.get("exclusion_markers", []),
-                f"{topic_key}.intent exclusion_markers",
-            ),
-            example=_clean_key(item.get("example"), f"{topic_key}.intent example"),
+    intents: list[IntentRule] = []
+    for item in value:
+        keywords = _clean_strings(
+            item.get("keywords", []),
+            f"{topic_key}.intent keywords",
         )
-        for item in value
-    )
+        if not keywords:
+            raise ValueError(f"{topic_key}.intent keywords에는 하나 이상의 값이 필요합니다.")
+        intents.append(
+            IntentRule(
+                key=_clean_key(item.get("key"), "intent key"),
+                label=_clean_key(item.get("label"), f"{topic_key}.intent label"),
+                keywords=keywords,
+                evidence_markers=_clean_strings(
+                    item.get("evidence_markers", []),
+                    f"{topic_key}.intent evidence_markers",
+                ),
+                exclusion_markers=_clean_strings(
+                    item.get("exclusion_markers", []),
+                    f"{topic_key}.intent exclusion_markers",
+                ),
+                example=_clean_key(item.get("example"), f"{topic_key}.intent example"),
+            )
+        )
+    return tuple(intents)
 
 
 def _load_retrieval_policy(value: object) -> RetrievalPolicy:
@@ -165,7 +178,7 @@ def load_topic_catalog(path: Path) -> TopicCatalog:
     rules = tuple(
         TopicRule(
             key=keys[index],
-            label=str(item["label"]).strip(),
+            label=_clean_key(item.get("label"), f"{keys[index]}.topic label"),
             keywords=_clean_strings(item.get("keywords", []), f"{keys[index]}.keywords"),
             suggested_questions=_clean_strings(
                 item.get("suggested_questions", []),

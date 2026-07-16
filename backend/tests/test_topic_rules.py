@@ -415,6 +415,58 @@ def test_catalog_rejects_topic_without_intents(tmp_path) -> None:
         load_topic_catalog(path)
 
 
+def test_catalog_rejects_intent_with_empty_keywords(tmp_path) -> None:
+    path = tmp_path / "topic_rules.json"
+    payload = _intent_payload("general.recent")
+    payload["keywords"] = []
+    path.write_text(
+        json.dumps(
+            {
+                "default_topic_key": "general",
+                "topics": [
+                    {
+                        "key": "general",
+                        "label": "전체",
+                        "keywords": [],
+                        "suggested_questions": [],
+                        "intents": [payload],
+                    }
+                ],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="intent keywords"):
+        load_topic_catalog(path)
+
+
+def test_catalog_rejects_blank_topic_label(tmp_path) -> None:
+    path = tmp_path / "topic_rules.json"
+    path.write_text(
+        json.dumps(
+            {
+                "default_topic_key": "general",
+                "topics": [
+                    {
+                        "key": "general",
+                        "label": " ",
+                        "keywords": [],
+                        "suggested_questions": [],
+                        "intents": [_intent_payload("general.recent")],
+                    }
+                ],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="topic label"):
+        load_topic_catalog(path)
+
+
 def test_general_notice_does_not_classify_as_department_overview() -> None:
     catalog = load_topic_catalog(Path("data/topic_rules.json"))
     topic = catalog.rule_for("general")
