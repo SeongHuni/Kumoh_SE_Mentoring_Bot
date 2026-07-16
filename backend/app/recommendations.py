@@ -25,13 +25,31 @@ def suggested_questions(
 
 
 def recent_notices(
-    posts: list[BoardPost], topic_key: str, catalog: TopicCatalog, limit: int = 3
+    posts: list[BoardPost],
+    topic_key: str,
+    catalog: TopicCatalog,
+    limit: int = 3,
+    *,
+    intent_key: str | None = None,
 ) -> list[RecentNotice]:
+    if limit <= 0:
+        return []
+    matching_intent = sorted(
+        (
+            post
+            for post in posts
+            if intent_key is not None and post.intent_key == intent_key
+        ),
+        key=freshness_key,
+        reverse=True,
+    )
     latest = [post for post in posts if post.is_latest_topic]
     related = [post for post in latest if post.topic_key == topic_key]
     others = [post for post in latest if post.topic_key != topic_key]
-    ordered = sorted(related, key=freshness_key, reverse=True) + sorted(
-        others, key=freshness_key, reverse=True
+    ordered = (
+        matching_intent[:1]
+        + sorted(related, key=freshness_key, reverse=True)
+        + sorted(others, key=freshness_key, reverse=True)
     )
     result: list[RecentNotice] = []
     seen_urls: set[str] = set()

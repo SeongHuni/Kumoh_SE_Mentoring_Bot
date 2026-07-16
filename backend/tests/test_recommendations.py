@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 from backend.app.domain import BoardPost
 from backend.app.recommendations import recent_notices, suggested_questions
-from backend.app.topic_rules import TopicCatalog, TopicRule
+from backend.app.topic_rules import IntentRule, TopicCatalog, TopicRule
 
 
 def catalog() -> TopicCatalog:
@@ -21,6 +21,7 @@ def post(
     published_at: str,
     url: str | None = None,
     latest: bool = True,
+    intent_key: str | None = None,
 ) -> BoardPost:
     return BoardPost(
         id=post_id,
@@ -32,6 +33,7 @@ def post(
         crawled_at=datetime.fromisoformat(published_at).replace(tzinfo=UTC),
         topic_key=topic_key,
         topic_label=topic_key,
+        intent_key=intent_key,
         is_latest_topic=latest,
     )
 
@@ -77,3 +79,98 @@ def test_recent_notices_prioritizes_related_latest_posts_and_deduplicates_urls()
         ("course-new", "course"),
         ("other", "general"),
     ]
+
+
+def test_recent_notices_prioritizes_newest_confirmed_subintent() -> None:
+    intent_catalog = TopicCatalog(
+        default_topic_key="general",
+        rules=(
+            TopicRule(
+                "registration",
+                "수강신청",
+                ("수강신청",),
+                ("최근 수강신청 공지를 알려줘",),
+                intents=(
+                    IntentRule(
+                        "registration.main",
+                        "일반 수강신청",
+                        ("수강신청",),
+                        ("수강신청",),
+                        ("출석인정",),
+                        "수강신청 일정 안내",
+                    ),
+                    IntentRule(
+                        "registration.attendance",
+                        "출석인정",
+                        ("출석인정",),
+                        ("출석인정",),
+                        (),
+                        "출석인정 안내",
+                    ),
+                ),
+            ),
+            TopicRule("general", "전체 공지", (), ("최근 공지를 알려줘",)),
+        ),
+    )
+    notices = recent_notices(
+        [
+            post(
+                "main-old",
+                "registration",
+                "2026-01-10",
+                latest=False,
+                intent_key="registration.main",
+            ),
+            post(
+                "main-new",
+                "registration",
+                "2026-02-10",
+                latest=False,
+                intent_key="registration.main",
+            ),
+            post(
+                "attendance-newer",
+                "registration",
+                "2026-06-16",
+                latest=True,
+                intent_key="registration.attendance",
+            ),
+            post("general", "general", "2026-07-01"),
+        ],
+        "registration",
+        intent_catalog,
+        intent_key="registration.main",
+    )
+
+    assert [notice.title for notice in notices] == [
+        "main-new",
+        "attendance-newer",
+        "general",
+    ]
+
+
+def test_recent_notices_deduplicates_confirmed_intent_against_latest_groups() -> None:
+    notices = recent_notices(
+        [
+            post(
+                "same",
+                "course",
+                "2026-03-20",
+                url="https://example.com/shared",
+                intent_key="course.lookup",
+            ),
+            post(
+                "duplicate",
+                "course",
+                "2026-03-19",
+                url="https://example.com/shared",
+                latest=False,
+                intent_key="course.lookup",
+            ),
+        ],
+        "course",
+        catalog(),
+        intent_key="course.lookup",
+    )
+
+    assert [notice.url for notice in notices] == ["https://example.com/shared"]
