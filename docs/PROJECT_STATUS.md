@@ -29,7 +29,7 @@
 | --- | --- | --- | --- |
 | 의도 확인 API | 완료 | `clarification` / `answer` / `no_answer`, confirmed intent 검증 | 실제 사용자 질문 로그 기반 intent catalog 확장 |
 | 정확도 우선 RAG | 완료 | BM25+dense RRF, deterministic reranker, CRAG, 최신성, compression | OpenAI provider 별도 평가·calibration |
-| 로컬 인덱스 | 완료 | schema v2, 50 posts → 84 chunks, fingerprint prefix `b107d8be2408` | 원본·규칙·provider 변경 시 재생성 |
+| 로컬 인덱스 | 완료 | schema v2, 50 posts → 84 chunks, main fingerprint prefix `bdba760dc6cb` | 원본·규칙·provider 변경 시 재생성 |
 | 평가 | 로컬 통과 | 31/31, topic 31/31, intent 31/31, grounded 31/31, latest-only 31/31 | 질문 다양성·실사용 로그 기반 세트 확대 |
 | 백엔드 품질 gate | 통과 | 406 tests, 93.86% coverage, Ruff 통과 | 운영 부하·장애 주입 테스트 |
 | 프론트엔드 품질 gate | 통과 | 6 files / 90 tests, typecheck, ESLint, Next production build | 390px 모바일 visual regression 자동화 |
