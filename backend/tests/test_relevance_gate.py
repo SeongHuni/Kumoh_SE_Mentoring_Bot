@@ -1,3 +1,4 @@
+import pytest
 from backend.app.domain import TextChunk
 from backend.app.hybrid_retriever import HybridCandidate
 from backend.app.relevance_gate import (
@@ -146,11 +147,20 @@ def test_evaluate_preserves_order_and_relevant_candidates_fail_closed() -> None:
         "relevant",
         "irrelevant",
     ]
-    assert [item.candidate.chunk.id for item in relevant_candidates(
-        [ambiguous, relevant, irrelevant]
-    )] == [
+    assert [item.candidate.chunk.id for item in relevant_candidates(decisions)] == [
         "relevant"
     ]
+
+
+def test_relevant_candidates_rejects_raw_reranked_candidates() -> None:
+    candidate = make_reranked(
+        make_chunk("raw", "수강신청 일정", "신청"),
+        title_marker_match=True,
+        signal_count=1,
+    )
+
+    with pytest.raises(TypeError, match="RelevanceDecision"):
+        relevant_candidates([candidate])  # type: ignore[list-item]
 
 
 def test_relevance_gate_empty_list() -> None:

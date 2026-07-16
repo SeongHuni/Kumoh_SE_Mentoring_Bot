@@ -166,6 +166,21 @@ def test_body_exclusion_does_not_override_exact_intent_metadata() -> None:
     assert result.has_intent_conflict is False
 
 
+def test_title_exclusion_is_hard_even_with_exact_intent_metadata() -> None:
+    result = rerank(
+        [
+            make_candidate(
+                make_chunk("title-exclusion", "출석인정 수강신청", "신청 기간")
+            )
+        ],
+        confirmed_intent(),
+        query_intent(),
+        intent_rule=registration_rule(),
+    )[0]
+
+    assert result.has_intent_conflict is True
+
+
 def test_topic_or_explicit_intent_mismatch_is_hard_conflict() -> None:
     mismatched_topic = make_candidate(
         make_chunk("topic", "수강신청 일정", "신청 기간", topic_key="career")

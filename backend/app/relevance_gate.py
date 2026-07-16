@@ -38,10 +38,12 @@ def evaluate_candidates(
 
 
 def relevant_candidates(
-    candidates: Sequence[RerankedCandidate],
+    decisions: Sequence[RelevanceDecision],
 ) -> list[RerankedCandidate]:
-    return [
-        decision.candidate
-        for decision in evaluate_candidates(candidates)
-        if decision.label == "relevant"
-    ]
+    relevant: list[RerankedCandidate] = []
+    for decision in decisions:
+        if not isinstance(decision, RelevanceDecision):
+            raise TypeError("relevant_candidates expects RelevanceDecision items")
+        if decision.label == "relevant":
+            relevant.append(decision.candidate)
+    return relevant
