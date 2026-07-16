@@ -21,6 +21,7 @@ from backend.app.provider_factory import (
 )
 from backend.app.rag import RAGService
 from backend.app.reporting import write_text_reports
+from backend.app.schemas import ChatResponse
 from backend.app.storage import load_posts
 from backend.app.topic_classifier import enrich_posts
 from backend.app.topic_rules import load_topic_catalog
@@ -128,7 +129,15 @@ def run_evaluation(args: argparse.Namespace) -> EvaluationReport:
         topic_catalog=catalog,
         posts=posts,
     )
-    results = evaluate_cases(cases, catalog=catalog, posts=posts, ask=service.ask)
+    def ask_with_confirmed_intent(question: str, intent_key: str) -> ChatResponse:
+        return service.ask(question, confirmed_intent_key=intent_key)
+
+    results = evaluate_cases(
+        cases,
+        catalog=catalog,
+        posts=posts,
+        ask=ask_with_confirmed_intent,
+    )
     chat_model, embedding_model = effective_models(effective_settings)
     return build_evaluation_report(
         results,

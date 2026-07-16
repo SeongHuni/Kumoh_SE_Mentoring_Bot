@@ -136,6 +136,12 @@ def test_run_evaluation_uses_compatible_index_chunk_count(
     assert compatibility_check.call_args.kwargs["settings"] is app_settings
     provider_factory.assert_called_once_with(app_settings)
     assert report_builder.call_args.kwargs["indexed_chunks"] == 84
+    ask = case_evaluator.call_args.kwargs["ask"]
+    ask("질문", "general.recent")
+    service.ask.assert_called_once_with(
+        "질문",
+        confirmed_intent_key="general.recent",
+    )
     store.count.assert_not_called()
 
 
@@ -160,11 +166,15 @@ def report(failed: int) -> EvaluationReport:
         category="개설강좌",
         expected_topic_key="course_openings",
         actual_topic_key="course_openings",
+        confirmed_intent_key="course_openings.lookup",
+        expected_intent_key="course_openings.lookup",
+        actual_intent_key="course_openings.lookup",
         expected_grounded=True,
         actual_grounded=passed,
         sources=[],
         checks=EvaluationChecks(
             topic_match=True,
+            intent_match=True,
             grounded_match=passed,
             latest_only_match=True,
             source_title_match=None,
@@ -183,6 +193,7 @@ def report(failed: int) -> EvaluationReport:
             passed=int(passed),
             failed=failed,
             topic=EvaluationMetric(passed=1, total=1, rate=1.0),
+            intent=EvaluationMetric(passed=1, total=1, rate=1.0),
             grounded=EvaluationMetric(
                 passed=int(passed),
                 total=1,

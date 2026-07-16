@@ -9,6 +9,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from backend.app.domain import AnswerSource, BoardPost
+from backend.app.freshness import freshness_key
 from backend.app.schemas import ChatResponse
 from backend.app.topic_rules import TopicCatalog
 
@@ -23,6 +24,8 @@ class EvaluationCase(BaseModel):
     question: str = Field(min_length=2, max_length=500)
     category: str
     expected_topic_key: str
+    confirmed_intent_key: str
+    expected_intent_key: str
     expected_grounded: bool
     expected_latest_only: bool
     expected_source_title_contains: list[str] = Field(default_factory=list)
@@ -33,6 +36,8 @@ class EvaluationCase(BaseModel):
         "question",
         "category",
         "expected_topic_key",
+        "confirmed_intent_key",
+        "expected_intent_key",
         "notes",
         mode="before",
     )
@@ -47,7 +52,12 @@ class EvaluationCase(BaseModel):
             raise ValueError("평가 id는 kebab-case여야 합니다.")
         return value
 
-    @field_validator("category", "expected_topic_key")
+    @field_validator(
+        "category",
+        "expected_topic_key",
+        "confirmed_intent_key",
+        "expected_intent_key",
+    )
     @classmethod
     def reject_blank_required_strings(cls, value: str) -> str:
         if not value:
@@ -84,6 +94,7 @@ def load_evaluation_cases(path: Path) -> list[EvaluationCase]:
 
 class EvaluationChecks(BaseModel):
     topic_match: bool
+    intent_match: bool
     grounded_match: bool
     latest_only_match: bool | None
     source_title_match: bool | None
@@ -95,6 +106,9 @@ class EvaluationResult(BaseModel):
     category: str
     expected_topic_key: str
     actual_topic_key: str
+    confirmed_intent_key: str
+    expected_intent_key: str
+    actual_intent_key: str | None
     expected_grounded: bool
     actual_grounded: bool
     sources: list[AnswerSource]
@@ -114,6 +128,7 @@ class EvaluationSummary(BaseModel):
     passed: int
     failed: int
     topic: EvaluationMetric
+    intent: EvaluationMetric
     grounded: EvaluationMetric
     latest_only: EvaluationMetric
     source_title: EvaluationMetric
@@ -129,16 +144,22 @@ class EvaluationReport(BaseModel):
     results: list[EvaluationResult]
 
 
-def _latest_urls(posts: Iterable[BoardPost]) -> tuple[dict[str, set[str]], set[str]]:
-    by_topic: dict[str, set[str]] = {}
-    all_latest: set[str] = set()
+def _post_evidence(
+    posts: Iterable[BoardPost],
+) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
+    intents_by_url: dict[str, set[str]] = {}
+    newest_by_intent: dict[str, BoardPost] = {}
     for post in posts:
-        if not post.is_latest_topic:
+        if post.intent_key is None:
             continue
-        topic_key = post.topic_key or "general"
-        by_topic.setdefault(topic_key, set()).add(post.url)
-        all_latest.add(post.url)
-    return by_topic, all_latest
+        intents_by_url.setdefault(post.url, set()).add(post.intent_key)
+        current = newest_by_intent.get(post.intent_key)
+        if current is None or freshness_key(post) > freshness_key(current):
+            newest_by_intent[post.intent_key] = post
+    latest_by_intent = {
+        intent_key: {post.url} for intent_key, post in newest_by_intent.items()
+    }
+    return intents_by_url, latest_by_intent
 
 
 def evaluate_cases(
@@ -146,19 +167,31 @@ def evaluate_cases(
     *,
     catalog: TopicCatalog,
     posts: Iterable[BoardPost],
-    ask: Callable[[str], ChatResponse],
+    ask: Callable[[str, str], ChatResponse],
 ) -> list[EvaluationResult]:
     case_list = list(cases)
     for case in case_list:
-        if catalog.rule_for(case.expected_topic_key) is None:
+        topic = catalog.rule_for(case.expected_topic_key)
+        if topic is None:
             raise ValueError(f"존재하지 않는 topic입니다: {case.expected_topic_key}")
+        topic_intent_keys = {intent.key for intent in topic.intents}
+        if case.expected_intent_key not in topic_intent_keys:
+            raise ValueError(
+                "expected topic에 존재하지 않는 intent입니다: "
+                f"{case.expected_intent_key}"
+            )
+        if case.confirmed_intent_key not in topic_intent_keys:
+            raise ValueError(
+                "expected topic에 존재하지 않는 confirmed intent입니다: "
+                f"{case.confirmed_intent_key}"
+            )
 
-    latest_by_topic, all_latest_urls = _latest_urls(posts)
+    intents_by_url, latest_by_intent = _post_evidence(posts)
     results: list[EvaluationResult] = []
 
     for case in case_list:
         actual_topic_key = catalog.classify(case.question).key
-        actual = ask(case.question)
+        actual = ask(case.question, case.confirmed_intent_key)
         failures: list[str] = []
 
         topic_match = case.expected_topic_key == actual_topic_key
@@ -167,6 +200,25 @@ def evaluate_cases(
                 "topic 기대값 불일치: "
                 f"expected={case.expected_topic_key}, actual={actual_topic_key}"
             )
+
+        actual_intent_key = (
+            actual.interpreted_intent.intent_key
+            if actual.interpreted_intent is not None
+            else None
+        )
+        interpreted_intent_match = actual_intent_key == case.expected_intent_key
+        source_intent_match = all(
+            case.expected_intent_key in intents_by_url.get(source.url, set())
+            for source in actual.sources
+        )
+        intent_match = interpreted_intent_match and source_intent_match
+        if not interpreted_intent_match:
+            failures.append(
+                "intent 기대값 불일치: "
+                f"expected={case.expected_intent_key}, actual={actual_intent_key}"
+            )
+        if not source_intent_match:
+            failures.append("다른 intent의 source가 포함됐습니다.")
 
         grounded_match = case.expected_grounded == actual.grounded
         if actual.grounded and not actual.sources:
@@ -183,17 +235,13 @@ def evaluate_cases(
 
         latest_only_match: bool | None = None
         if case.expected_latest_only:
-            allowed_urls = (
-                all_latest_urls
-                if case.expected_topic_key == catalog.default_topic_key
-                else latest_by_topic.get(case.expected_topic_key, set())
-            )
+            allowed_urls = latest_by_intent.get(case.expected_intent_key, set())
             source_urls = [source.url for source in actual.sources]
             latest_only_match = all(url in allowed_urls for url in source_urls)
             if case.expected_grounded and not source_urls:
                 latest_only_match = False
             if not latest_only_match:
-                failures.append("최신 주제 source가 아닌 URL이 포함됐습니다.")
+                failures.append("해당 intent의 최신 source가 아닌 URL이 포함됐습니다.")
 
         source_title_match: bool | None = None
         if case.expected_source_title_contains:
@@ -215,11 +263,15 @@ def evaluate_cases(
                 category=case.category,
                 expected_topic_key=case.expected_topic_key,
                 actual_topic_key=actual_topic_key,
+                confirmed_intent_key=case.confirmed_intent_key,
+                expected_intent_key=case.expected_intent_key,
+                actual_intent_key=actual_intent_key,
                 expected_grounded=case.expected_grounded,
                 actual_grounded=actual.grounded,
                 sources=actual.sources,
                 checks=EvaluationChecks(
                     topic_match=topic_match,
+                    intent_match=intent_match,
                     grounded_match=grounded_match,
                     latest_only_match=latest_only_match,
                     source_title_match=source_title_match,
@@ -259,6 +311,7 @@ def build_evaluation_report(
         passed=passed,
         failed=total - passed,
         topic=_metric(result.checks.topic_match for result in results),
+        intent=_metric(result.checks.intent_match for result in results),
         grounded=_metric(result.checks.grounded_match for result in results),
         latest_only=_metric(result.checks.latest_only_match for result in results),
         source_title=_metric(result.checks.source_title_match for result in results),
@@ -302,6 +355,7 @@ def render_markdown(report: EvaluationReport) -> str:
     ]
     for label, metric in (
         ("Topic", summary.topic),
+        ("Intent", summary.intent),
         ("Grounded", summary.grounded),
         ("Latest-only", summary.latest_only),
         ("Source title", summary.source_title),
@@ -322,6 +376,10 @@ def render_markdown(report: EvaluationReport) -> str:
                 "- Topic: "
                 f"expected={_markdown_inline(result.expected_topic_key)}, "
                 f"actual={_markdown_inline(result.actual_topic_key)}",
+                "- Intent: "
+                f"confirmed={_markdown_inline(result.confirmed_intent_key)}, "
+                f"expected={_markdown_inline(result.expected_intent_key)}, "
+                f"actual={_markdown_inline(result.actual_intent_key)}",
                 "- Grounded: "
                 f"expected={_markdown_inline(str(result.expected_grounded).lower())}, "
                 f"actual={_markdown_inline(str(result.actual_grounded).lower())}",

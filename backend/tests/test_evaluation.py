@@ -13,8 +13,8 @@ from backend.app.evaluation import (
     load_evaluation_cases,
     render_markdown,
 )
-from backend.app.schemas import ChatResponse
-from backend.app.topic_rules import TopicCatalog, TopicRule
+from backend.app.schemas import ChatResponse, ClarificationOption
+from backend.app.topic_rules import IntentRule, TopicCatalog, TopicRule
 
 
 def valid_case(case_id: str = "course-openings-current") -> dict[str, object]:
@@ -23,6 +23,8 @@ def valid_case(case_id: str = "course-openings-current") -> dict[str, object]:
         "question": "이번 학기 개설강좌를 알려줘",
         "category": "개설강좌",
         "expected_topic_key": "course_openings",
+        "confirmed_intent_key": "course_openings.lookup",
+        "expected_intent_key": "course_openings.lookup",
         "expected_grounded": True,
         "expected_latest_only": True,
         "expected_source_title_contains": ["수강신청 안내"],
@@ -39,18 +41,44 @@ def catalog() -> TopicCatalog:
                 label="개설강좌",
                 keywords=("개설강좌",),
                 suggested_questions=(),
+                intents=(
+                    IntentRule(
+                        "course_openings.lookup",
+                        "개설강좌 조회",
+                        ("개설강좌",),
+                        ("개설강좌",),
+                        (),
+                        "개설강좌 조회",
+                    ),
+                ),
             ),
             TopicRule(
                 key="general",
                 label="일반",
                 keywords=(),
                 suggested_questions=(),
+                intents=(
+                    IntentRule(
+                        "general.recent",
+                        "전체 최신 공지",
+                        ("공지",),
+                        ("공지",),
+                        (),
+                        "최근 공지",
+                    ),
+                ),
             ),
         ),
     )
 
 
-def post(post_id: str, topic_key: str | None, latest: bool) -> BoardPost:
+def post(
+    post_id: str,
+    topic_key: str | None,
+    latest: bool,
+    *,
+    intent_key: str | None = None,
+) -> BoardPost:
     return BoardPost(
         id=post_id,
         source="학과 공지",
@@ -60,6 +88,12 @@ def post(post_id: str, topic_key: str | None, latest: bool) -> BoardPost:
         url=f"https://example.com/{post_id}",
         topic_key=topic_key,
         topic_label="개설강좌" if topic_key == "course_openings" else "일반",
+        intent_key=intent_key
+        or (
+            "course_openings.lookup"
+            if topic_key == "course_openings"
+            else "general.recent"
+        ),
         is_latest_topic=latest,
     )
 
@@ -68,6 +102,9 @@ def response(
     grounded: bool,
     url: str | None = None,
     title: str = "",
+    *,
+    intent_key: str = "course_openings.lookup",
+    topic_key: str = "course_openings",
 ) -> ChatResponse:
     sources = (
         [
@@ -82,7 +119,18 @@ def response(
         if url is not None
         else []
     )
-    return ChatResponse(answer="답변", sources=sources, grounded=grounded)
+    return ChatResponse(
+        response_type="answer" if grounded else "no_answer",
+        answer="답변",
+        sources=sources,
+        grounded=grounded,
+        interpreted_intent=ClarificationOption(
+            topic_key=topic_key,
+            intent_key=intent_key,
+            label="평가 의도",
+            example="평가 예시",
+        ),
+    )
 
 
 def test_load_evaluation_cases_validates_structured_list(tmp_path) -> None:
@@ -92,6 +140,101 @@ def test_load_evaluation_cases_validates_structured_list(tmp_path) -> None:
     cases = load_evaluation_cases(path)
 
     assert cases == [EvaluationCase.model_validate(valid_case())]
+
+
+def test_evaluation_case_requires_confirmed_and_expected_intent() -> None:
+    payload = valid_case("intent-contract")
+    payload["confirmed_intent_key"] = "course_openings.lookup"
+    payload["expected_intent_key"] = "course_openings.lookup"
+
+    case = EvaluationCase.model_validate(payload)
+
+    assert case.confirmed_intent_key == "course_openings.lookup"
+    assert case.expected_intent_key == "course_openings.lookup"
+
+
+def test_evaluation_rejects_source_from_other_subintent() -> None:
+    intent_catalog = TopicCatalog(
+        default_topic_key="general",
+        rules=(
+            TopicRule(
+                "registration",
+                "수강신청",
+                ("수강신청",),
+                (),
+                intents=(
+                    IntentRule(
+                        "registration.main",
+                        "일반 수강신청",
+                        ("수강신청",),
+                        ("수강신청",),
+                        ("출석인정",),
+                        "수강신청 일정",
+                    ),
+                    IntentRule(
+                        "registration.attendance",
+                        "출석인정",
+                        ("출석인정",),
+                        ("출석인정",),
+                        (),
+                        "출석인정 신청",
+                    ),
+                ),
+            ),
+            TopicRule("general", "일반", (), ()),
+        ),
+    )
+    attendance = BoardPost(
+        id="attendance",
+        source="학과 공지",
+        title="조기취업자 출석인정신청 안내",
+        content="출석인정 신청",
+        published_at="2026-06-16",
+        url="https://example.com/attendance",
+        topic_key="registration",
+        topic_label="수강신청",
+        intent_key="registration.attendance",
+        is_latest_topic=True,
+    )
+    payload = valid_case("wrong-subintent")
+    payload.update(
+        question="최근 수강신청 공지를 알려줘",
+        category="수강신청",
+        expected_topic_key="registration",
+        confirmed_intent_key="registration.main",
+        expected_intent_key="registration.main",
+        expected_source_title_contains=[],
+    )
+    actual = ChatResponse(
+        response_type="answer",
+        answer="출석인정 안내",
+        sources=[
+            AnswerSource(
+                title=attendance.title,
+                url=attendance.url,
+                source=attendance.source,
+                published_at=attendance.published_at,
+                score=0.9,
+            )
+        ],
+        grounded=True,
+        interpreted_intent=ClarificationOption(
+            topic_key="registration",
+            intent_key="registration.main",
+            label="일반 수강신청",
+            example="수강신청 일정",
+        ),
+    )
+
+    result = evaluate_cases(
+        [EvaluationCase.model_validate(payload)],
+        catalog=intent_catalog,
+        posts=[attendance],
+        ask=lambda _question, _intent: actual,
+    )[0]
+
+    assert result.checks.intent_match is False
+    assert any("intent" in failure for failure in result.failures)
 
 
 def test_load_evaluation_cases_rejects_duplicate_ids(tmp_path) -> None:
@@ -153,11 +296,14 @@ def test_evaluate_cases_passes_matching_latest_source() -> None:
         [case],
         catalog=catalog(),
         posts=[latest_post, post("old", "course_openings", False)],
-        ask=lambda _: response(True, latest_post.url, latest_post.title),
+        ask=lambda _question, _intent: response(
+            True, latest_post.url, latest_post.title
+        ),
     )
 
     assert results[0].checks == EvaluationChecks(
         topic_match=True,
+        intent_match=True,
         grounded_match=True,
         latest_only_match=True,
         source_title_match=True,
@@ -174,7 +320,7 @@ def test_evaluate_cases_fails_stale_source_wrong_title_and_grounding() -> None:
         [case],
         catalog=catalog(),
         posts=[post("latest", "course_openings", True), stale_post],
-        ask=lambda _: response(False, stale_post.url, "다른 공지"),
+        ask=lambda _question, _intent: response(False, stale_post.url, "다른 공지"),
     )[0]
 
     assert result.checks.grounded_match is False
@@ -208,7 +354,7 @@ def test_evaluate_cases_classifies_topic_and_reports_forced_mismatch() -> None:
         ],
         catalog=catalog(),
         posts=[],
-        ask=lambda _: response(False),
+        ask=lambda _question, _intent: response(False),
     )
 
     assert results[0].actual_topic_key == "course_openings"
@@ -227,7 +373,7 @@ def test_evaluate_cases_rejects_unknown_expected_topic() -> None:
             [EvaluationCase.model_validate(payload)],
             catalog=catalog(),
             posts=[],
-            ask=lambda _: response(True),
+            ask=lambda _question, _intent: response(True),
         )
 
 
@@ -241,7 +387,7 @@ def test_evaluate_cases_preflights_all_topics_before_asking() -> None:
     )
     ask_calls = 0
 
-    def ask(_: str) -> ChatResponse:
+    def ask(_: str, _intent: str) -> ChatResponse:
         nonlocal ask_calls
         ask_calls += 1
         return response(True)
@@ -262,6 +408,8 @@ def test_evaluate_cases_scopes_latest_urls_for_general_and_specific_topics() -> 
     general_payload.update(
         question="학과 소식을 알려줘",
         expected_topic_key="general",
+        confirmed_intent_key="general.recent",
+        expected_intent_key="general.recent",
         expected_source_title_contains=[],
     )
     course_payload = valid_case("course-specific-latest")
@@ -275,13 +423,21 @@ def test_evaluate_cases_scopes_latest_urls_for_general_and_specific_topics() -> 
         ],
         catalog=catalog(),
         posts=[other_latest],
-        ask=lambda _: response(True, other_latest.url, other_latest.title),
+        ask=lambda question, _intent: response(
+            True,
+            other_latest.url,
+            other_latest.title,
+            intent_key=(
+                "general.recent" if "학과" in question else "course_openings.lookup"
+            ),
+            topic_key="general" if "학과" in question else "course_openings",
+        ),
     )
 
     assert results[0].checks.latest_only_match is True
     assert results[0].passed is True
     assert results[1].checks.latest_only_match is False
-    assert "최신 주제 source가 아닌 URL이 포함됐습니다." in results[1].failures
+    assert "해당 intent의 최신 source가 아닌 URL이 포함됐습니다." in results[1].failures
 
 
 def test_build_evaluation_report_excludes_inapplicable_checks() -> None:
@@ -292,11 +448,15 @@ def test_build_evaluation_report_excludes_inapplicable_checks() -> None:
             category="일반",
             expected_topic_key="general",
             actual_topic_key="general",
+            confirmed_intent_key="general.recent",
+            expected_intent_key="general.recent",
+            actual_intent_key="general.recent",
             expected_grounded=False,
             actual_grounded=False,
             sources=[],
             checks=EvaluationChecks(
                 topic_match=True,
+                intent_match=True,
                 grounded_match=True,
                 latest_only_match=True,
                 source_title_match=None,
@@ -310,11 +470,15 @@ def test_build_evaluation_report_excludes_inapplicable_checks() -> None:
             category="일반",
             expected_topic_key="general",
             actual_topic_key="general",
+            confirmed_intent_key="general.recent",
+            expected_intent_key="general.recent",
+            actual_intent_key="general.recent",
             expected_grounded=False,
             actual_grounded=False,
             sources=[],
             checks=EvaluationChecks(
                 topic_match=True,
+                intent_match=True,
                 grounded_match=True,
                 latest_only_match=None,
                 source_title_match=None,
@@ -346,6 +510,7 @@ def test_build_evaluation_report_excludes_inapplicable_checks() -> None:
         total=0,
         rate=None,
     )
+    assert report.summary.intent == EvaluationMetric(passed=2, total=2, rate=1.0)
 
 
 def test_render_markdown_lists_summary_case_and_failure_reason() -> None:
@@ -356,11 +521,15 @@ def test_render_markdown_lists_summary_case_and_failure_reason() -> None:
         category="개설강좌",
         expected_topic_key="course_openings",
         actual_topic_key="general",
+        confirmed_intent_key="course_openings.lookup",
+        expected_intent_key="course_openings.lookup",
+        actual_intent_key="course_openings.lookup",
         expected_grounded=False,
         actual_grounded=False,
         sources=[],
         checks=EvaluationChecks(
             topic_match=False,
+            intent_match=True,
             grounded_match=True,
             latest_only_match=None,
             source_title_match=None,
@@ -395,6 +564,9 @@ def test_render_markdown_sanitizes_dynamic_content() -> None:
         category="일반",
         expected_topic_key="general",
         actual_topic_key="general",
+        confirmed_intent_key="general.recent",
+        expected_intent_key="general.recent",
+        actual_intent_key="general.recent",
         expected_grounded=True,
         actual_grounded=True,
         sources=[
@@ -408,6 +580,7 @@ def test_render_markdown_sanitizes_dynamic_content() -> None:
         ],
         checks=EvaluationChecks(
             topic_match=True,
+            intent_match=True,
             grounded_match=True,
             latest_only_match=None,
             source_title_match=None,

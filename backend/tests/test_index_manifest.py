@@ -8,6 +8,7 @@ import pytest
 from backend.app import index_manifest
 from backend.app.config import get_settings
 from backend.app.index_manifest import (
+    INDEX_SCHEMA_VERSION,
     IndexCompatibility,
     assess_index_compatibility,
     build_index_manifest,
@@ -23,6 +24,18 @@ from pydantic import ValidationError
 
 FIXED_TIME = datetime(2026, 7, 15, 3, 0, tzinfo=UTC)
 LATER_TIME = datetime(2026, 7, 15, 4, 0, tzinfo=UTC)
+
+
+def test_index_schema_version_requires_intent_metadata_pipeline() -> None:
+    assert INDEX_SCHEMA_VERSION == 2
+
+
+def test_index_signature_rejects_pre_intent_schema_version(tmp_path) -> None:
+    payload = build_index_signature(make_settings(tmp_path)).model_dump()
+    payload["schema_version"] = 1
+
+    with pytest.raises(ValidationError, match="schema_version"):
+        index_manifest.IndexSignature.model_validate(payload)
 
 
 def make_settings(tmp_path):
