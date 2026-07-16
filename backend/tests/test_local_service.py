@@ -37,7 +37,7 @@ def test_local_answer_contains_source_marker() -> None:
     assert "[자료 1]" in answer
     assert "수강신청 안내" in answer
     assert "2026-02-20" in answer
-    assert "확인된 공지" in answer
+    assert "확인한 최신 공지" in answer
 
 
 def test_local_answer_uses_only_context_facts_and_readable_sections() -> None:
@@ -67,3 +67,44 @@ def test_local_answer_uses_only_context_facts_and_readable_sections() -> None:
     assert "3월 20일" in answer
     assert "등록금" not in answer
     assert answer.index("캡스톤디자인 신청 안내") < answer.index("[자료 1]")
+
+
+def test_local_answer_cleans_noisy_title_and_uses_scannable_metadata() -> None:
+    provider = LocalHashProvider(dimensions=256)
+    context = RetrievedChunk(
+        chunk=TextChunk(
+            id="kumoh:3:0",
+            post_id="3",
+            source="kumoh",
+            title=(
+                "[수업] ★ ★ 2026학년도 1학기 수강신청 안내"
+                "[신입생 수강신청 포함되어 있습니다.]"
+            ),
+            text=(
+                "★ 수강신청 화면 안내 ( 수강신청 부정 신청 방지를 위한 보안사항 ) "
+                "★ 개인 PC 문제를 방지하기 위해 수강신청 전에 캐시를 삭제하세요."
+            ),
+            url="https://example.com/3",
+            published_at="2026-02-11",
+            chunk_index=0,
+            topic_key="registration",
+            topic_label="수강신청",
+            is_latest_topic=False,
+            intent_key="registration.main",
+        ),
+        score=0.9,
+    )
+
+    answer = provider.answer("최근 수강신청 공지를 알려줘", [context])
+
+    assert answer.startswith("확인한 최신 공지")
+    assert (
+        "1. 2026학년도 1학기 수강신청 안내 "
+        "[신입생 수강신청 포함되어 있습니다.]" in answer
+    )
+    assert "분류 · 수업" in answer
+    assert "게시일 · 2026-02-11" in answer
+    assert "\n핵심 내용\n- 수강신청 화면 안내" in answer
+    assert "\n출처 · [자료 1]" in answer
+    assert "\n원문 확인\n- 신청 가능 여부" in answer
+    assert "★" not in answer

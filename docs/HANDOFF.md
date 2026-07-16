@@ -48,8 +48,8 @@ npm --prefix frontend run build
 
 2026-07-16 결과:
 
-- backend: 406 passed, coverage 93.86%, Ruff 통과
-- frontend: 6 files / 90 tests, typecheck·lint·build 통과
+- backend: 407 passed, coverage 93.92%, Ruff 통과
+- frontend: 6 files / 91 tests, typecheck·lint·build 통과
 - evaluation: 31/31, 84 chunks, exit 0
 - data audit: 3 warnings, exit 1
 - production dependency audit: 0 vulnerabilities

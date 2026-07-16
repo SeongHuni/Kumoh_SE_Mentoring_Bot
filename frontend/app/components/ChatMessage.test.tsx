@@ -76,6 +76,48 @@ describe("ChatMessage", () => {
     expect(screen.queryByRole("region", { name: "관련 최근 공지" })).not.toBeInTheDocument();
   });
 
+  it("renders local answer sections with distinct visual hierarchy", () => {
+    render(
+      <ChatMessage
+        message={{
+          id: 3,
+          role: "assistant",
+          content: [
+            "확인한 최신 공지",
+            "",
+            "1. 2026학년도 1학기 수강신청 안내",
+            "분류 · 수업",
+            "게시일 · 2026-02-11",
+            "",
+            "핵심 내용",
+            "- 수강신청 전에 브라우저 캐시를 삭제하세요.",
+            "출처 · [자료 1]",
+            "",
+            "원문 확인",
+            "- 신청 가능 여부와 마감일은 원문에서 확인해 주세요.",
+          ].join("\n"),
+          sources: [],
+          grounded: true,
+          suggested_questions: [],
+          recent_notices: [],
+        }}
+        isLoading={false}
+        onSuggestion={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("확인한 최신 공지")).toHaveClass("answer-section-title");
+    expect(screen.getByText("1. 2026학년도 1학기 수강신청 안내")).toHaveClass(
+      "answer-notice-title",
+    );
+    expect(screen.getByText("분류 · 수업")).toHaveClass("answer-meta");
+    expect(screen.getByText("게시일 · 2026-02-11")).toHaveClass("answer-meta");
+    expect(screen.getByText("수강신청 전에 브라우저 캐시를 삭제하세요.")).toHaveClass(
+      "answer-bullet",
+    );
+    expect(screen.getByText("출처 · [자료 1]")).toHaveClass("answer-citation");
+  });
+
   it("renders recommendations and recent notices returned by the chat API", async () => {
     vi.stubGlobal(
       "fetch",

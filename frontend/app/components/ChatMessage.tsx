@@ -19,6 +19,30 @@ function isAssistantMessage(message: Message): message is AssistantMessage {
   return message.role === "assistant";
 }
 
+const sectionTitles = new Set(["확인한 최신 공지", "핵심 내용", "원문 확인"]);
+
+function presentAnswerLine(line: string, assistant: boolean) {
+  const trimmed = line.trim();
+  if (!trimmed) return { className: "answer-spacer", text: "" };
+  if (!assistant) return { className: "answer-line", text: line };
+  if (sectionTitles.has(trimmed)) {
+    return { className: "answer-section-title", text: trimmed };
+  }
+  if (/^\d+\.\s/.test(trimmed)) {
+    return { className: "answer-notice-title", text: trimmed };
+  }
+  if (/^(?:분류|게시일)\s*·/.test(trimmed)) {
+    return { className: "answer-meta", text: trimmed };
+  }
+  if (trimmed.startsWith("- ")) {
+    return { className: "answer-bullet", text: trimmed.slice(2) };
+  }
+  if (/^출처\s*·/.test(trimmed)) {
+    return { className: "answer-citation", text: trimmed };
+  }
+  return { className: "answer-line", text: line };
+}
+
 export function ChatMessage({
   message,
   isLoading,
@@ -38,15 +62,14 @@ export function ChatMessage({
       </div>
       <div className="message-stack">
         <div className={`message-bubble ${responseType}`}>
-          {lines.map((line, index) => (
-            <span
-              className={line.trim() ? "answer-line" : "answer-spacer"}
-              key={`${message.id}-${index}`}
-            >
-              {line}
-              {index < lines.length - 1 && <br />}
-            </span>
-          ))}
+          {lines.map((line, index) => {
+            const presented = presentAnswerLine(line, assistant);
+            return (
+              <span className={presented.className} key={`${message.id}-${index}`}>
+                {presented.text}
+              </span>
+            );
+          })}
         </div>
         {assistant &&
           responseType === "clarification" &&

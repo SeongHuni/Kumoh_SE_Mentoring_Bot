@@ -9,6 +9,8 @@ from backend.app.domain import RetrievedChunk
 
 TOKEN_PATTERN = re.compile(r"[0-9A-Za-z가-힣]+")
 SENTENCE_PATTERN = re.compile(r"(?<=[.!?다요])\s+|\n+")
+LEADING_TAG_PATTERN = re.compile(r"^\s*\[([^\[\]]+)\]\s*")
+DECORATION_PATTERN = re.compile(r"[★☆]+")
 
 
 class LocalHashProvider:
@@ -84,8 +86,36 @@ class LocalHashProvider:
         excerpt = " ".join(sentences[best_index : best_index + 2])
         return excerpt if len(excerpt) <= limit else excerpt[: limit - 1].rstrip() + "…"
 
+    @staticmethod
+    def _clean_display_text(value: str) -> str:
+        cleaned = DECORATION_PATTERN.sub(" ", value)
+        cleaned = re.sub(r"(?<=\S)\[", " [", cleaned)
+        cleaned = re.sub(r"\s+([,.;:!?%)\]])", r"\1", cleaned)
+        cleaned = re.sub(r"([(\[])\s+", r"\1", cleaned)
+        return " ".join(cleaned.split())
+
+    @classmethod
+    def _display_title(cls, title: str) -> tuple[str, tuple[str, ...]]:
+        categories: list[str] = []
+        remainder = title
+        while match := LEADING_TAG_PATTERN.match(remainder):
+            categories.append(cls._clean_display_text(match.group(1)))
+            remainder = remainder[match.end() :]
+        cleaned_title = cls._clean_display_text(remainder)
+        return cleaned_title or cls._clean_display_text(title), tuple(categories)
+
+    @classmethod
+    def _excerpt_points(cls, text: str, question: str) -> tuple[str, ...]:
+        excerpt = cls._excerpt(text, question)
+        points = tuple(
+            cleaned
+            for part in DECORATION_PATTERN.split(excerpt)
+            if (cleaned := cls._clean_display_text(part))
+        )
+        return points or (cls._clean_display_text(excerpt),)
+
     def answer(self, question: str, contexts: Sequence[RetrievedChunk]) -> str:
-        lines = ["확인된 공지"]
+        lines = ["확인한 최신 공지"]
         seen_urls: set[str] = set()
         source_number = 0
         for item in contexts:
@@ -93,16 +123,29 @@ class LocalHashProvider:
                 continue
             seen_urls.add(item.chunk.url)
             source_number += 1
-            date = f" ({item.chunk.published_at})" if item.chunk.published_at else ""
-            excerpt = self._excerpt(item.chunk.text, question)
-            lines.append(
-                f"\n\n{source_number}. {item.chunk.title}{date}"
-                f"\n   핵심 내용: {excerpt} [자료 {source_number}]"
+            title, categories = self._display_title(item.chunk.title)
+            lines.extend(("", f"{source_number}. {title}"))
+            if categories:
+                lines.append(f"분류 · {' · '.join(categories)}")
+            lines.extend(
+                (
+                    f"게시일 · {item.chunk.published_at or '게시일 미상'}",
+                    "",
+                    "핵심 내용",
+                )
             )
+            lines.extend(
+                f"- {point}"
+                for point in self._excerpt_points(item.chunk.text, question)
+            )
+            lines.append(f"출처 · [자료 {source_number}]")
             if source_number >= 3:
                 break
-        lines.append(
-            "\n\n확인 안내"
-            "\n- 신청 가능 여부와 마감일은 아래 원문 공지에서 다시 확인해 주세요."
+        lines.extend(
+            (
+                "",
+                "원문 확인",
+                "- 신청 가능 여부와 마감일은 아래 원문 공지에서 다시 확인해 주세요.",
+            )
         )
-        return "".join(lines)
+        return "\n".join(lines)

@@ -31,8 +31,8 @@
 | 정확도 우선 RAG | 완료 | BM25+dense RRF, deterministic reranker, CRAG, 최신성, compression | OpenAI provider 별도 평가·calibration |
 | 로컬 인덱스 | 완료 | schema v2, 50 posts → 84 chunks, main fingerprint prefix `bdba760dc6cb` | 원본·규칙·provider 변경 시 재생성 |
 | 평가 | 로컬 통과 | 31/31, topic 31/31, intent 31/31, grounded 31/31, latest-only 31/31 | 질문 다양성·실사용 로그 기반 세트 확대 |
-| 백엔드 품질 gate | 통과 | 406 tests, 93.86% coverage, Ruff 통과 | 운영 부하·장애 주입 테스트 |
-| 프론트엔드 품질 gate | 통과 | 6 files / 90 tests, typecheck, ESLint, Next production build | 390px 모바일 visual regression 자동화 |
+| 백엔드 품질 gate | 통과 | 407 tests, 93.92% coverage, Ruff 통과 | 운영 부하·장애 주입 테스트 |
+| 프론트엔드 품질 gate | 통과 | 6 files / 91 tests, typecheck, ESLint, Next production build | 390px 모바일 visual regression 자동화 |
 | 브라우저 통합 검증 | 통과 | 의도 카드 → 선택 → 최신 근거 답변, 자동 스크롤, 출처·추천·최근 공지, console error 0 | 자동화된 cross-browser E2E |
 | 데이터 감사 | 경고 있음 | 50 posts, 3 warnings, exit 1 | SE source 미수집, course_openings·graduation 비어 있음 |
 | 의존성 | 통과 | `npm audit --omit=dev`: 0 vulnerabilities | 정기 재검증 |
@@ -77,6 +77,7 @@
 - 근거가 있으면 `answer`, 없으면 `no_answer`; `no_answer`는 항상 빈 `sources`를 유지한다.
 - frontend는 API payload와 HTTP/HTTPS 링크를 runtime에서 검증하며 timeout·network·non-JSON 오류를 사용자용 문장으로 바꾼다.
 - 새 assistant 결과가 생기면 채팅 컨테이너를 결과의 시작 위치로 이동해 답변 첫 줄이 바로 보인다.
+- local 답변은 장식 문자를 제거하고 공지 제목·분류·게시일·핵심 내용·자료 번호·원문 확인을 시각적으로 구분한다.
 - `recent_notices`는 답변 근거와 별도 보조 정보다. 같은 URL이 포함되더라도 source card의 근거 계약을 대신하지 않는다.
 
 ## 남은 우선순위
