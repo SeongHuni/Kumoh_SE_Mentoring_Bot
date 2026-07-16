@@ -1,9 +1,10 @@
 import math
 from dataclasses import FrozenInstanceError
 
+import backend.app.lexical_retriever as lexical_retriever
 import pytest
 from backend.app.domain import TextChunk
-from backend.app.lexical_retriever import BM25Retriever, LexicalResult
+from backend.app.lexical_retriever import BM25Retriever, LexicalResult, _tokenize
 
 
 def make_chunk(
@@ -90,6 +91,91 @@ def test_korean_spacing_matches_compact_form() -> None:
     results = BM25Retriever([unrelated, spaced]).search(["수강신청"], top_k=1)
 
     assert [result.chunk.id for result in results] == ["spaced"]
+
+
+@pytest.mark.parametrize(
+    ("chunk_title", "query"),
+    [
+        ("수강 신청 안내", "수강신청"),
+        ("수강신청 안내", "수강 신청"),
+    ],
+)
+def test_korean_spacing_matches_in_both_directions(
+    chunk_title: str,
+    query: str,
+) -> None:
+    chunk = make_chunk("spacing", chunk_title, "일정을 확인하세요.")
+
+    results = BM25Retriever([chunk]).search([query], top_k=1)
+
+    assert results[0].chunk is chunk
+
+
+def test_tokenizer_normalizes_unicode_and_excludes_punctuation_and_underscore() -> None:
+    features = set(_tokenize("ＡＢＣ_测试,ΔΕΛΤΑ!"))
+
+    assert "abc" in features
+    assert "测试" in features
+    assert "δελτα" in features
+    assert "abc_测试" not in features
+    assert not any("_" in feature or any(char in ",!" for char in feature) for feature in features)
+
+
+def test_non_ascii_cjk_text_matches() -> None:
+    chunk = make_chunk("cjk", "课程申请指南", "提交课程申请的方法")
+
+    results = BM25Retriever([chunk]).search(["课程申请"], top_k=1)
+
+    assert results[0].chunk is chunk
+
+
+def test_ngrams_do_not_span_more_than_one_word_boundary() -> None:
+    three_single_character_words = set(_tokenize("a b c"))
+    three_words_with_middle_length = set(_tokenize("a bb c"))
+
+    assert "abc" not in three_single_character_words
+    assert "abb" in three_words_with_middle_length
+    assert "bbc" in three_words_with_middle_length
+    assert "abbc" not in three_words_with_middle_length
+
+
+def test_repeated_generic_query_features_do_not_amplify_ranking() -> None:
+    generic = make_chunk("generic", "공지", "")
+    specific = make_chunk("specific", "수강신청", "")
+    retriever = BM25Retriever([generic, specific])
+
+    baseline = retriever.search(["공지 수강신청"], top_k=2)
+    repeated_generic = retriever.search(["공지 공지 공지 수강신청"], top_k=2)
+
+    assert [item.chunk.id for item in repeated_generic] == [item.chunk.id for item in baseline]
+    assert {
+        item.chunk.id: item.score for item in repeated_generic
+    } == pytest.approx({item.chunk.id: item.score for item in baseline})
+
+
+def test_duplicate_chunk_ids_are_rejected() -> None:
+    chunk = registration_chunk()
+
+    with pytest.raises(ValueError, match=r"(?i)duplicate.*id|unique"):
+        BM25Retriever([chunk, chunk])
+
+
+def test_search_pre_tokenizes_each_unique_nonblank_query_variant_once(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    retriever = BM25Retriever([registration_chunk(), attendance_chunk()])
+    original_tokenize = lexical_retriever._tokenize
+    calls: list[str] = []
+
+    def tracked_tokenize(value: str) -> tuple[str, ...]:
+        calls.append(value)
+        return original_tokenize(value)
+
+    monkeypatch.setattr(lexical_retriever, "_tokenize", tracked_tokenize)
+
+    retriever.search(["수강신청", "", "수강신청", "출석"], top_k=2)
+
+    assert calls == ["수강신청", "출석"]
 
 
 @pytest.mark.parametrize(

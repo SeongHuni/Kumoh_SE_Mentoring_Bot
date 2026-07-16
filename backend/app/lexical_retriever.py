@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import math
-import re
+import unicodedata
 from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass
 
 from backend.app.domain import TextChunk
 
-TOKEN_PATTERN = re.compile(r"[0-9A-Za-z가-힣]+")
 K1 = 1.5
 B = 0.75
 
@@ -21,19 +20,40 @@ class LexicalResult:
 
 
 def _tokenize(value: str) -> tuple[str, ...]:
-    tokens = tuple(token.casefold() for token in TOKEN_PATTERN.findall(value))
-    compact = "".join(tokens)
-    ngrams = tuple(
-        compact[index : index + size]
-        for size in (2, 3, 4)
-        for index in range(len(compact) - size + 1)
-    )
-    return tokens + ngrams
+    normalized = unicodedata.normalize("NFKC", value).casefold()
+    tokens: list[str] = []
+    current: list[str] = []
+    for character in normalized:
+        if character.isalnum():
+            current.append(character)
+        elif current:
+            tokens.append("".join(current))
+            current = []
+    if current:
+        tokens.append("".join(current))
+
+    features = list(tokens)
+    for token in tokens:
+        features.extend(
+            token[index : index + size]
+            for size in (2, 3, 4)
+            for index in range(len(token) - size + 1)
+        )
+    for left, right in zip(tokens, tokens[1:], strict=False):
+        features.extend(
+            left[-left_size:] + right[:right_size]
+            for left_size in range(1, min(4, len(left)) + 1)
+            for right_size in range(1, min(4, len(right)) + 1)
+            if 2 <= left_size + right_size <= 4
+        )
+    return tuple(features)
 
 
 class BM25Retriever:
     def __init__(self, chunks: Sequence[TextChunk]) -> None:
         self.chunks = tuple(chunks)
+        if len({chunk.id for chunk in self.chunks}) != len(self.chunks):
+            raise ValueError("chunk ids must be unique")
         self._document_terms = tuple(
             Counter(_tokenize(f"{chunk.title} {chunk.text}")) for chunk in self.chunks
         )
@@ -55,15 +75,15 @@ class BM25Retriever:
             for term, document_frequency in self._document_frequency.items()
         }
 
-    def _score_document(self, document_index: int, query: str) -> float:
-        query_terms = Counter(_tokenize(query))
-        if not query_terms or self._avgdl == 0.0:
+    def _score_document(self, document_index: int, query_terms: Sequence[str]) -> float:
+        unique_query_terms = set(query_terms)
+        if not unique_query_terms or self._avgdl == 0.0:
             return 0.0
 
         document_terms = self._document_terms[document_index]
         document_length = self._document_lengths[document_index]
         score = 0.0
-        for term, query_frequency in query_terms.items():
+        for term in unique_query_terms:
             document_frequency = document_terms.get(term, 0)
             if not document_frequency:
                 continue
@@ -75,7 +95,6 @@ class BM25Retriever:
                 * document_frequency
                 * (K1 + 1.0)
                 / denominator
-                * query_frequency
             )
         return score
 
@@ -85,12 +104,13 @@ class BM25Retriever:
         if not self.chunks:
             return []
 
-        query_variants = tuple(query for query in queries if query.strip())
-        if not query_variants:
+        query_variants = tuple(dict.fromkeys(query for query in queries if query.strip()))
+        tokenized_queries = tuple(_tokenize(query) for query in query_variants)
+        if not tokenized_queries:
             return []
 
         scored = [
-            (chunk, max(self._score_document(index, query) for query in query_variants))
+            (chunk, max(self._score_document(index, query) for query in tokenized_queries))
             for index, chunk in enumerate(self.chunks)
         ]
         ordered = sorted(
