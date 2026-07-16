@@ -216,7 +216,10 @@ def test_rag_returns_grounded_answer_and_source() -> None:
     provider = FakeProvider()
     service = RAGService(provider=provider, vector_store=FakeStore([retrieved()]))  # type: ignore[arg-type]
 
-    result = service.ask("캡스톤디자인은 어디서 신청해?")
+    result = service.ask(
+        "캡스톤디자인은 어디서 신청해?",
+        confirmed_intent_key="capstone.general",
+    )
 
     assert result.grounded is True
     assert provider.answer_called is True

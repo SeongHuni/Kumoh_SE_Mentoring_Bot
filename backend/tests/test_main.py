@@ -119,7 +119,10 @@ def test_chat_checks_openai_configuration_before_index(monkeypatch) -> None:
     response = api_request(
         "POST",
         "/api/chat",
-        json={"question": "최근 공지 알려줘"},
+        json={
+            "question": "최근 공지 알려줘",
+            "confirmed_intent_key": "general.recent",
+        },
     )
 
     assert response.status_code == 503
@@ -157,7 +160,10 @@ def test_chat_blocks_incompatible_index_before_service(
     response = api_request(
         "POST",
         "/api/chat",
-        json={"question": "최근 공지 알려줘"},
+        json={
+            "question": "최근 공지 알려줘",
+            "confirmed_intent_key": "general.recent",
+        },
     )
 
     assert response.status_code == status
@@ -188,7 +194,10 @@ def test_chat_passes_compatible_fingerprint_to_service(monkeypatch) -> None:
     response = api_request(
         "POST",
         "/api/chat",
-        json={"question": "최근 공지 알려줘"},
+        json={
+            "question": "최근 공지 알려줘",
+            "confirmed_intent_key": "general.recent",
+        },
     )
 
     assert response.status_code == 200
@@ -196,7 +205,10 @@ def test_chat_passes_compatible_fingerprint_to_service(monkeypatch) -> None:
         "a" * 64,
         "2026-07-15T00:00:00+00:00",
     )
-    service.ask.assert_called_once_with("최근 공지 알려줘")
+    service.ask.assert_called_once_with(
+        "최근 공지 알려줘",
+        confirmed_intent_key="general.recent",
+    )
 
 
 def test_chat_preserves_openai_api_error_mapping(monkeypatch) -> None:
@@ -217,11 +229,90 @@ def test_chat_preserves_openai_api_error_mapping(monkeypatch) -> None:
     response = api_request(
         "POST",
         "/api/chat",
-        json={"question": "최근 공지 알려줘"},
+        json={
+            "question": "최근 공지 알려줘",
+            "confirmed_intent_key": "general.recent",
+        },
     )
 
     assert response.status_code == 502
     assert response.json()["detail"] == "OpenAI API 요청에 실패했습니다."
+
+
+def test_chat_free_text_returns_clarification_without_provider_or_index(monkeypatch) -> None:
+    settings = replace(main.settings, ai_provider="openai", openai_api_key=None)
+    compatibility_check = Mock(side_effect=AssertionError("index must not be checked"))
+    vector_store_factory = Mock(side_effect=AssertionError("store must not open"))
+    provider_factory = Mock(side_effect=AssertionError("provider must not be created"))
+    service_factory = Mock(side_effect=AssertionError("service must not be created"))
+    monkeypatch.setattr(main, "settings", settings)
+    monkeypatch.setattr(main, "get_index_compatibility", compatibility_check)
+    monkeypatch.setattr(main, "get_vector_store", vector_store_factory)
+    monkeypatch.setattr(main, "create_provider", provider_factory)
+    monkeypatch.setattr(main, "get_rag_service", service_factory)
+
+    response = api_request(
+        "POST",
+        "/api/chat",
+        json={"question": "최근 수강신청 공지를 알려줘"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["response_type"] == "clarification"
+    assert payload["answer"] == (
+        "질문 의도를 이렇게 이해했습니다. 무엇을 찾을지 선택해 주세요."
+    )
+    assert payload["grounded"] is False
+    assert payload["sources"] == []
+    assert payload["suggested_questions"] == []
+    assert payload["recent_notices"] == []
+    assert payload["interpreted_intent"] == {
+        "topic_key": "registration",
+        "intent_key": "registration.main",
+        "label": "일반 수강신청 일정과 공지",
+        "example": "2026학년도 수강신청 일정과 유의사항",
+    }
+    assert [option["intent_key"] for option in payload["clarification_options"]] == [
+        "registration.main",
+        "registration.change",
+        "registration.course_basket",
+    ]
+    assert all(
+        set(option) == {"topic_key", "intent_key", "label", "example"}
+        for option in payload["clarification_options"]
+    )
+    compatibility_check.assert_not_called()
+    vector_store_factory.assert_not_called()
+    provider_factory.assert_not_called()
+    service_factory.assert_not_called()
+
+
+def test_chat_invalid_confirmation_returns_clarification_without_rag_calls(monkeypatch) -> None:
+    settings = replace(main.settings, ai_provider="local", openai_api_key=None)
+    compatibility_check = Mock(side_effect=AssertionError("index must not be checked"))
+    provider_factory = Mock(side_effect=AssertionError("provider must not be created"))
+    service_factory = Mock(side_effect=AssertionError("service must not be created"))
+    monkeypatch.setattr(main, "settings", settings)
+    monkeypatch.setattr(main, "get_index_compatibility", compatibility_check)
+    monkeypatch.setattr(main, "create_provider", provider_factory)
+    monkeypatch.setattr(main, "get_rag_service", service_factory)
+
+    response = api_request(
+        "POST",
+        "/api/chat",
+        json={
+            "question": "최근 수강신청 공지를 알려줘",
+            "confirmed_intent_key": "career.general",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["response_type"] == "clarification"
+    assert response.json()["interpreted_intent"]["intent_key"] == "registration.main"
+    compatibility_check.assert_not_called()
+    provider_factory.assert_not_called()
+    service_factory.assert_not_called()
 
 
 def test_rag_service_cache_rotates_with_index_fingerprint(monkeypatch) -> None:

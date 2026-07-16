@@ -137,7 +137,12 @@ class RAGService:
             return None
         return max(latest, key=freshness_key).url
 
-    def ask(self, question: str) -> ChatResponse:
+    def ask(
+        self,
+        question: str,
+        *,
+        confirmed_intent_key: str | None = None,
+    ) -> ChatResponse:
         topic = self.topic_catalog.classify(question) if self.topic_catalog else None
         intent = (
             analyze_query(question, topic=topic, catalog=self.topic_catalog)

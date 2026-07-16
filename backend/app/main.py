@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import asdict
 from functools import lru_cache
 
 from chromadb.errors import ChromaError
@@ -11,9 +12,16 @@ from openai import APIError
 from backend.app.config import get_settings
 from backend.app.domain import BoardPost
 from backend.app.index_manifest import IndexCompatibility, assess_index_compatibility
+from backend.app.intent_analysis import analyze_intents, validate_confirmation
 from backend.app.provider_factory import create_provider, effective_models, selected_provider_name
 from backend.app.rag import RAGService
-from backend.app.schemas import ChatRequest, ChatResponse, HealthResponse, LiveResponse
+from backend.app.schemas import (
+    ChatRequest,
+    ChatResponse,
+    ClarificationOption,
+    HealthResponse,
+    LiveResponse,
+)
 from backend.app.storage import load_posts
 from backend.app.topic_classifier import enrich_posts
 from backend.app.topic_rules import TopicCatalog, load_topic_catalog
@@ -115,6 +123,28 @@ def health() -> HealthResponse:
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(payload: ChatRequest) -> ChatResponse:
+    analysis = analyze_intents(
+        payload.question,
+        load_topic_catalog(settings.topic_rules_path),
+    )
+    confirmed = (
+        validate_confirmation(analysis, payload.confirmed_intent_key)
+        if payload.confirmed_intent_key is not None
+        else None
+    )
+    if confirmed is None:
+        return ChatResponse(
+            response_type="clarification",
+            answer="질문 의도를 이렇게 이해했습니다. 무엇을 찾을지 선택해 주세요.",
+            sources=[],
+            grounded=False,
+            interpreted_intent=ClarificationOption(**asdict(analysis.primary)),
+            clarification_options=[
+                ClarificationOption(**asdict(option)) for option in analysis.options
+            ],
+            recent_notices=[],
+        )
+
     if selected_provider_name(settings) == "openai" and not settings.openai_api_key:
         raise HTTPException(
             status_code=503,
@@ -152,6 +182,10 @@ async def chat(payload: ChatRequest) -> ChatResponse:
             compatibility.fingerprint,
             compatibility.generation,
         )
-        return await run_in_threadpool(service.ask, payload.question)
+        return await run_in_threadpool(
+            service.ask,
+            payload.question,
+            confirmed_intent_key=confirmed.intent_key,
+        )
     except APIError as exc:
         raise HTTPException(status_code=502, detail="OpenAI API 요청에 실패했습니다.") from exc
