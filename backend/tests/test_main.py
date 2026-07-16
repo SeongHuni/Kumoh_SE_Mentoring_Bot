@@ -1,4 +1,5 @@
 import asyncio
+import json
 from dataclasses import replace
 from datetime import UTC, datetime
 from unittest.mock import Mock
@@ -18,9 +19,18 @@ from backend.app.vector_store import ChromaVectorStore
 from openai import APIConnectionError
 
 
-def api_request(method: str, path: str, **kwargs) -> httpx.Response:
+def api_request(
+    method: str,
+    path: str,
+    *,
+    raise_app_exceptions: bool = True,
+    **kwargs,
+) -> httpx.Response:
     async def send() -> httpx.Response:
-        transport = httpx.ASGITransport(app=main.app)
+        transport = httpx.ASGITransport(
+            app=main.app,
+            raise_app_exceptions=raise_app_exceptions,
+        )
         async with httpx.AsyncClient(
             transport=transport,
             base_url="http://testserver",
@@ -101,6 +111,72 @@ def test_health_status_matrix(monkeypatch, provider, key, reason, expected) -> N
     assert payload["indexed_chunks"] == compatibility(reason).indexed_chunks
     assert "fingerprint" not in payload
     assert "raw_posts_sha256" not in payload
+
+
+def test_chat_returns_503_when_topic_catalog_is_missing(monkeypatch) -> None:
+    settings = replace(main.settings, ai_provider="local", openai_api_key=None)
+    catalog_loader = Mock(side_effect=FileNotFoundError("topic rules missing"))
+    configuration_check = Mock(side_effect=AssertionError("config must not be checked"))
+    compatibility_check = Mock(side_effect=AssertionError("index must not be checked"))
+    service_factory = Mock(side_effect=AssertionError("service must not be created"))
+    monkeypatch.setattr(main, "settings", settings)
+    monkeypatch.setattr(main, "load_topic_catalog", catalog_loader)
+    monkeypatch.setattr(main, "selected_provider_name", configuration_check)
+    monkeypatch.setattr(main, "get_index_compatibility", compatibility_check)
+    monkeypatch.setattr(main, "get_rag_service", service_factory)
+
+    response = api_request(
+        "POST",
+        "/api/chat",
+        json={"question": "최근 공지 알려줘"},
+        raise_app_exceptions=False,
+    )
+
+    assert response.status_code == 503
+    assert "주제 규칙" in response.json()["detail"]
+    assert "확인" in response.json()["detail"]
+    catalog_loader.assert_called_once_with(settings.topic_rules_path)
+    configuration_check.assert_not_called()
+    compatibility_check.assert_not_called()
+    service_factory.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "catalog_failure",
+    [
+        json.JSONDecodeError("invalid json", "topic_rules.json", 0),
+        ValueError("invalid topic rules"),
+    ],
+    ids=["malformed-json", "invalid-catalog"],
+)
+def test_chat_returns_503_when_topic_catalog_is_malformed_or_invalid(
+    monkeypatch, catalog_failure
+) -> None:
+    settings = replace(main.settings, ai_provider="local", openai_api_key=None)
+    catalog_loader = Mock(side_effect=catalog_failure)
+    configuration_check = Mock(side_effect=AssertionError("config must not be checked"))
+    compatibility_check = Mock(side_effect=AssertionError("index must not be checked"))
+    service_factory = Mock(side_effect=AssertionError("service must not be created"))
+    monkeypatch.setattr(main, "settings", settings)
+    monkeypatch.setattr(main, "load_topic_catalog", catalog_loader)
+    monkeypatch.setattr(main, "selected_provider_name", configuration_check)
+    monkeypatch.setattr(main, "get_index_compatibility", compatibility_check)
+    monkeypatch.setattr(main, "get_rag_service", service_factory)
+
+    response = api_request(
+        "POST",
+        "/api/chat",
+        json={"question": "최근 공지 알려줘"},
+        raise_app_exceptions=False,
+    )
+
+    assert response.status_code == 503
+    assert "주제 규칙" in response.json()["detail"]
+    assert "확인" in response.json()["detail"]
+    catalog_loader.assert_called_once_with(settings.topic_rules_path)
+    configuration_check.assert_not_called()
+    compatibility_check.assert_not_called()
+    service_factory.assert_not_called()
 
 
 def test_chat_checks_openai_configuration_before_index(monkeypatch) -> None:

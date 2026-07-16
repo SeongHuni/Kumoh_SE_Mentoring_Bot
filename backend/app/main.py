@@ -123,10 +123,15 @@ def health() -> HealthResponse:
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(payload: ChatRequest) -> ChatResponse:
-    analysis = analyze_intents(
-        payload.question,
-        load_topic_catalog(settings.topic_rules_path),
-    )
+    try:
+        catalog = load_topic_catalog(settings.topic_rules_path)
+    except (OSError, UnicodeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="주제 규칙 파일을 확인하세요. 읽거나 검증할 수 없습니다.",
+        ) from exc
+
+    analysis = analyze_intents(payload.question, catalog)
     confirmed = (
         validate_confirmation(analysis, payload.confirmed_intent_key)
         if payload.confirmed_intent_key is not None
