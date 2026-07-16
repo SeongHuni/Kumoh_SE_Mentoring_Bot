@@ -1,17 +1,20 @@
 from __future__ import annotations
 
+import math
 import re
+import unicodedata
 from collections.abc import Sequence
 from dataclasses import dataclass
+from numbers import Real
 
 from backend.app.domain import TextChunk
 from backend.app.hybrid_retriever import HybridCandidate
 from backend.app.intent_analysis import IntentOption
-from backend.app.query_intent import TERM_PATTERNS, QueryIntent, compact
+from backend.app.query_intent import TERM_PATTERNS, QueryIntent
 from backend.app.topic_rules import IntentRule
 
 YEAR_PATTERN = re.compile(r"(?<!\d)((?:19|20)\d{2})(?:학년도|년)?(?!\d)")
-TOKEN_PATTERN = re.compile(r"[0-9A-Za-z가-힣]+")
+TOKEN_PATTERN = re.compile(r"[^\W_]+", re.UNICODE)
 GENERIC_MARKERS = frozenset(
     {
         "공지",
@@ -43,12 +46,54 @@ class RerankedCandidate:
 
 
 def _normalized(value: str) -> str:
-    return " ".join(value.casefold().split())
+    return " ".join(unicodedata.normalize("NFKC", value).casefold().split())
+
+
+def _tokens(value: str) -> tuple[str, ...]:
+    return tuple(TOKEN_PATTERN.findall(unicodedata.normalize("NFKC", value).casefold()))
+
+
+def _compact(value: str) -> str:
+    return "".join(_tokens(value))
 
 
 def _contains_marker(text: str, marker: str) -> bool:
-    normalized_marker = compact(marker)
-    return bool(normalized_marker) and normalized_marker in compact(text)
+    marker_tokens = _tokens(marker)
+    if not marker_tokens:
+        return False
+
+    normalized_marker = "".join(marker_tokens)
+    text_tokens = _tokens(text)
+    if any(token.startswith(normalized_marker) for token in text_tokens):
+        return True
+
+    for start in range(len(text_tokens)):
+        combined = ""
+        for token in text_tokens[start:]:
+            combined += token
+            if combined == normalized_marker:
+                return True
+            if len(combined) >= len(normalized_marker):
+                break
+
+        if len(marker_tokens) > 1:
+            matches = True
+            for offset, marker_token in enumerate(marker_tokens):
+                text_index = start + offset
+                if text_index >= len(text_tokens):
+                    matches = False
+                    break
+                text_token = text_tokens[text_index]
+                if offset < len(marker_tokens) - 1:
+                    if text_token != marker_token:
+                        matches = False
+                        break
+                elif not text_token.startswith(marker_token):
+                    matches = False
+                    break
+            if matches:
+                return True
+    return False
 
 
 def _fallback_markers(intent: IntentOption, query_intent: QueryIntent) -> tuple[str, ...]:
@@ -61,17 +106,17 @@ def _fallback_markers(intent: IntentOption, query_intent: QueryIntent) -> tuple[
     markers: set[str] = set()
     for value in values:
         normalized_value = _normalized(value)
-        compact_value = compact(value)
-        tokens = tuple(TOKEN_PATTERN.findall(value.casefold()))
+        compact_value = _compact(value)
+        tokens = _tokens(value)
         useful_tokens = tuple(
             token
             for token in tokens
-            if len(compact(token)) >= 2 and compact(token) not in GENERIC_MARKERS
+            if len(token) >= 2 and token not in GENERIC_MARKERS
         )
         if compact_value and useful_tokens:
             markers.add(normalized_value)
-        markers.update(compact(token) for token in useful_tokens)
-    return tuple(sorted(markers, key=lambda marker: (-len(compact(marker)), marker)))
+        markers.update(useful_tokens)
+    return tuple(sorted(markers, key=lambda marker: (-len(_compact(marker)), marker)))
 
 
 def _markers(
@@ -84,29 +129,48 @@ def _markers(
     return _fallback_markers(intent, query_intent)
 
 
-def _candidate_years(chunk: TextChunk) -> set[int]:
-    text = f"{chunk.title}\n{chunk.text}"
-    return {int(match.group(1)) for match in YEAR_PATTERN.finditer(text)}
+def _candidate_years(text: str) -> set[int]:
+    normalized = unicodedata.normalize("NFKC", text).casefold()
+    return {int(match.group(1)) for match in YEAR_PATTERN.finditer(normalized)}
 
 
-def _candidate_terms(chunk: TextChunk) -> set[str]:
-    text = f"{chunk.title}\n{chunk.text}"
+def _candidate_terms(text: str) -> set[str]:
+    normalized = unicodedata.normalize("NFKC", text).casefold()
     return {
         term
         for term, pattern in TERM_PATTERNS
-        if pattern.search(text)
+        if pattern.search(normalized)
     }
 
 
+def _actual_body(chunk: TextChunk) -> str:
+    normalized_text = _normalized(chunk.text)
+    delimiter = "본문:"
+    if delimiter in normalized_text:
+        return normalized_text.split(delimiter, 1)[1].strip()
+
+    normalized_title = _normalized(chunk.title)
+    if not normalized_title:
+        return normalized_text
+    title_pattern = re.compile(
+        rf"(?<![^\W_]){re.escape(normalized_title)}(?![^\W_])",
+        re.UNICODE,
+    )
+    return title_pattern.sub("", normalized_text, count=1).strip()
+
+
 def _temporal_match(chunk: TextChunk, query_intent: QueryIntent) -> bool:
-    years = _candidate_years(chunk)
-    if query_intent.requested_year is not None and years:
-        if query_intent.requested_year not in years:
+    body = _actual_body(chunk)
+    if query_intent.requested_year is not None:
+        title_years = _candidate_years(chunk.title)
+        years = title_years or _candidate_years(body)
+        if years and years != {query_intent.requested_year}:
             return False
 
-    terms = _candidate_terms(chunk)
-    if query_intent.requested_term is not None and terms:
-        if query_intent.requested_term not in terms:
+    if query_intent.requested_term is not None:
+        title_terms = _candidate_terms(chunk.title)
+        terms = title_terms or _candidate_terms(body)
+        if terms and terms != {query_intent.requested_term}:
             return False
     return True
 
@@ -115,6 +179,7 @@ def _has_intent_conflict(
     chunk: TextChunk,
     intent: IntentOption,
     intent_rule: IntentRule | None,
+    body: str,
 ) -> bool:
     if chunk.topic_key != intent.topic_key:
         return True
@@ -133,10 +198,33 @@ def _has_intent_conflict(
 
     exact_intent_metadata = explicit_intent_key == intent.intent_key
     body_exclusion = any(
-        _contains_marker(chunk.text, marker)
+        _contains_marker(body, marker)
         for marker in intent_rule.exclusion_markers
     )
     return body_exclusion and not exact_intent_metadata
+
+
+def _validate_finite_score(value: object, name: str) -> None:
+    if isinstance(value, bool) or not isinstance(value, Real):
+        raise ValueError(f"{name} must be a finite real number")
+    numeric = float(value)
+    if not math.isfinite(numeric) or numeric < 0:
+        raise ValueError(f"{name} must be a finite nonnegative real number")
+
+
+def _validate_rank(value: object, name: str) -> None:
+    if value is None:
+        return
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise ValueError(f"{name} must be a positive integer")
+
+
+def _validate_candidate(candidate: HybridCandidate) -> None:
+    _validate_finite_score(candidate.fused_score, "fused_score")
+    _validate_finite_score(candidate.dense_score, "dense_score")
+    _validate_finite_score(candidate.lexical_score, "lexical_score")
+    _validate_rank(candidate.dense_rank, "dense_rank")
+    _validate_rank(candidate.lexical_rank, "lexical_rank")
 
 
 def _score(
@@ -147,9 +235,7 @@ def _score(
 ) -> float:
     signal_score = (
         candidate.fused_score
-        + (candidate.dense_score * 0.01)
-        + (candidate.lexical_score * 0.01)
-        + (candidate.signal_count * 0.05)
+        + (min(candidate.signal_count, 2) * 0.05)
     )
     marker_score = (0.30 if title_marker_match else 0.0) + (
         0.15 if body_marker_match else 0.0
@@ -166,21 +252,26 @@ def rerank(
 ) -> list[RerankedCandidate]:
     if intent.topic_key != query_intent.topic_key:
         raise ValueError("intent and query_intent topic must match")
+    if intent_rule is not None and intent_rule.key != intent.intent_key:
+        raise ValueError("intent_rule key must match intent key")
 
     markers = _markers(intent, query_intent, intent_rule)
     reranked: list[RerankedCandidate] = []
     for candidate in candidates:
+        _validate_candidate(candidate)
+        body = _actual_body(candidate.chunk)
         title_marker_match = any(
             _contains_marker(candidate.chunk.title, marker) for marker in markers
         )
         body_marker_match = any(
-            _contains_marker(candidate.chunk.text, marker) for marker in markers
+            _contains_marker(body, marker) for marker in markers
         )
         temporal_match = _temporal_match(candidate.chunk, query_intent)
         has_intent_conflict = _has_intent_conflict(
             candidate.chunk,
             intent,
             intent_rule,
+            body,
         )
         reranked.append(
             RerankedCandidate(

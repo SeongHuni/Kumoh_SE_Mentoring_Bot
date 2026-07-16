@@ -1,4 +1,5 @@
-from dataclasses import FrozenInstanceError
+import math
+from dataclasses import FrozenInstanceError, replace
 
 import pytest
 from backend.app.domain import TextChunk
@@ -124,6 +125,115 @@ def test_explicit_conflicting_year_is_not_temporally_compatible() -> None:
     assert result.temporal_match is False
 
 
+def test_title_year_takes_precedence_over_conflicting_body_year() -> None:
+    result = rerank(
+        [
+            make_candidate(
+                make_chunk(
+                    "title-year",
+                    "2025 수강신청 일정",
+                    "본문: 2026학년도에도 적용되는 안내",
+                )
+            )
+        ],
+        confirmed_intent(),
+        query_intent(requested_year=2026),
+        intent_rule=registration_rule(),
+    )[0]
+
+    assert result.temporal_match is False
+
+
+def test_multiple_title_years_fail_closed_even_when_requested_year_is_present() -> None:
+    result = rerank(
+        [
+            make_candidate(
+                make_chunk("multi-title-year", "2025·2026 수강신청 일정", "신청 기간")
+            )
+        ],
+        confirmed_intent(),
+        query_intent(requested_year=2026),
+        intent_rule=registration_rule(),
+    )[0]
+
+    assert result.temporal_match is False
+
+
+def test_body_year_is_used_when_title_has_no_year() -> None:
+    result = rerank(
+        [
+            make_candidate(
+                make_chunk("body-year", "수강신청 일정", "본문: 2026학년도 신청 기간")
+            )
+        ],
+        confirmed_intent(),
+        query_intent(requested_year=2026),
+        intent_rule=registration_rule(),
+    )[0]
+
+    assert result.temporal_match is True
+
+
+def test_multiple_body_years_fail_closed() -> None:
+    result = rerank(
+        [
+            make_candidate(
+                make_chunk("multi-body-year", "수강신청 일정", "본문: 2025년과 2026년")
+            )
+        ],
+        confirmed_intent(),
+        query_intent(requested_year=2026),
+        intent_rule=registration_rule(),
+    )[0]
+
+    assert result.temporal_match is False
+
+
+def test_title_term_takes_precedence_over_conflicting_body_term() -> None:
+    result = rerank(
+        [
+            make_candidate(
+                make_chunk(
+                    "title-term",
+                    "1학기 수강신청 일정",
+                    "본문: 2학기 신청 기간",
+                )
+            )
+        ],
+        confirmed_intent(),
+        query_intent(requested_term="second"),
+        intent_rule=registration_rule(),
+    )[0]
+
+    assert result.temporal_match is False
+
+
+def test_multiple_body_terms_fail_closed() -> None:
+    result = rerank(
+        [
+            make_candidate(
+                make_chunk("multi-body-term", "수강신청 일정", "본문: 1학기와 2학기")
+            )
+        ],
+        confirmed_intent(),
+        query_intent(requested_term="second"),
+        intent_rule=registration_rule(),
+    )[0]
+
+    assert result.temporal_match is False
+
+
+def test_missing_candidate_temporal_metadata_for_term_is_compatible() -> None:
+    result = rerank(
+        [make_candidate(make_chunk("unknown-term", "수강신청 일정", "신청 기간"))],
+        confirmed_intent(),
+        query_intent(requested_term="second"),
+        intent_rule=registration_rule(),
+    )[0]
+
+    assert result.temporal_match is True
+
+
 def test_missing_candidate_temporal_metadata_is_not_a_conflict() -> None:
     result = rerank(
         [make_candidate(make_chunk("unknown", "수강신청 일정", "신청 기간"))],
@@ -133,6 +243,25 @@ def test_missing_candidate_temporal_metadata_is_not_a_conflict() -> None:
     )[0]
 
     assert result.temporal_match is True
+
+
+def test_reranker_rejects_intent_rule_for_a_different_intent() -> None:
+    mismatched_rule = IntentRule(
+        key="registration.attendance",
+        label="출석인정",
+        keywords=("출석인정",),
+        evidence_markers=(),
+        exclusion_markers=(),
+        example="출석인정",
+    )
+
+    with pytest.raises(ValueError, match="intent_rule"):
+        rerank(
+            [],
+            confirmed_intent(),
+            query_intent(),
+            intent_rule=mismatched_rule,
+        )
 
 
 def test_marker_flags_are_computed_independently_and_normalize_spacing() -> None:
@@ -149,6 +278,160 @@ def test_marker_flags_are_computed_independently_and_normalize_spacing() -> None
 
     assert result.title_marker_match is True
     assert result.body_marker_match is True
+
+
+def test_marker_matching_uses_nfkc_casefold_and_prefixes() -> None:
+    rule = IntentRule(
+        key="registration.main",
+        label="채용",
+        keywords=("채용",),
+        evidence_markers=("ＡＢＣ",),
+        exclusion_markers=(),
+        example="채용",
+    )
+    result = rerank(
+        [make_candidate(make_chunk("unicode", "ａｂｃ 채용공고", "본문"))],
+        confirmed_intent(),
+        query_intent(),
+        intent_rule=rule,
+    )[0]
+
+    assert result.title_marker_match is True
+
+
+def test_marker_matching_rejects_unrelated_token_substrings() -> None:
+    rule = IntentRule(
+        key="registration.main",
+        label="채용",
+        keywords=("채용",),
+        evidence_markers=(),
+        exclusion_markers=(),
+        example="채용",
+    )
+    result = rerank(
+        [make_candidate(make_chunk("substring", "미채용 안내", "본문"))],
+        confirmed_intent(),
+        query_intent(),
+        intent_rule=rule,
+    )[0]
+
+    assert result.title_marker_match is False
+
+
+def test_marker_matching_accepts_bounded_adjacent_token_concatenation() -> None:
+    result = rerank(
+        [make_candidate(make_chunk("adjacent", "수강 신청 안내", "본문"))],
+        confirmed_intent(),
+        query_intent(),
+        intent_rule=registration_rule(),
+    )[0]
+
+    assert result.title_marker_match is True
+
+
+def test_body_marker_ignores_title_header_and_does_not_copy_title_match() -> None:
+    result = rerank(
+        [
+            make_candidate(
+                make_chunk(
+                    "body-header",
+                    "수강신청 일정",
+                    "제목: 수강신청 일정\n본문: 일반 학사 공지",
+                )
+            )
+        ],
+        confirmed_intent(),
+        query_intent(),
+        intent_rule=registration_rule(),
+    )[0]
+
+    assert result.title_marker_match is True
+    assert result.body_marker_match is False
+
+
+def test_body_marker_removes_one_duplicated_title_without_delimiter() -> None:
+    result = rerank(
+        [
+            make_candidate(
+                make_chunk("body-duplicate", "수강신청 일정", "수강신청 일정 일반 학사 공지")
+            )
+        ],
+        confirmed_intent(),
+        query_intent(),
+        intent_rule=registration_rule(),
+    )[0]
+
+    assert result.title_marker_match is True
+    assert result.body_marker_match is False
+
+
+def test_body_exclusion_uses_actual_body_after_delimiter() -> None:
+    rule = IntentRule(
+        key="registration.main",
+        label="수강신청",
+        keywords=("수강신청",),
+        evidence_markers=(),
+        exclusion_markers=("출석인정",),
+        example="수강신청",
+    )
+    result = rerank(
+        [
+            make_candidate(
+                make_chunk(
+                    "body-exclusion",
+                    "수강신청 일정",
+                    "출석인정 제목 장식\n본문: 일반 신청 안내",
+                    intent_key=None,
+                )
+            )
+        ],
+        confirmed_intent(),
+        query_intent(),
+        intent_rule=rule,
+    )[0]
+
+    assert result.has_intent_conflict is False
+
+
+def test_reranker_score_ignores_incompatible_raw_retrieval_scales() -> None:
+    low = make_candidate(
+        make_chunk("low", "수강신청 일정", "신청 기간"),
+        dense_score=0.1,
+        lexical_score=0.5,
+    )
+    high = make_candidate(
+        make_chunk("high", "수강신청 일정", "신청 기간"),
+        dense_score=0.9,
+        lexical_score=50.0,
+    )
+
+    results = rerank(
+        [low, high],
+        confirmed_intent(),
+        query_intent(),
+        intent_rule=registration_rule(),
+    )
+
+    assert results[0].score == results[1].score
+
+
+@pytest.mark.parametrize("field", ["fused_score", "dense_score", "lexical_score"])
+@pytest.mark.parametrize("value", [math.nan, math.inf, -math.inf])
+def test_reranker_rejects_nonfinite_scores(field: str, value: float) -> None:
+    candidate = make_candidate(make_chunk("nonfinite", "수강신청", "본문"))
+    invalid = replace(candidate, **{field: value})
+
+    with pytest.raises(ValueError, match="finite"):
+        rerank([invalid], confirmed_intent(), query_intent())
+
+
+@pytest.mark.parametrize("field", ["dense_rank", "lexical_rank"])
+def test_reranker_rejects_invalid_ranks(field: str) -> None:
+    candidate = make_candidate(make_chunk("rank", "수강신청", "본문"))
+    invalid = replace(candidate, **{field: 0})
+
+    with pytest.raises(ValueError, match="rank"):
+        rerank([invalid], confirmed_intent(), query_intent())
 
 
 def test_body_exclusion_does_not_override_exact_intent_metadata() -> None:
