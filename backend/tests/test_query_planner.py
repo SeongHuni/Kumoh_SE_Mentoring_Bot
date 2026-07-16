@@ -28,21 +28,45 @@ def query_intent(**updates: object) -> QueryIntent:
     return QueryIntent(**values)
 
 
-def test_query_plan_preserves_normalized_original_and_temporal_constraints() -> None:
+def test_query_plan_preserves_exact_original_and_temporal_constraints() -> None:
+    question = "  2026학년도   최근 수강신청 공지  "
     plan = build_query_plan(
-        "  2026학년도   최근 수강신청 공지  ",
+        question,
         confirmed_intent(),
         query_intent(),
     )
 
     assert isinstance(plan, QueryPlan)
-    assert plan.original == "2026학년도 최근 수강신청 공지"
+    assert plan.original == question
     assert plan.queries[0] == plan.original
     assert any("2026" in query and "2학기" in query for query in plan.queries)
     assert any(
         "일반 수강신청 일정과 공지" in query and "공식 공지" in query
         for query in plan.queries
     )
+
+
+def test_hypothetical_notice_contains_official_notice_temporal_intent_and_example() -> None:
+    plan = build_query_plan(
+        "2026학년도 수강신청 공지",
+        confirmed_intent(),
+        query_intent(),
+    )
+
+    assert "공식 공지" in plan.hypothetical_notice
+    assert "2026학년도" in plan.hypothetical_notice
+    assert "2학기" in plan.hypothetical_notice
+    assert confirmed_intent().label in plan.hypothetical_notice
+    assert confirmed_intent().example in plan.hypothetical_notice
+
+
+def test_query_plan_preserves_internal_newlines_in_original_and_first_query() -> None:
+    question = "2026학년도\n최근  수강신청 공지"
+
+    plan = build_query_plan(question, confirmed_intent(), query_intent())
+
+    assert plan.original == question
+    assert plan.queries[0] == question
 
 
 def test_hypothetical_notice_is_valid_deterministic_title_and_body() -> None:

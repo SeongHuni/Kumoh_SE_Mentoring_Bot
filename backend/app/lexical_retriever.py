@@ -57,7 +57,7 @@ class BM25Retriever:
 
     def _score_document(self, document_index: int, query: str) -> float:
         query_terms = Counter(_tokenize(query))
-        if not query_terms:
+        if not query_terms or self._avgdl == 0.0:
             return 0.0
 
         document_terms = self._document_terms[document_index]

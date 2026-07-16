@@ -34,7 +34,17 @@ def _temporal_text(query_intent: QueryIntent) -> str:
 
 
 def _deduplicate(values: tuple[str, ...]) -> tuple[str, ...]:
-    return tuple(dict.fromkeys(value for value in values if value))
+    seen: set[str] = set()
+    result: list[str] = []
+    for value in values:
+        if not value:
+            continue
+        comparison_key = _normalize(value)
+        if comparison_key in seen:
+            continue
+        seen.add(comparison_key)
+        result.append(value)
+    return tuple(result)
 
 
 def build_query_plan(
@@ -42,9 +52,9 @@ def build_query_plan(
     intent: IntentOption,
     query_intent: QueryIntent,
 ) -> QueryPlan:
-    original = _normalize(question)
-    if not original:
+    if not question.strip():
         raise ValueError("question must not be blank")
+    original = question
     if intent.topic_key != query_intent.topic_key:
         raise ValueError("intent and query_intent topic must match")
 

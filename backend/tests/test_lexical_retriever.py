@@ -1,3 +1,4 @@
+import math
 from dataclasses import FrozenInstanceError
 
 import pytest
@@ -89,6 +90,86 @@ def test_korean_spacing_matches_compact_form() -> None:
     results = BM25Retriever([unrelated, spaced]).search(["수강신청"], top_k=1)
 
     assert [result.chunk.id for result in results] == ["spaced"]
+
+
+@pytest.mark.parametrize(
+    ("chunk_text", "query"),
+    [
+        ("공 지", "공지"),
+        ("수 강 신 청", "강신청"),
+        ("수 강 신 청", "수강신청"),
+    ],
+)
+def test_compact_matching_supports_two_three_and_four_grams(
+    chunk_text: str,
+    query: str,
+) -> None:
+    chunk = make_chunk("compact", "분리된 한글", chunk_text)
+
+    results = BM25Retriever([chunk]).search([query], top_k=1)
+
+    assert results[0].chunk is chunk
+    assert results[0].score > 0
+
+
+def test_chunk_score_uses_maximum_across_query_variants() -> None:
+    first = make_chunk("first", "희귀알파", "첫 번째 내용")
+    second = make_chunk("second", "보통베타", "두 번째 내용")
+    retriever = BM25Retriever([first, second])
+
+    variants = ["희귀알파", "보통베타"]
+    combined = {item.chunk.id: item.score for item in retriever.search(variants, top_k=2)}
+    individual = {
+        chunk.id: max(
+            item.score
+            for variant in variants
+            for item in retriever.search([variant], top_k=2)
+            if item.chunk.id == chunk.id
+        )
+        for chunk in (first, second)
+    }
+
+    assert combined == individual
+
+
+def test_okapi_score_is_positive_and_matches_hand_checkable_formula() -> None:
+    rare = make_chunk("rare", "희", "")
+    other = make_chunk("other", "공", "")
+    retriever = BM25Retriever([rare, other])
+
+    result = retriever.search(["희"], top_k=1)[0]
+    expected_idf = math.log(1 + (2 - 1 + 0.5) / (1 + 0.5))
+    expected_score = expected_idf * (1 * (1.5 + 1)) / (1 + 1.5 * (1 - 0.75 + 0.75))
+
+    assert result.score > 0
+    assert result.score == pytest.approx(expected_score)
+
+
+@pytest.mark.parametrize(
+    ("title", "text", "query"),
+    [
+        ("수강신청 제목", "일반적인 본문", "수강신청"),
+        ("일반적인 제목", "수강신청 본문", "수강신청"),
+    ],
+)
+def test_title_only_and_text_only_matching(
+    title: str,
+    text: str,
+    query: str,
+) -> None:
+    chunk = make_chunk("field", title, text)
+
+    results = BM25Retriever([chunk]).search([query], top_k=1)
+
+    assert results[0].chunk is chunk
+
+
+def test_nonempty_corpus_with_no_tokens_does_not_divide_by_zero() -> None:
+    empty = make_chunk("empty", "", "")
+    retriever = BM25Retriever([empty])
+
+    assert retriever._avgdl == 0
+    assert retriever.search(["수강신청"], top_k=1) == []
 
 
 def test_search_ignores_blank_variants_and_excludes_zero_scores() -> None:
