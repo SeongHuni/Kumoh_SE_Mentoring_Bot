@@ -57,7 +57,7 @@ def _compact(value: str) -> str:
     return "".join(_tokens(value))
 
 
-def _contains_marker(text: str, marker: str) -> bool:
+def contains_marker(text: str, marker: str) -> bool:
     marker_tokens = _tokens(marker)
     if not marker_tokens:
         return False
@@ -190,7 +190,7 @@ def _has_intent_conflict(
         return False
 
     title_exclusion = any(
-        _contains_marker(chunk.title, marker)
+        contains_marker(chunk.title, marker)
         for marker in intent_rule.exclusion_markers
     )
     if title_exclusion:
@@ -198,7 +198,7 @@ def _has_intent_conflict(
 
     exact_intent_metadata = explicit_intent_key == intent.intent_key
     body_exclusion = any(
-        _contains_marker(body, marker)
+        contains_marker(body, marker)
         for marker in intent_rule.exclusion_markers
     )
     return body_exclusion and not exact_intent_metadata
@@ -302,10 +302,10 @@ def rerank(
         expected_rrf = _validate_candidate(candidate, validated_rrf_k)
         body = _actual_body(candidate.chunk)
         title_marker_match = any(
-            _contains_marker(candidate.chunk.title, marker) for marker in markers
+            contains_marker(candidate.chunk.title, marker) for marker in markers
         )
         body_marker_match = any(
-            _contains_marker(body, marker) for marker in markers
+            contains_marker(body, marker) for marker in markers
         )
         temporal_match = _temporal_match(candidate.chunk, query_intent)
         has_intent_conflict = _has_intent_conflict(

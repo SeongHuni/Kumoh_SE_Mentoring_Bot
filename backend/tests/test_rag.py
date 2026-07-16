@@ -100,6 +100,81 @@ def capstone_notice() -> TextChunk:
     )
 
 
+def career_faculty_recruitment() -> TextChunk:
+    return chunk(
+        "career-faculty",
+        title="소프트웨어전공 전임교원 초빙 공개강의 심사 공고",
+        text=(
+            "제목: 소프트웨어전공 전임교원 초빙 공개강의 심사 공고\n"
+            "본문: 전임교원 신규채용 공개강의 일정과 제출 서류를 안내합니다."
+        ),
+        published_at="2026-06-30",
+        topic_key="career",
+        intent_key="career.general",
+        latest=True,
+    )
+
+
+def older_career_program() -> TextChunk:
+    return chunk(
+        "career-program",
+        title="신입 개발자 포트폴리오 리팩토링 취업 프로그램 안내",
+        text=(
+            "제목: 신입 개발자 포트폴리오 리팩토링 취업 프로그램 안내\n"
+            "본문: 취업 준비 프로그램의 일정과 신청 방법을 안내합니다."
+        ),
+        published_at="2026-04-15",
+        topic_key="career",
+        intent_key="career.general",
+        latest=False,
+    )
+
+
+def scholarship_bootcamp() -> TextChunk:
+    return chunk(
+        "scholarship-bootcamp",
+        title="방산AI인재양성부트캠프사업단 소개 및 설명회 안내",
+        text=(
+            "제목: 방산AI인재양성부트캠프사업단 소개 및 설명회 안내\n"
+            "본문: 교육과정 이수 장학금과 취업 연계 및 인턴십 프로그램을 소개합니다."
+        ),
+        published_at="2026-06-17",
+        topic_key="scholarship",
+        intent_key="scholarship.general",
+        latest=True,
+    )
+
+
+def older_scholarship_application() -> TextChunk:
+    return chunk(
+        "scholarship-application",
+        title="외국어성적우수장학금 신청 안내",
+        text=(
+            "제목: 외국어성적우수장학금 신청 안내\n"
+            "본문: 장학금 신청 자격과 제출 방법을 안내합니다."
+        ),
+        published_at="2025-07-02",
+        topic_key="scholarship",
+        intent_key="scholarship.general",
+        latest=False,
+    )
+
+
+def general_ax_notice() -> TextChunk:
+    return chunk(
+        "general-ax",
+        title="AX 기반 역량 강화 프로젝트 주제 공모전 기간 연장 안내",
+        text=(
+            "제목: AX 기반 역량 강화 프로젝트 주제 공모전 기간 연장 안내\n"
+            "본문: 공모 접수 기간과 제출 방법을 안내합니다."
+        ),
+        published_at="2026-06-17",
+        topic_key="general",
+        intent_key="general.recent",
+        latest=True,
+    )
+
+
 def post_for(item: TextChunk) -> BoardPost:
     return BoardPost(
         id=item.post_id,
@@ -275,6 +350,96 @@ def test_grounded_answer_has_sources_interpreted_intent_and_followups() -> None:
     assert result.suggested_questions
     assert result.recent_notices[0].url == notice.url
     assert len(provider.answer_calls) == 1
+
+
+@pytest.mark.parametrize(
+    ("question", "confirmed_intent_key", "notice"),
+    [
+        ("최근 취업 프로그램을 알려줘", "career.general", career_faculty_recruitment()),
+        ("인턴 관련 공지가 있어?", "career.general", career_faculty_recruitment()),
+        ("장학금 신청 공지를 알려줘", "scholarship.general", scholarship_bootcamp()),
+        ("장학생 선발 기준은?", "scholarship.general", scholarship_bootcamp()),
+        ("최근 장학 공지를 알려줘", "scholarship.general", scholarship_bootcamp()),
+        ("오늘 학생식당 메뉴를 알려줘", "general.recent", general_ax_notice()),
+        ("데이터에 없는 기숙사 식단을 알려줘", "general.recent", general_ax_notice()),
+        ("오늘 학교 날씨를 알려줘", "general.recent", general_ax_notice()),
+    ],
+)
+def test_broad_intents_fail_closed_when_request_evidence_is_missing(
+    question: str,
+    confirmed_intent_key: str,
+    notice: TextChunk,
+) -> None:
+    service, provider, _ = service_for([notice])
+
+    result = service.ask(question, confirmed_intent_key=confirmed_intent_key)
+
+    assert result.response_type == "no_answer"
+    assert result.grounded is False
+    assert result.sources == []
+    assert provider.answer_calls == []
+
+
+@pytest.mark.parametrize(
+    ("question", "confirmed_intent_key", "notice"),
+    [
+        ("최근 채용 공지를 찾아줘", "career.general", career_faculty_recruitment()),
+        (
+            "장학 관련 방산AI인재양성부트캠프 설명회 공지를 찾아줘",
+            "scholarship.general",
+            scholarship_bootcamp(),
+        ),
+        (
+            "AX 기반 역량 강화 프로젝트 공모 기간 연장 안내를 찾아줘",
+            "general.recent",
+            general_ax_notice(),
+        ),
+        ("최근 학과 공지를 알려줘", "general.recent", general_ax_notice()),
+        ("소프트웨어전공 공지를 알려줘", "general.recent", general_ax_notice()),
+    ],
+)
+def test_broad_intents_keep_exact_or_board_scope_evidence(
+    question: str,
+    confirmed_intent_key: str,
+    notice: TextChunk,
+) -> None:
+    service, provider, _ = service_for([notice])
+
+    result = service.ask(question, confirmed_intent_key=confirmed_intent_key)
+
+    assert result.response_type == "answer"
+    assert result.grounded is True
+    assert [source.url for source in result.sources] == [notice.url]
+    assert len(provider.answer_calls) == 1
+
+
+@pytest.mark.parametrize(
+    ("question", "confirmed_intent_key", "notices"),
+    [
+        (
+            "최근 취업 프로그램을 알려줘",
+            "career.general",
+            [career_faculty_recruitment(), older_career_program()],
+        ),
+        (
+            "장학금 신청 공지를 알려줘",
+            "scholarship.general",
+            [scholarship_bootcamp(), older_scholarship_application()],
+        ),
+    ],
+)
+def test_latest_intent_evidence_never_falls_back_to_an_older_matching_post(
+    question: str,
+    confirmed_intent_key: str,
+    notices: list[TextChunk],
+) -> None:
+    service, provider, _ = service_for(notices)
+
+    result = service.ask(question, confirmed_intent_key=confirmed_intent_key)
+
+    assert result.response_type == "no_answer"
+    assert result.sources == []
+    assert provider.answer_calls == []
 
 
 @pytest.mark.parametrize(

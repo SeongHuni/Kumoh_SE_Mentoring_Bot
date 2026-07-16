@@ -19,6 +19,7 @@ from backend.app.query_intent import analyze_query
 from backend.app.query_planner import build_query_plan
 from backend.app.recommendations import recent_notices, suggested_questions
 from backend.app.relevance_gate import evaluate_candidates, relevant_candidates
+from backend.app.request_evidence import supports_specific_request
 from backend.app.reranker import rerank, to_retrieved
 from backend.app.schemas import ChatResponse, ClarificationOption
 from backend.app.topic_rules import IntentRule, TopicCatalog, TopicRule
@@ -156,10 +157,21 @@ class RAGService:
             for candidate in relevant_candidates(decisions)
             if candidate.score >= self.min_score
         ]
-        selected = select_freshest(
+        freshest = select_freshest(
             relevant,
             require_dated=query_intent.recency_requested,
-        )[: self.top_k]
+        )
+        selected = [
+            candidate
+            for candidate in freshest
+            if supports_specific_request(
+                candidate,
+                question=question,
+                query_intent=query_intent,
+                intent_rule=intent_rule,
+                policy=self.topic_catalog.retrieval_policy,
+            )
+        ][: self.top_k]
 
         suggestions = suggested_questions(self.topic_catalog, confirmed.topic_key)
         notices = recent_notices(
