@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from numbers import Real
 
 from backend.app.domain import TextChunk
-from backend.app.hybrid_retriever import HybridCandidate
+from backend.app.hybrid_retriever import HybridCandidate, reciprocal_rank
 from backend.app.intent_analysis import IntentOption
 from backend.app.query_intent import TERM_PATTERNS, QueryIntent
 from backend.app.topic_rules import IntentRule
@@ -219,22 +219,41 @@ def _validate_rank(value: object, name: str) -> None:
         raise ValueError(f"{name} must be a positive integer")
 
 
-def _validate_candidate(candidate: HybridCandidate) -> None:
+def _validate_rrf_k(value: object) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise ValueError("rrf_k must be a positive integer")
+    return value
+
+
+def _validate_candidate(candidate: HybridCandidate, rrf_k: int) -> float:
     _validate_finite_score(candidate.fused_score, "fused_score")
     _validate_finite_score(candidate.dense_score, "dense_score")
     _validate_finite_score(candidate.lexical_score, "lexical_score")
     _validate_rank(candidate.dense_rank, "dense_rank")
     _validate_rank(candidate.lexical_rank, "lexical_rank")
+    expected_rrf = reciprocal_rank(candidate.dense_rank, k=rrf_k) + reciprocal_rank(
+        candidate.lexical_rank,
+        k=rrf_k,
+    )
+    if not math.isclose(
+        candidate.fused_score,
+        expected_rrf,
+        rel_tol=1e-9,
+        abs_tol=1e-12,
+    ):
+        raise ValueError("fused_score does not match expected RRF")
+    return expected_rrf
 
 
 def _score(
     candidate: HybridCandidate,
     *,
+    fused_score: float,
     title_marker_match: bool,
     body_marker_match: bool,
 ) -> float:
     signal_score = (
-        candidate.fused_score
+        fused_score
         + (min(candidate.signal_count, 2) * 0.05)
     )
     marker_score = (0.30 if title_marker_match else 0.0) + (
@@ -249,16 +268,18 @@ def rerank(
     query_intent: QueryIntent,
     *,
     intent_rule: IntentRule | None = None,
+    rrf_k: int = 60,
 ) -> list[RerankedCandidate]:
     if intent.topic_key != query_intent.topic_key:
         raise ValueError("intent and query_intent topic must match")
     if intent_rule is not None and intent_rule.key != intent.intent_key:
         raise ValueError("intent_rule key must match intent key")
+    validated_rrf_k = _validate_rrf_k(rrf_k)
 
     markers = _markers(intent, query_intent, intent_rule)
     reranked: list[RerankedCandidate] = []
     for candidate in candidates:
-        _validate_candidate(candidate)
+        expected_rrf = _validate_candidate(candidate, validated_rrf_k)
         body = _actual_body(candidate.chunk)
         title_marker_match = any(
             _contains_marker(candidate.chunk.title, marker) for marker in markers
@@ -278,6 +299,7 @@ def rerank(
                 candidate=candidate,
                 score=_score(
                     candidate,
+                    fused_score=expected_rrf,
                     title_marker_match=title_marker_match,
                     body_marker_match=body_marker_match,
                 ),

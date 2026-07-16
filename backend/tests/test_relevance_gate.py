@@ -1,6 +1,6 @@
 import pytest
 from backend.app.domain import TextChunk
-from backend.app.hybrid_retriever import HybridCandidate
+from backend.app.hybrid_retriever import HybridCandidate, reciprocal_rank
 from backend.app.relevance_gate import (
     RelevanceDecision,
     evaluate_candidates,
@@ -48,7 +48,8 @@ def make_reranked(
         lexical_score=0.8 if signal_count >= 1 else 0.0,
         dense_rank=1 if signal_count == 2 else None,
         lexical_rank=1 if signal_count >= 1 else None,
-        fused_score=1.0,
+        fused_score=reciprocal_rank(1 if signal_count == 2 else None)
+        + reciprocal_rank(1 if signal_count >= 1 else None),
     )
     return RerankedCandidate(
         candidate=candidate,
@@ -94,7 +95,7 @@ def test_dense_only_evidence_is_ambiguous() -> None:
             lexical_score=0.0,
             dense_rank=1,
             lexical_rank=None,
-            fused_score=1.0,
+            fused_score=reciprocal_rank(1),
         ),
         score=candidate.score,
         title_marker_match=candidate.title_marker_match,

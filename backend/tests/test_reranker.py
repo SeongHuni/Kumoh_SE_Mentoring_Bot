@@ -3,7 +3,7 @@ from dataclasses import FrozenInstanceError, replace
 
 import pytest
 from backend.app.domain import TextChunk
-from backend.app.hybrid_retriever import HybridCandidate
+from backend.app.hybrid_retriever import HybridCandidate, reciprocal_rank
 from backend.app.intent_analysis import IntentOption
 from backend.app.query_intent import QueryIntent
 from backend.app.reranker import RerankedCandidate, rerank
@@ -42,15 +42,20 @@ def make_candidate(
     lexical_score: float = 0.8,
     dense_rank: int | None = 1,
     lexical_rank: int | None = 1,
-    fused_score: float = 1.0,
+    fused_score: float | None = None,
 ) -> HybridCandidate:
+    valid_fused_score = (
+        reciprocal_rank(dense_rank) + reciprocal_rank(lexical_rank)
+        if fused_score is None
+        else fused_score
+    )
     return HybridCandidate(
         chunk=chunk,
         dense_score=dense_score,
         lexical_score=lexical_score,
         dense_rank=dense_rank,
         lexical_rank=lexical_rank,
-        fused_score=fused_score,
+        fused_score=valid_fused_score,
     )
 
 
@@ -89,8 +94,7 @@ def registration_rule() -> IntentRule:
 
 def test_newer_wrong_subintent_ranks_after_older_confirmed_intent() -> None:
     older_main = make_candidate(
-        make_chunk("main", "2025 수강신청 일정", "신청 기간과 방법"),
-        fused_score=0.2,
+        make_chunk("main", "2025 수강신청 일정", "신청 기간과 방법")
     )
     newer_attendance = make_candidate(
         make_chunk(
@@ -100,7 +104,6 @@ def test_newer_wrong_subintent_ranks_after_older_confirmed_intent() -> None:
             intent_key="registration.attendance",
             published_at="2026-07-16",
         ),
-        fused_score=1.0,
     )
 
     results = rerank(
@@ -413,6 +416,69 @@ def test_reranker_score_ignores_incompatible_raw_retrieval_scales() -> None:
     )
 
     assert results[0].score == results[1].score
+
+
+@pytest.mark.parametrize(
+    ("dense_rank", "lexical_rank"),
+    [(1, 1), (None, 1), (None, None)],
+)
+def test_valid_fused_score_provenance_for_signal_shapes(
+    dense_rank: int | None,
+    lexical_rank: int | None,
+) -> None:
+    candidate = make_candidate(
+        make_chunk(f"valid-{dense_rank}-{lexical_rank}", "무관한 제목", "무관한 본문"),
+        dense_rank=dense_rank,
+        lexical_rank=lexical_rank,
+    )
+    expected_rrf = reciprocal_rank(dense_rank) + reciprocal_rank(lexical_rank)
+
+    result = rerank([candidate], confirmed_intent(), query_intent())[0]
+
+    assert result.score == expected_rrf + (candidate.signal_count * 0.05)
+
+
+def test_rerank_recomputes_rrf_with_requested_k() -> None:
+    candidate = make_candidate(
+        make_chunk("custom-k", "무관한 제목", "무관한 본문"),
+        fused_score=reciprocal_rank(1, k=10) * 2,
+    )
+
+    result = rerank(
+        [candidate],
+        confirmed_intent(),
+        query_intent(),
+        rrf_k=10,
+    )[0]
+
+    assert result.score == (reciprocal_rank(1, k=10) * 2) + 0.1
+
+
+def test_reranker_rejects_huge_forged_fused_score() -> None:
+    candidate = make_candidate(
+        make_chunk("forged", "무관한 제목", "무관한 본문"),
+        fused_score=1e9,
+    )
+
+    with pytest.raises(ValueError, match="fused_score"):
+        rerank([candidate], confirmed_intent(), query_intent())
+
+
+def test_reranker_rejects_subtle_fused_score_mismatch() -> None:
+    expected_rrf = reciprocal_rank(1) * 2
+    candidate = make_candidate(
+        make_chunk("subtle", "무관한 제목", "무관한 본문"),
+        fused_score=expected_rrf + 1e-6,
+    )
+
+    with pytest.raises(ValueError, match="fused_score"):
+        rerank([candidate], confirmed_intent(), query_intent())
+
+
+@pytest.mark.parametrize("rrf_k", [0, -1, True, 1.0])
+def test_reranker_rejects_invalid_rrf_k(rrf_k: object) -> None:
+    with pytest.raises(ValueError, match="rrf_k"):
+        rerank([], confirmed_intent(), query_intent(), rrf_k=rrf_k)  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize("field", ["fused_score", "dense_score", "lexical_score"])
