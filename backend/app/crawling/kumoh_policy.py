@@ -9,9 +9,11 @@ ALLOWED_DEPARTMENT_STATIC_PATHS = frozenset(
     {
         "/cs/sub0101.do",
         "/cs/sub0102.do",
+        "/cs/sub0103.do",
         "/cs/sub0104.do",
         "/cs/sub0105_2.do",
         "/cs/sub0401.do",
+        "/cs/sub0402.do",
         "/cs/sub0504.do",
     }
 )
@@ -35,8 +37,8 @@ def kumoh_collection_exclusion_reason(url: str) -> str | None:
         and path not in ALLOWED_DEPARTMENT_STATIC_PATHS
     ):
         return (
-            "학과 사이트 수집 범위는 전공소개·교육목표·교육과정·졸업 후 진로·"
-            "비식별 교수소개·동아리 소개만 허용됩니다."
+            "학과 사이트 수집 범위는 전공소개·교육목표·교육과정·주요성과·졸업 후 진로·"
+            "비식별 교수·조교 소개·동아리 소개만 허용됩니다."
         )
     if (
         hostname in UNIVERSITY_ACADEMIC_GUIDANCE_HOSTS

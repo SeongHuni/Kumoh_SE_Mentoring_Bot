@@ -5,6 +5,7 @@ from backend.app.crawling.kumoh_static import (
     KumohStaticCrawler,
     StaticPage,
 )
+from backend.app.domain import BoardPost
 
 STATIC_HTML = """
 <html><body>
@@ -16,6 +17,7 @@ STATIC_HTML = """
         <h3>김테스트</h3>
         <p>소속 : 컴퓨터공학부 소프트웨어전공</p>
         <p>연락처 : 054-478-7544</p>
+        <p>연락처 : <span>054</span><span>478</span><span>7544</span></p>
         <p>이메일 : faculty@example.com</p>
         <p>전공 : 인공지능, 정보검색</p>
       </div>
@@ -63,6 +65,10 @@ INTRODUCTION_HTML = """
       <p>소프트웨어 개발에 참여할 실천적인 프로그래머 양성을 교육의 목표로 한다.</p>
     </div>
     <div class="contents-area">
+      <h4>연혁</h4>
+      <p>2025년 소프트웨어전공 교육과정을 개편했다.</p>
+    </div>
+    <div class="contents-area">
       <h4>주소 및 연락처</h4>
       <p>054-478-7000</p>
     </div>
@@ -89,6 +95,7 @@ def test_static_crawler_uses_content_area_and_removes_contact_details() -> None:
         title="소프트웨어전공 교수진",
         url="https://cs.kumoh.ac.kr/cs/sub0401.do",
         content_selector="#jwxe_main_content .professors-wrapper",
+        deidentify_profile_names=True,
     )
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -110,6 +117,7 @@ def test_static_crawler_uses_content_area_and_removes_contact_details() -> None:
     assert "인공지능" in posts[0].content
     assert "게시글 검색" not in posts[0].content
     assert "054-478-7544" not in posts[0].content
+    assert "054\n478\n7544" not in posts[0].content
     assert "faculty@example.com" not in posts[0].content
 
 
@@ -120,26 +128,34 @@ def test_static_scope_contains_only_allowed_department_pages() -> None:
         "https://cs.kumoh.ac.kr/cs/sub0101.do",
         "https://cs.kumoh.ac.kr/cs/sub0102.do",
         "https://cs.kumoh.ac.kr/cs/sub0105_2.do",
+        "https://cs.kumoh.ac.kr/cs/sub0103.do",
         "https://cs.kumoh.ac.kr/cs/sub0104.do",
         "https://cs.kumoh.ac.kr/cs/sub0401.do",
+        "https://cs.kumoh.ac.kr/cs/sub0402.do",
         "https://cs.kumoh.ac.kr/cs/sub0504.do",
     }
 
     pages = {page.id: page for page in KUMOH_STATIC_PAGES}
-    assert pages["static-department-introduction"].section_headings == ("전공소개",)
+    assert pages["static-department-introduction"].section_headings is None
+    assert pages["static-department-introduction"].excluded_section_headings == (
+        "주소 및 연락처",
+    )
     assert pages["static-department-introduction"].semantic_reference_ids == (
         "static-education-objectives",
         "static-curriculum",
     )
     assert pages["static-career"].document_type == "historical"
+    assert pages["static-major-achievements"].document_type == "historical"
+    assert pages["static-faculty"].deidentify_profile_names is True
+    assert pages["static-assistants"].deidentify_profile_names is True
 
 
-def test_static_crawler_keeps_intro_section_and_semantically_deduplicates_it() -> None:
+def test_static_crawler_keeps_intro_page_content_and_semantically_deduplicates_it() -> None:
     introduction = StaticPage(
         id="static-department-introduction",
         title="소프트웨어전공 소개",
         url="https://cs.kumoh.ac.kr/cs/sub0101.do",
-        section_headings=("전공소개",),
+        excluded_section_headings=("주소 및 연락처",),
         semantic_reference_ids=("static-education-objectives",),
     )
     objectives = StaticPage(
@@ -166,9 +182,60 @@ def test_static_crawler_keeps_intro_section_and_semantically_deduplicates_it() -
     assert "실천적인 프로그래머를 양성한다" not in posts[
         "static-department-introduction"
     ].content
-    assert "교육목표" not in posts["static-department-introduction"].content
+    assert "교육목표" in posts["static-department-introduction"].content
+    assert "연혁" in posts["static-department-introduction"].content
+    assert "2025년 소프트웨어전공 교육과정을 개편했다" in posts[
+        "static-department-introduction"
+    ].content
     assert "주소 및 연락처" not in posts["static-department-introduction"].content
     assert "프로젝트 기반 실무 역량" in posts["static-education-objectives"].content
+
+
+def test_static_crawler_removes_contact_details_reassembled_by_semantic_dedup() -> None:
+    introduction = StaticPage(
+        id="static-department-introduction",
+        title="introduction",
+        url="https://cs.kumoh.ac.kr/cs/sub0101.do",
+        semantic_reference_ids=("static-education-objectives",),
+    )
+    objectives = StaticPage(
+        id="static-education-objectives",
+        title="objectives",
+        url="https://cs.kumoh.ac.kr/cs/sub0102.do",
+    )
+    crawler = KumohStaticCrawler(
+        delay_seconds=0,
+        client=httpx.Client(transport=httpx.MockTransport(lambda _: httpx.Response(200))),
+        pages=(introduction, objectives),
+    )
+    posts = [
+        BoardPost(
+            id="static-department-introduction",
+            source="kumoh",
+            title="introduction",
+            content=(
+                "054\n"
+                "Software curriculum includes programming algorithms systems and projects\n"
+                "478\n7544"
+            ),
+            url="https://cs.kumoh.ac.kr/cs/sub0101.do",
+            document_type="static",
+        ),
+        BoardPost(
+            id="static-education-objectives",
+            source="kumoh",
+            title="objectives",
+            content="Software curriculum includes programming algorithms systems and projects",
+            url="https://cs.kumoh.ac.kr/cs/sub0102.do",
+            document_type="static",
+        ),
+    ]
+
+    deduplicated = {
+        post.id: post for post in crawler._deduplicate_semantic_content(posts)
+    }
+
+    assert "054\n478\n7544" not in deduplicated["static-department-introduction"].content
 
 
 def test_static_crawler_marks_historical_static_page() -> None:
@@ -239,6 +306,16 @@ def test_static_crawler_rejects_university_academic_guidance_pages() -> None:
             "소프트웨어전공 졸업 후 진로",
             "https://cs.kumoh.ac.kr/cs/sub0104.do",
         ),
+        (
+            "static-major-achievements",
+            "소프트웨어전공 주요성과",
+            "https://cs.kumoh.ac.kr/cs/sub0103.do",
+        ),
+        (
+            "static-assistants",
+            "소프트웨어전공 조교",
+            "https://cs.kumoh.ac.kr/cs/sub0402.do",
+        ),
     ],
 )
 def test_static_crawler_allows_mentoring_relevant_department_pages(
@@ -257,11 +334,11 @@ def test_static_crawler_allows_mentoring_relevant_department_pages(
     crawler.close()
 
 
-def test_static_crawler_rejects_major_achievements_outside_allowlist() -> None:
+def test_static_crawler_rejects_retired_faculty_outside_allowlist() -> None:
     page = StaticPage(
-        id="static-major-achievements",
-        title="소프트웨어전공 주요성과",
-        url="https://cs.kumoh.ac.kr/cs/sub0103.do",
+        id="static-retired-faculty",
+        title="소프트웨어전공 퇴임교수",
+        url="https://cs.kumoh.ac.kr/cs/sub0403.do",
     )
 
     with pytest.raises(ValueError, match="수집 범위"):

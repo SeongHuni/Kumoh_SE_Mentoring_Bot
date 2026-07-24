@@ -20,10 +20,12 @@ class StaticPage:
     title: str
     url: str
     section_headings: tuple[str, ...] | None = None
+    excluded_section_headings: tuple[str, ...] = ()
     semantic_reference_ids: tuple[str, ...] = ()
     document_type: Literal["static", "historical"] = "static"
     content_selector: str | None = None
     content_kind: Literal["standard", "club_introductions"] = "standard"
+    deidentify_profile_names: bool = False
 
 
 KUMOH_STATIC_PAGES: tuple[StaticPage, ...] = (
@@ -31,7 +33,7 @@ KUMOH_STATIC_PAGES: tuple[StaticPage, ...] = (
         id="static-department-introduction",
         title="소프트웨어전공 소개",
         url="https://cs.kumoh.ac.kr/cs/sub0101.do",
-        section_headings=("전공소개",),
+        excluded_section_headings=("주소 및 연락처",),
         semantic_reference_ids=(
             "static-education-objectives",
             "static-curriculum",
@@ -48,6 +50,12 @@ KUMOH_STATIC_PAGES: tuple[StaticPage, ...] = (
         url="https://cs.kumoh.ac.kr/cs/sub0105_2.do",
     ),
     StaticPage(
+        id="static-major-achievements",
+        title="소프트웨어전공 주요성과",
+        url="https://cs.kumoh.ac.kr/cs/sub0103.do",
+        document_type="historical",
+    ),
+    StaticPage(
         id="static-career",
         title="소프트웨어전공 졸업 후 진로",
         url="https://cs.kumoh.ac.kr/cs/sub0104.do",
@@ -58,6 +66,14 @@ KUMOH_STATIC_PAGES: tuple[StaticPage, ...] = (
         title="소프트웨어전공 교수진",
         url="https://cs.kumoh.ac.kr/cs/sub0401.do",
         content_selector="#jwxe_main_content .professors-wrapper",
+        deidentify_profile_names=True,
+    ),
+    StaticPage(
+        id="static-assistants",
+        title="소프트웨어전공 조교",
+        url="https://cs.kumoh.ac.kr/cs/sub0402.do",
+        content_selector="#jwxe_main_content .professors-wrapper",
+        deidentify_profile_names=True,
     ),
     StaticPage(
         id="static-clubs",
@@ -111,12 +127,16 @@ class KumohStaticCrawler:
                 return selected
         main = soup.select_one("#jwxe_main_content")
         if isinstance(main, Tag):
+            direct_content = [
+                node
+                for node in main.find_all(class_="contents-area", recursive=False)
+                if isinstance(node, Tag)
+            ]
             if page.section_headings:
                 sections = [
                     node
-                    for node in main.find_all(class_="contents-area", recursive=False)
-                    if isinstance(node, Tag)
-                    and (
+                    for node in direct_content
+                    if (
                         heading := node.select_one("h2, h3, h4, h5")
                     ) is not None
                     and clean_text(heading.get_text(" ", strip=True))
@@ -125,11 +145,17 @@ class KumohStaticCrawler:
                 if sections:
                     return sections
                 raise ValueError(f"허용된 정적 안내 섹션을 찾지 못했습니다: {page.url}")
-            direct_content = [
-                node
-                for node in main.find_all(class_="contents-area", recursive=False)
-                if isinstance(node, Tag)
-            ]
+            if page.excluded_section_headings:
+                excluded_headings = set(page.excluded_section_headings)
+                direct_content = [
+                    node
+                    for node in direct_content
+                    if (
+                        (heading := node.select_one("h2, h3, h4, h5")) is None
+                        or clean_text(heading.get_text(" ", strip=True))
+                        not in excluded_headings
+                    )
+                ]
             if direct_content:
                 return direct_content
             return [main]
@@ -141,7 +167,20 @@ class KumohStaticCrawler:
         return []
 
     @staticmethod
-    def _clean_static_content(nodes: list[Tag]) -> str:
+    def _remove_contact_details(content: str) -> str:
+        content = _EMAIL.sub("", content)
+        content = _PHONE.sub("", content)
+        content = _CONTACT_LABEL.sub("", content)
+
+        cleaned_lines: list[str] = []
+        for line in content.splitlines():
+            cleaned = clean_text(line).strip(" -,:：")
+            if cleaned:
+                cleaned_lines.append(cleaned)
+        return "\n".join(cleaned_lines)
+
+    @classmethod
+    def _clean_static_content(cls, nodes: list[Tag]) -> str:
         lines: list[str] = []
         for node in nodes:
             for raw_line in node.get_text("\n", strip=True).splitlines():
@@ -151,7 +190,7 @@ class KumohStaticCrawler:
                 cleaned = clean_text(line).strip(" -,:：")
                 if cleaned:
                     lines.append(cleaned)
-        return "\n".join(lines)
+        return cls._remove_contact_details("\n".join(lines))
 
     @classmethod
     def _club_introductions(cls, soup: BeautifulSoup, page: StaticPage) -> str:
@@ -190,7 +229,7 @@ class KumohStaticCrawler:
         if page.content_kind == "club_introductions":
             content = cls._club_introductions(soup, page)
         else:
-            if page.id == "static-faculty":
+            if page.deidentify_profile_names:
                 for heading in soup.select("#jwxe_main_content h3, #jwxe_main_content h4"):
                     heading.decompose()
             content = cls._clean_static_content(cls._content_nodes(soup, page))
@@ -219,9 +258,13 @@ class KumohStaticCrawler:
                 if reference_id in posts_by_id
             ]
             if references:
+                deduplicated_content = remove_semantic_duplicates(
+                    post.content,
+                    references,
+                )
                 post = post.model_copy(
                     update={
-                        "content": remove_semantic_duplicates(post.content, references)
+                        "content": self._remove_contact_details(deduplicated_content)
                     }
                 )
             cleaned_posts.append(post)

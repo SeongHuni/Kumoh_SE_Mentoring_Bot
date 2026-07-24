@@ -20,7 +20,7 @@ public CLI가 positive limit에 대해 기술적으로 검증하는 것은 `--se
 backend/.venv/Scripts/python.exe -m backend.scripts.crawl --kumoh-static --candidate-output data/raw/candidates/kumoh-community-2024.json --seboard-limit 0
 ```
 
-학과 사이트는 allowlist에 있는 정적 페이지 6개만 수집한다: 전공소개(`sub0101`), 교육목표(`sub0102`), 교육과정(`sub0105_2`), 졸업 후 진로(`sub0104`), 비식별 교수소개(`sub0401`), 동아리명·동아리 소개(`sub0504`). `--kumoh-limit`, `--kumoh-all`, `--kumoh-all-boards`는 학과 게시판 수집을 재개할 수 없도록 오류로 종료한다. 학과 홈페이지 공지사항(`sub0601`), 주요성과(`sub0103`), 취업·행사·수상 게시판, 대학원·학생회 페이지를 포함한 나머지 학과 URL은 정책 위반으로 거절된다. 금오공과대학교 학사안내 URL 계열(`www.kumoh.ac.kr/ko/sub06_01_*`)도 수집·저장하지 않는다. 허용 수집은 기존 운영 원본을 덮어쓰지 않도록 `--candidate-output`과 함께 사용한다.
+학과 사이트는 allowlist에 있는 정적 페이지 8개만 수집한다: 전공소개(`sub0101`), 교육목표(`sub0102`), 교육과정(`sub0105_2`), 주요성과(`sub0103`), 졸업 후 진로(`sub0104`), 비식별 교수소개(`sub0401`), 비식별 조교소개(`sub0402`), 동아리명·동아리 소개(`sub0504`). `--kumoh-limit`, `--kumoh-all`, `--kumoh-all-boards`는 학과 게시판 수집을 재개할 수 없도록 오류로 종료한다. 학과 홈페이지 공지사항(`sub0601`), 취업·행사·수상 게시판, 대학원·학생회·퇴임교수 페이지를 포함한 나머지 학과 URL은 정책 위반으로 거절된다. 금오공과대학교 학사안내 URL 계열(`www.kumoh.ac.kr/ko/sub06_01_*`)도 수집·저장하지 않는다. 허용 수집은 기존 운영 원본을 덮어쓰지 않도록 `--candidate-output`과 함께 사용한다.
 
 ```powershell
 backend/.venv/Scripts/python.exe -m backend.scripts.crawl --kumoh-static --candidate-output data/raw/candidates/kumoh-allowlist.json --seboard-limit 0
@@ -32,9 +32,9 @@ backend/.venv/Scripts/python.exe -m backend.scripts.crawl --kumoh-static --candi
 
 ## 학과 정적 안내
 
-`KumohStaticCrawler`는 `--kumoh-static`에서 전공소개·교육목표·교육과정·졸업 후 진로·비식별 교수소개·동아리 소개 6개 공개 페이지만 수집한다. `sub0101`은 `#jwxe_main_content` 안의 `전공소개` 섹션만 보존하므로 같은 화면의 교육목표·교육과정·연혁·오시는길·주소·연락처는 저장하지 않는다. 전공소개의 본문 줄은 상세 교육목표(`sub0102`)·교육과정(`sub0105_2`)과 정규화한 의미어·포함도·문자 유사도를 비교해 중복이면 제거하고, 제목과 고유 문맥은 보존한다. 교수 페이지는 profile 이름·전화·이메일·검색 UI를 제거하고 소속·전공 분야만 보존한다. 동아리 페이지는 각 `h4` 동아리명과 표의 `동아리 소개` 값만 저장하며 회장·부회장·연락처·이미지는 저장하지 않는다. 주요성과와 첨부파일은 수집하지 않는다.
+`KumohStaticCrawler`는 `--kumoh-static`에서 전공소개·교육목표·교육과정·주요성과·졸업 후 진로·비식별 교수·조교 소개·동아리 소개 8개 공개 페이지만 수집한다. `sub0101`은 `#jwxe_main_content` 안의 전공소개·교육목표·교육과정·연혁·오시는길 본문 블록을 보존하고, `주소 및 연락처` 블록과 전화·이메일은 제거한다. 전공소개의 본문 줄은 상세 교육목표(`sub0102`)·교육과정(`sub0105_2`)과 정규화한 의미어·포함도·문자 유사도를 비교해 중복이면 제거하고, 제목·섹션 heading·고유 문맥은 보존한다. 의미 중복 제거로 줄이 다시 인접한 뒤에도 전화·이메일·연락처를 한 번 더 제거한다. 교수·조교 페이지는 profile 이름·전화·이메일·검색 UI를 제거하고 역할·소속·전공 분야만 보존한다. 동아리 페이지는 각 `h4` 동아리명과 표의 `동아리 소개` 값만 저장하며 회장·부회장·연락처·이미지는 저장하지 않는다. 첨부파일 본문은 수집하지 않는다.
 
-일반 정적 문서는 `document_type=static`, `published_at=null`로 저장한다. 졸업 후 진로(`sub0104`)는 원문에 과거 취업률·기업 사례가 포함돼 `document_type=historical`, `published_at=null`로 저장한다. `static`과 `historical` 문서는 검색 근거가 될 수 있지만 최근 공지 및 intent별 최신 공지 경쟁에는 참여하지 않으며, 역사 청크의 header에는 “현재 수치·현황 아님”을 명시한다. 둘 다 데이터 감사의 게시일 누락 경고 대상이 아니다.
+일반 정적 문서는 `document_type=static`, `published_at=null`로 저장한다. 주요성과(`sub0103`)와 졸업 후 진로(`sub0104`)는 원문에 과거 성과·취업률·기업 사례가 포함돼 `document_type=historical`, `published_at=null`로 저장한다. `static`과 `historical` 문서는 검색 근거가 될 수 있지만 최근 공지 및 intent별 최신 공지 경쟁에는 참여하지 않으며, 역사 청크의 header에는 “현재 수치·현황 아님”을 명시한다. 둘 다 데이터 감사의 게시일 누락 경고 대상이 아니다.
 
 ## 원본 스키마와 보존
 

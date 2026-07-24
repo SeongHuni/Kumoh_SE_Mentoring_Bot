@@ -38,13 +38,13 @@
 
 ## 운영 절차
 
-허용된 학과 source만 수집하는 기본 명령은 다음과 같다. 학과 사이트에서는 전공소개·교육목표·교육과정·졸업 후 진로·비식별 교수소개·동아리명/동아리 소개의 정적 6페이지만 수집한다. `--kumoh-limit`, `--kumoh-all`, `--kumoh-all-boards`는 정책상 오류로 종료한다. 학과 홈페이지 공지사항을 포함한 모든 학과 게시판, 주요성과(`sub0103`), 금오공과대학교 학사안내 URL 계열(`www.kumoh.ac.kr/ko/sub06_01_*`)은 수집·저장하지 않는다. SE 게시판은 권한과 승인된 API가 확인되기 전까지 `--seboard-limit 0`을 유지한다.
+허용된 학과 source만 수집하는 기본 명령은 다음과 같다. 학과 사이트에서는 전공소개·교육목표·교육과정·주요성과·졸업 후 진로·비식별 교수·조교 소개·동아리명/동아리 소개의 정적 8페이지만 수집한다. `--kumoh-limit`, `--kumoh-all`, `--kumoh-all-boards`는 정책상 오류로 종료한다. 학과 홈페이지 공지사항을 포함한 모든 학과 게시판, 금오공과대학교 학사안내 URL 계열(`www.kumoh.ac.kr/ko/sub06_01_*`)은 수집·저장하지 않는다. SE 게시판은 권한과 승인된 API가 확인되기 전까지 `--seboard-limit 0`을 유지한다.
 
 ```powershell
-backend/.venv/Scripts/python.exe -m backend.scripts.crawl --kumoh-static --candidate-output data/raw/candidates/kumoh-community-2024.json --seboard-limit 0
+backend/.venv/Scripts/python.exe -m backend.scripts.crawl --kumoh-static --candidate-output data/raw/candidates/kumoh-static-expanded-with-achievements-assistants-2026-07-24.json --seboard-limit 0
 ```
 
-학과 게시판 전체 수집은 더 이상 허용하지 않는다. `--kumoh-static`은 전공소개(`sub0101`), 교육목표(`sub0102`), 교육과정(`sub0105_2`), 졸업 후 진로(`sub0104`), 비식별 교수소개(`sub0401`), 동아리명·동아리 소개(`sub0504`)만 수집한다. 전공소개에서는 해당 섹션만 남기고 상세 교육목표·교육과정과 의미 중복을 제거한다. 졸업 후 진로는 `historical` 참고 문서로 저장해 현재 취업률·현황 답변과 최근 공지에 사용하지 않는다. 주요성과(`sub0103`)는 수상·성과 제외 정책에 따라 차단한다. 동아리 페이지에서는 회장·부회장 등 개인 식별 정보가 아닌 이름과 소개만 남긴다. 수집 결과는 반드시 `--candidate-output data/raw/candidates/<name>.json`으로 먼저 저장한다. 후보 output은 `RAW_POSTS_PATH`와 같을 수 없으며, 검토·승격 전에는 인덱싱에 사용하지 않는다.
+학과 게시판 전체 수집은 더 이상 허용하지 않는다. `--kumoh-static`은 전공소개(`sub0101`), 교육목표(`sub0102`), 교육과정(`sub0105_2`), 주요성과(`sub0103`), 졸업 후 진로(`sub0104`), 비식별 교수소개(`sub0401`), 비식별 조교소개(`sub0402`), 동아리명·동아리 소개(`sub0504`)만 수집한다. 전공소개 페이지에서는 전공소개·교육목표·교육과정·연혁·오시는길의 본문 블록을 보존하고, 상세 교육목표·교육과정과 의미 중복을 제거하며, `주소 및 연락처`·전화·이메일은 제외한다. 주요성과와 졸업 후 진로는 `historical` 참고 문서로 저장해 현재 성과·취업률·현황 답변과 최근 공지에 사용하지 않는다. 교수·조교 소개에서는 이름·전화·이메일을 제외하고, 동아리 페이지에서는 회장·부회장 등 개인 식별 정보가 아닌 이름과 소개만 남긴다. 수집 결과는 반드시 `--candidate-output data/raw/candidates/<name>.json`으로 먼저 저장한다. 후보 output은 `RAW_POSTS_PATH`와 같을 수 없으며, 검토·승격 전에는 인덱싱에 사용하지 않는다.
 
 ```powershell
 backend/.venv/Scripts/python.exe -m backend.scripts.crawl --kumoh-static --candidate-output data/raw/candidates/kumoh-allowlist.json --seboard-limit 0

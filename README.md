@@ -1,6 +1,6 @@
 # SE Mentor Bot
 
-학과 홈페이지 공지사항은 SE 게시판을 우선 source로 쓰는 정책에 따라 수집·저장하지 않는 정확도 우선 RAG 챗봇입니다. 현재 canonical 원본에는 정책 검토를 마친 학과 정적 페이지 6건이 있고, 로컬 인덱스에는 12개 청크가 반영되어 있습니다. SE source는 여전히 비활성 상태이며, 첫 질문에서는 해석한 의도와 예시 선택지를 먼저 보여주고 확인된 의도에 대한 근거만 답변에 사용합니다.
+학과 홈페이지 공지사항은 SE 게시판을 우선 source로 쓰는 정책에 따라 수집·저장하지 않는 정확도 우선 RAG 챗봇입니다. 현재 canonical 원본에는 정책 검토를 마친 학과 정적 페이지 8건이 있고, 로컬 인덱스에는 16개 청크가 반영되어 있습니다. SE source는 여전히 비활성 상태이며, 첫 질문에서는 해석한 의도와 예시 선택지를 먼저 보여주고 확인된 의도에 대한 근거만 답변에 사용합니다.
 
 현재 수치·준비도·우선순위 TODO·검증 기준은 [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md)를 기준으로 합니다. 다음 작업자는 [`docs/HANDOFF.md`](docs/HANDOFF.md)에서 시작하세요. RAG 단계별 흐름과 변경 시 재인덱싱 기준은 [`docs/RAG_ARCHITECTURE.md`](docs/RAG_ARCHITECTURE.md), 운영 명령과 평가 기준은 [`docs/rag/operations-evaluation.md`](docs/rag/operations-evaluation.md)를 참고하세요.
 
@@ -42,13 +42,13 @@ npm --prefix frontend ci
 
 ## 데이터 수집 및 인덱싱
 
-현재 학과 홈페이지 수집 범위는 정적 6페이지로 한정합니다: 전공소개(`sub0101`), 교육목표(`sub0102`), 교육과정(`sub0105_2`), 졸업 후 진로(`sub0104`, 역사 참고 정보), 비식별 교수소개(`sub0401`), 학생활동의 동아리명·동아리 소개(`sub0504`). 전공소개에서는 해당 섹션만 보존하고 교육목표·교육과정 상세 페이지와 의미가 겹치는 문장을 제거합니다. 주요성과(`sub0103`)는 수상·성과 제외 정책에 따라, 학과 게시판 전체와 그 밖의 학과 페이지는 crawler가 정책상 거절합니다. 일반 공지사항(`sub0601`)은 SE 게시판 우선 source 정책으로, 금오공과대학교 학사안내 사이트(`www.kumoh.ac.kr/ko/sub06_01_*`)는 별도 URL 차단 정책으로 수집·저장하지 않습니다.
+현재 학과 홈페이지 수집 범위는 정적 8페이지로 한정합니다: 전공소개(`sub0101`), 교육목표(`sub0102`), 교육과정(`sub0105_2`), 주요성과(`sub0103`, 역사 참고 정보), 졸업 후 진로(`sub0104`, 역사 참고 정보), 비식별 교수소개(`sub0401`), 비식별 조교소개(`sub0402`), 학생활동의 동아리명·동아리 소개(`sub0504`). 전공소개 페이지에서는 전공소개·교육목표·교육과정·연혁·오시는길의 본문 블록을 보존하되, 상세 교육목표·교육과정 페이지와 의미가 겹치는 본문은 한 번만 남기고 연락처 필드는 제거합니다. 주요성과와 졸업 후 진로는 현재 수치·현황이나 최근 공지에 쓰지 않는 `historical` 참고 문서로 저장합니다. 학과 게시판 전체와 그 밖의 학과 페이지는 crawler가 정책상 거절합니다. 일반 공지사항(`sub0601`)은 SE 게시판 우선 source 정책으로, 금오공과대학교 학사안내 사이트(`www.kumoh.ac.kr/ko/sub06_01_*`)는 별도 URL 차단 정책으로 수집·저장하지 않습니다.
 
 ```powershell
-backend/.venv/Scripts/python.exe -m backend.scripts.crawl --kumoh-static --candidate-output data/raw/candidates/kumoh-community-2024.json --seboard-limit 0
+backend/.venv/Scripts/python.exe -m backend.scripts.crawl --kumoh-static --candidate-output data/raw/candidates/kumoh-static-expanded-with-achievements-assistants-2026-07-24.json --seboard-limit 0
 ```
 
-`--kumoh-limit`, `--kumoh-all`, `--kumoh-all-boards`는 학과 게시판 수집을 재개할 수 없도록 오류로 종료합니다. 허용 범위를 검토 후보로 다시 수집할 때는 `--kumoh-static`만 사용합니다. 교수소개에서는 이름·전화·이메일을 제거하고 소속·전공 분야만 보존합니다. 동아리 페이지에서는 회장·부회장 등 개인 식별 정보와 이미지·연락처를 제외하며, 각 동아리의 이름과 소개만 보존합니다.
+`--kumoh-limit`, `--kumoh-all`, `--kumoh-all-boards`는 학과 게시판 수집을 재개할 수 없도록 오류로 종료합니다. 허용 범위를 검토 후보로 다시 수집할 때는 `--kumoh-static`만 사용합니다. 교수·조교 소개에서는 이름·전화·이메일을 제거하고 역할·소속·전공 분야처럼 비식별 본문만 보존합니다. 동아리 페이지에서는 회장·부회장 등 개인 식별 정보와 이미지·연락처를 제외하며, 각 동아리의 이름과 소개만 보존합니다.
 
 ```powershell
 backend/.venv/Scripts/python.exe -m backend.scripts.crawl --kumoh-static --candidate-output data/raw/candidates/kumoh-allowlist.json --seboard-limit 0

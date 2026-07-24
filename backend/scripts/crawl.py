@@ -42,7 +42,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--kumoh-static",
         action="store_true",
-        help="전공소개·교육목표·교과과정·졸업 후 진로·비식별 교수소개·동아리 소개만 수집",
+        help=(
+            "전공소개·교육목표·교육과정·주요성과·졸업 후 진로·"
+            "비식별 교수·조교 소개·동아리 소개만 수집"
+        ),
     )
     parser.add_argument(
         "--kumoh-since",
