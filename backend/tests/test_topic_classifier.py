@@ -61,6 +61,36 @@ def test_enrich_posts_prefers_title_topic_and_assigns_intent() -> None:
     assert enriched.intent_key == "registration.main"
 
 
+def test_enrich_posts_uses_llm_category_as_the_external_category_override() -> None:
+    catalog = load_topic_catalog(Path("data/topic_rules.json"))
+    post = BoardPost(
+        id="llm-category",
+        source="seboard",
+        title="방산AI 과정 소개 및 수강생 안내",
+        content="비교과 과정 참여 방법을 안내합니다.",
+        url="https://seboard.site/notice/llm-category",
+        llm_category="비교과·행사",
+    )
+
+    enriched = enrich_posts([post], catalog)[0]
+
+    assert enriched.llm_category == "비교과·행사"
+    assert enriched.category_key == "extracurricular"
+    assert enriched.category_label == "비교과·행사"
+
+
+def test_board_post_rejects_a_category_outside_the_supported_taxonomy() -> None:
+    with pytest.raises(ValueError):
+        BoardPost(
+            id="invalid-category",
+            source="seboard",
+            title="잘못된 분류",
+            content="본문",
+            url="https://seboard.site/notice/invalid-category",
+            llm_category="공지",
+        )
+
+
 def test_enrich_posts_uses_content_only_when_title_has_default_topic() -> None:
     catalog = load_topic_catalog(Path("data/topic_rules.json"))
     post = BoardPost(

@@ -36,7 +36,7 @@
 | 정확도 우선 RAG | 완료 | BM25+dense RRF, deterministic reranker, CRAG, 최신성, compression | OpenAI provider 별도 평가·calibration |
 | 로컬 인덱스 | 대기 | schema v5, canonical 0 posts, Chroma 0 chunks, manifest 없음 | 승인된 원본을 넣은 뒤 전체 재생성 |
 | 평가 | 대기 | 기존 31/31은 공지사항 삭제 전의 역사 결과이며 현재 원본에는 적용하지 않음 | 원본·인덱스 생성 뒤 재평가 |
-| 백엔드 품질 gate | 통과 | 456 tests, 93.92% coverage, Ruff 통과 | 운영 부하·장애 주입 테스트 |
+| 백엔드 품질 gate | 통과 | 459 tests, 93.82% coverage, Ruff 통과 (`llm_category` 입력 계약 포함) | 운영 부하·장애 주입 테스트 |
 | 프론트엔드 품질 gate | 통과 | 6 files / 91 tests, typecheck, ESLint, Next production build | 390px 모바일 visual regression 자동화 |
 | 브라우저 통합 검증 | 통과 | 의도 카드 → 선택 → 최신 근거 답변, 자동 스크롤, 출처·추천·최근 공지, console error 0 | 자동화된 cross-browser E2E |
 | 데이터 감사 | 대기/경고 있음 | canonical 빈 원본은 감사 불가가 정상; allowlist 후보 6건, 10 warnings | 후보 검토·승격 |

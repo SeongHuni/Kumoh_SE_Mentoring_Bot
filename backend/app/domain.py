@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from backend.app.categories import CategoryLabel
+
 
 class Attachment(BaseModel):
     name: str
@@ -18,6 +20,7 @@ class BoardPost(BaseModel):
     content: str
     author: str = ""
     published_at: str | None = None
+    llm_category: CategoryLabel | None = None
     document_type: Literal["notice", "static", "historical"] = "notice"
     url: str
     attachments: list[Attachment] = Field(default_factory=list)

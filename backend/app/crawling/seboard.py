@@ -65,6 +65,7 @@ class SeBoardCrawler:
             else urljoin(self.base_url, f"posts/{post_id}")
         )
         date = self._first(item, ("createdAt", "created_at", "publishedAt", "date", "regDate"))
+        llm_category = self._first(item, ("llm_category", "llmCategory"))
         return BoardPost(
             id=post_id,
             source="seboard",
@@ -73,6 +74,7 @@ class SeBoardCrawler:
             author=self._first(item, ("author", "writer", "nickname", "userName")),
             published_at=extract_date(date),
             url=url,
+            llm_category=llm_category or None,
         )
 
     def _crawl_api(self, limit: int) -> list[BoardPost]:

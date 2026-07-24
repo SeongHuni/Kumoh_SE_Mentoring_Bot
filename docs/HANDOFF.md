@@ -50,7 +50,7 @@ npm --prefix frontend run build
 
 2026-07-24 기록:
 
-- backend: 456 passed, coverage 93.92%, Ruff 통과 (의미 중복 제거·historical 문서 정책 포함)
+- backend: 459 passed, coverage 93.82%, Ruff 통과 (의미 중복 제거·historical 문서·`llm_category` 정책 포함)
 - frontend: 6 files / 91 tests, typecheck·lint·build 통과
 - evaluation (삭제 전 historical snapshot): 31/31, schema v4 84 chunks, exit 0; 현재 원본이 비어 있어 현 정책 기준 재평가 대기
 - data audit: canonical 빈 원본 오류가 정상; 6건 allowlist 후보는 10 warnings, exit 1

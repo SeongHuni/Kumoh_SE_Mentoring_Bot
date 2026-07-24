@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from backend.app.categories import CATEGORY_KEY_BY_LABEL
 from backend.app.domain import BoardPost
 from backend.app.freshness import latest_post_keys
 from backend.app.topic_rules import IntentRule, TopicCatalog, TopicRule
@@ -43,13 +44,18 @@ def enrich_posts(posts: list[BoardPost], catalog: TopicCatalog) -> list[BoardPos
                 intent = catalog.match_intent_in_body(post.content, rule)
             if intent is None:
                 intent = _fallback_intent(rule)
+        category_key = rule.category_key or rule.key
+        category_label = rule.category_label or rule.label
+        if post.llm_category is not None:
+            category_key = CATEGORY_KEY_BY_LABEL[post.llm_category]
+            category_label = post.llm_category
         topicized.append(
             post.model_copy(
                 update={
                     "topic_key": rule.key,
                     "topic_label": rule.label,
-                    "category_key": rule.category_key or rule.key,
-                    "category_label": rule.category_label or rule.label,
+                    "category_key": category_key,
+                    "category_label": category_label,
                     "intent_key": intent.key if intent is not None else None,
                     "notice_kind": catalog.classify_notice_kind(
                         post.title,
