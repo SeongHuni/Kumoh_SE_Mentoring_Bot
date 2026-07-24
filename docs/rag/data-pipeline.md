@@ -51,12 +51,15 @@ backend/.venv/Scripts/python.exe -m backend.scripts.crawl --kumoh-static --candi
 | `crawled_at` | 수집 시점과 게시일 fallback |
 | `topic_key`, `topic_label`, `intent_key` | 검색용 topic/intent; 원본 override 또는 인덱싱 전 파생 metadata |
 | `category_key`, `category_label` | 멘토링 업무 분류: 수업, 학적·졸업, 장학금, 취업·진로, 비교과·행사, 연구·캡스톤, 대학원, 학생회, 행정·안내, 기타 |
+| `llm_category` | 외부 수집·LLM 분류 입력값; 위 10개 `category_label` 중 하나만 허용하며 인덱싱 전에 대응하는 `category_key`·`category_label`로 정규화 |
 | `notice_kind` | 신청·모집, 제도·행정, 행사·프로그램, 운영·이용 안내, 일반 안내의 공지 성격 |
 | `is_latest_topic` | 최근 공지 보조 목록용 topic 최신 표시; 답변 검색의 단독 필터가 아님 |
 
 정상 수집 원본은 `RAW_POSTS_PATH`가 가리키는 JSON snapshot이며 기본 경로는 `data/raw/posts.json`이다. 이 파일은 운영 원본으로 취급한다. 벡터 DB를 원본 저장소로 사용하지 않고, 부분 결과는 후보 경로에 격리해 raw snapshot의 immutability를 지킨다. 후보를 사람 검토로 승격하거나 게시글을 수정·삭제하면 원본을 갱신하고 전체 인덱스를 다시 만들어 삭제된 청크가 남지 않게 한다.
 
 ## 주제 보강과 최신 게시글 계산
+
+SE 게시판처럼 원천 데이터에 `llm_category`가 포함된 경우에는 이 값을 10개 허용 label의 외부 category override로 보존하고, `category_key`와 `category_label`을 함께 파생한다. 값이 없을 때만 제목·본문 규칙 분류를 사용한다. URL·게시일·첨부파일 같은 canonical source 필드는 별도로 검증하며 `llm_category`만으로 원문 출처를 대체하지 않는다.
 
 `data/topic_rules.json`은 검색용 topic key/label, 하위 intent key/label/example, 업무 category, 공지 성격, 분류 keyword, evidence/exclusion marker, suggested question과 retrieval policy를 관리하는 단일 유지보수 지점이다. `TOPIC_RULES_PATH`로 다른 파일을 지정할 수 있지만 운영 규칙은 하나의 파일에서 관리한다. `topic_key` override가 없으면 먼저 제목의 구체 keyword를 판정하고, 제목에 구체 keyword가 없을 때만 `[수업]`·`[학적]`·`[대학원]`·`[장학]`·`[교내행사]` 같은 title marker를 사용한다. 그래도 general이면 본문을 문장·문단 단위로 나눠 같은 범위에 topic keyword와 action marker가 함께 있을 때만 보조 분류한다. 일치가 없으면 `default_topic_key=general`과 `category_key=other`를 사용한다. intent도 override → 제목 → 본문 local context → topic별 fallback 순으로 정하고, `notice_kind`는 제목을 우선한 뒤 문장·문단 단위 본문 보조 판정으로 정한다.
 
