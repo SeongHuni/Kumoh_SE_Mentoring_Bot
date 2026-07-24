@@ -140,10 +140,17 @@ class HybridRetriever:
         self.lexical_top_k = lexical_top_k
         self.dense_top_k = dense_top_k
 
-    def retrieve(self, plan: QueryPlan, *, topic_key: str) -> list[HybridCandidate]:
-        if not isinstance(topic_key, str) or not topic_key.strip():
+    def retrieve(
+        self,
+        plan: QueryPlan,
+        *,
+        topic_key: str | None,
+    ) -> list[HybridCandidate]:
+        if topic_key is not None and (
+            not isinstance(topic_key, str) or not topic_key.strip()
+        ):
             raise ValueError("topic_key must not be blank")
-        where = {"topic_key": topic_key}
+        where = None if topic_key is None else {"topic_key": topic_key}
         corpus = self.vector_store.list_chunks(where=where)
         if not corpus:
             return []

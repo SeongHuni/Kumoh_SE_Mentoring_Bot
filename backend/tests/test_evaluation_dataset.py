@@ -17,11 +17,11 @@ EXPECTED_CASE_IDS = (
     "capstone-apply",
     "capstone-schedule",
     "capstone-second-semester",
-    "career-faculty-lecture",
+    "administration-faculty-lecture",
     "career-program",
     "career-internship",
     "career-recruitment",
-    "scholarship-bootcamp",
+    "extracurricular-bootcamp",
     "scholarship-apply",
     "scholarship-selection",
     "scholarship-recent",
@@ -42,8 +42,10 @@ EXPECTED_CATEGORY_COUNTS = Counter(
         "개설강좌": 4,
         "수강신청": 5,
         "캡스톤": 4,
-        "진로·취업": 4,
-        "장학금": 4,
+        "진로·취업": 3,
+        "장학금": 3,
+        "비교과·행사": 1,
+        "행정·안내": 1,
         "졸업요건": 3,
         "일반 공지": 3,
         "학과 소개": 1,
@@ -57,6 +59,8 @@ EXPECTED_TOPIC_BY_CATEGORY = {
     "캡스톤": "capstone",
     "진로·취업": "career",
     "장학금": "scholarship",
+    "비교과·행사": "extracurricular",
+    "행정·안내": "administration",
     "졸업요건": "graduation",
     "일반 공지": "general",
     "학과 소개": "general",
@@ -74,7 +78,11 @@ def test_evaluation_dataset_has_intent_aware_31_case_baseline() -> None:
 
     assert tuple(case.id for case in cases) == EXPECTED_CASE_IDS
     assert Counter(case.category for case in cases) == EXPECTED_CATEGORY_COUNTS
-    assert all(case.expected_latest_only is True for case in cases)
+    assert all(
+        case.expected_latest_only is True
+        for case in cases
+        if case.id != "general-ax-project"
+    )
     assert all(case.confirmed_intent_key for case in cases)
     assert all(case.expected_intent_key for case in cases)
 
@@ -108,6 +116,13 @@ def test_evaluation_dataset_preserves_reported_accuracy_regressions() -> None:
     assert overview.confirmed_intent_key == "department.overview"
     assert overview.expected_grounded is False
     assert overview.expected_source_title_contains == []
+
+    bootcamp = cases["extracurricular-bootcamp"]
+    assert bootcamp.expected_topic_key == "extracurricular"
+    assert bootcamp.expected_source_title_contains == ["방산AI인재양성부트캠프"]
+
+    ax_project = cases["general-ax-project"]
+    assert ax_project.expected_latest_only is False
 
 
 def test_evaluation_dataset_fails_closed_without_direct_evidence() -> None:

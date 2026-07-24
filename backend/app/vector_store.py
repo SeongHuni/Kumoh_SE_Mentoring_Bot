@@ -17,13 +17,18 @@ def _chunk_metadata(chunk: TextChunk) -> dict[str, str | int | bool]:
         "title": chunk.title,
         "url": chunk.url,
         "published_at": chunk.published_at or "",
+        "document_type": chunk.document_type,
         "chunk_index": chunk.chunk_index,
         "topic_key": chunk.topic_key,
         "topic_label": chunk.topic_label,
+        "category_key": chunk.category_key,
+        "category_label": chunk.category_label,
         "is_latest_topic": chunk.is_latest_topic,
     }
     if chunk.intent_key is not None:
         metadata["intent_key"] = chunk.intent_key
+    if chunk.notice_kind is not None:
+        metadata["notice_kind"] = chunk.notice_kind
     return metadata
 
 
@@ -81,11 +86,15 @@ def _text_chunk(
         text=document or "",
         url=str(values.get("url", "")),
         published_at=str(values.get("published_at") or "") or None,
+        document_type=str(values.get("document_type", "notice")),
         chunk_index=int(values.get("chunk_index", 0)),
         topic_key=str(values.get("topic_key", "general")),
         topic_label=str(values.get("topic_label", "전체 공지")),
         is_latest_topic=_is_latest_topic(values.get("is_latest_topic", False)),
         intent_key=str(values.get("intent_key") or "") or None,
+        category_key=str(values.get("category_key", "other")),
+        category_label=str(values.get("category_label", "기타")),
+        notice_kind=str(values.get("notice_kind") or "") or None,
     )
 
 

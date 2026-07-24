@@ -31,7 +31,7 @@ npm --prefix frontend run lint
 npm --prefix frontend run build
 ```
 
-수집은 허용된 기본 경로의 `backend/.venv/Scripts/python.exe -m backend.scripts.crawl --kumoh-limit 50 --seboard-limit 0`을 사용한다. SE limit을 양수로 바꾸려면 실제 운영자 서면 허가 또는 승인된 공식 API가 먼저 문서화되어야 하며, `--seboard-permission-confirmed`는 그 확인을 CLI에 기록할 뿐 권한을 대신하지 않는다.
+수집은 allowlist 정적 페이지 전용 경로인 `backend/.venv/Scripts/python.exe -m backend.scripts.crawl --kumoh-static --candidate-output data/raw/candidates/kumoh-community-2024.json --seboard-limit 0`을 사용한다. 전공소개·교육목표·교육과정·졸업 후 진로·비식별 교수소개·동아리명/동아리 소개 외의 학과 URL과 학과 게시판은 수집하지 않는다. 전공소개에서는 해당 섹션만 보존하고 상세 교육목표·교육과정과 의미 중복을 제거한다. 졸업 후 진로는 `historical` 참고 문서로 처리한다. 주요성과는 수상·성과 제외 정책에 따라 수집하지 않는다. SE limit을 양수로 바꾸려면 실제 운영자 서면 허가 또는 승인된 공식 API가 먼저 문서화되어야 하며, 현 allowlist 정책이 별도로 바뀌기 전에는 SE collection도 실행하지 않는다.
 
 ## Coding, Testing, and Security
 

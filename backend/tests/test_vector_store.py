@@ -72,6 +72,9 @@ def test_upsert_stores_topic_metadata() -> None:
             topic_key="course_openings",
             topic_label="개설강좌조회",
             intent_key="course_openings.lookup",
+            category_key="course",
+            category_label="수업",
+            notice_kind="application",
             is_latest_topic=True,
         )
     ]
@@ -81,7 +84,24 @@ def test_upsert_stores_topic_metadata() -> None:
     metadata = store.collection.upsert.call_args.kwargs["metadatas"][0]
     assert metadata["topic_key"] == "course_openings"
     assert metadata["intent_key"] == "course_openings.lookup"
+    assert metadata["category_key"] == "course"
+    assert metadata["category_label"] == "수업"
+    assert metadata["notice_kind"] == "application"
+    assert metadata["document_type"] == "notice"
     assert metadata["is_latest_topic"] is True
+
+
+def test_upsert_stores_historical_document_type() -> None:
+    store = ChromaVectorStore.__new__(ChromaVectorStore)
+    store.collection = Mock()
+    chunk = make_chunk("career", "졸업 후 진로").model_copy(
+        update={"document_type": "historical"}
+    )
+
+    store.upsert([chunk], [[1.0, 0.0]])
+
+    metadata = store.collection.upsert.call_args.kwargs["metadatas"][0]
+    assert metadata["document_type"] == "historical"
 
 
 def test_query_forwards_latest_topic_filter() -> None:
@@ -103,6 +123,9 @@ def test_query_forwards_latest_topic_filter() -> None:
                     "topic_key": "course_openings",
                     "topic_label": "개설강좌조회",
                     "intent_key": "course_openings.lookup",
+                    "category_key": "course",
+                    "category_label": "수업",
+                    "notice_kind": "application",
                     "is_latest_topic": True,
                 }
             ]
@@ -120,6 +143,9 @@ def test_query_forwards_latest_topic_filter() -> None:
         "is_latest_topic": True
     }
     assert results[0].chunk.intent_key == "course_openings.lookup"
+    assert results[0].chunk.category_key == "course"
+    assert results[0].chunk.category_label == "수업"
+    assert results[0].chunk.notice_kind == "application"
 
 
 def test_query_reconstructs_legacy_metadata_without_intent_key() -> None:
@@ -150,6 +176,9 @@ def test_query_reconstructs_legacy_metadata_without_intent_key() -> None:
     results = store.query([1.0, 0.0], top_k=1)
 
     assert results[0].chunk.intent_key is None
+    assert results[0].chunk.category_key == "other"
+    assert results[0].chunk.category_label == "기타"
+    assert results[0].chunk.notice_kind is None
 
 
 def test_list_chunks_forwards_topic_without_implicit_latest_filter() -> None:

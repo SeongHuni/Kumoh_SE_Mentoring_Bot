@@ -2,17 +2,22 @@ from __future__ import annotations
 
 import re
 import time
+from datetime import date
 from urllib.parse import parse_qs, urlencode, urljoin, urlparse
 
 import httpx
 from bs4 import BeautifulSoup, Tag
 
 from backend.app.crawling.common import clean_text, extract_attachments, extract_date, select_text
+from backend.app.crawling.kumoh_policy import (
+    ensure_kumoh_collection_allowed,
+    kumoh_collection_exclusion_reason,
+)
 from backend.app.domain import BoardPost
 
 
 class KumohBoardCrawler:
-    base_url = "https://cs.kumoh.ac.kr/cs/sub0601.do"
+    base_url = "https://cs.kumoh.ac.kr/cs/sub0602.do"
 
     def __init__(
         self,
@@ -20,7 +25,10 @@ class KumohBoardCrawler:
         delay_seconds: float = 1.0,
         timeout_seconds: float = 20.0,
         client: httpx.Client | None = None,
+        base_url: str | None = None,
     ) -> None:
+        self.base_url = base_url or type(self).base_url
+        ensure_kumoh_collection_allowed(self.base_url)
         self.delay_seconds = delay_seconds
         self._owns_client = client is None
         self.client = client or httpx.Client(
@@ -54,6 +62,8 @@ class KumohBoardCrawler:
                 {"mode": "view", "articleNo": params["articleNo"][0]}
             )
             normalized = f"{parsed.scheme}://{parsed.netloc}{parsed.path}?{canonical_query}"
+            if kumoh_collection_exclusion_reason(normalized):
+                continue
             if normalized not in seen:
                 seen.add(normalized)
                 links.append(normalized)
@@ -130,12 +140,33 @@ class KumohBoardCrawler:
             attachments=extract_attachments(soup, url),
         )
 
-    def crawl(self, limit: int) -> list[BoardPost]:
+    @staticmethod
+    def _published_date(post: BoardPost) -> date | None:
+        try:
+            return date.fromisoformat(post.published_at or "")
+        except ValueError:
+            return None
+
+    @classmethod
+    def _is_in_requested_range(
+        cls, post: BoardPost, published_from: date | None
+    ) -> bool:
+        if published_from is None:
+            return True
+        published_at = cls._published_date(post)
+        return published_at is not None and published_at >= published_from
+
+    def crawl(
+        self,
+        limit: int | None,
+        *,
+        published_from: date | None = None,
+    ) -> list[BoardPost]:
         posts: list[BoardPost] = []
         seen_urls: set[str] = set()
         offset = 0
         try:
-            while len(posts) < limit:
+            while limit is None or len(posts) < limit:
                 page_url = self._list_url(offset)
                 response = self.client.get(page_url)
                 response.raise_for_status()
@@ -146,19 +177,30 @@ class KumohBoardCrawler:
                 ]
                 if not links:
                     break
+                page_all_before_requested_range = published_from is not None
                 for detail_url in links:
-                    if len(posts) >= limit:
+                    if limit is not None and len(posts) >= limit:
                         break
                     seen_urls.add(detail_url)
                     try:
                         detail = self.client.get(detail_url)
                         detail.raise_for_status()
-                        posts.append(self.parse_detail(detail.text, detail_url))
+                        post = self.parse_detail(detail.text, detail_url)
+                        published_at = self._published_date(post)
+                        if (
+                            published_from is not None
+                            and (published_at is None or published_at >= published_from)
+                        ):
+                            page_all_before_requested_range = False
+                        if self._is_in_requested_range(post, published_from):
+                            posts.append(post)
                     except (httpx.HTTPError, ValueError):
                         # Image-only, removed, or temporarily unavailable posts are not embeddable.
-                        pass
+                        page_all_before_requested_range = False
                     if self.delay_seconds:
                         time.sleep(self.delay_seconds)
+                if page_all_before_requested_range:
+                    break
                 offset += 10
                 if self.delay_seconds:
                     time.sleep(self.delay_seconds)

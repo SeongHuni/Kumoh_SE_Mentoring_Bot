@@ -174,3 +174,28 @@ def test_recent_notices_deduplicates_confirmed_intent_against_latest_groups() ->
     )
 
     assert [notice.url for notice in notices] == ["https://example.com/shared"]
+
+
+def test_recent_notices_excludes_historical_reference_documents() -> None:
+    current = post(
+        "current-career-notice",
+        "course",
+        "2026-07-20",
+        intent_key="course.lookup",
+    )
+    historical = post(
+        "historical-career-reference",
+        "course",
+        "2026-07-24",
+        latest=True,
+        intent_key="course.lookup",
+    ).model_copy(update={"document_type": "historical"})
+
+    notices = recent_notices(
+        [historical, current],
+        "course",
+        catalog(),
+        intent_key="course.lookup",
+    )
+
+    assert [notice.title for notice in notices] == ["current-career-notice"]

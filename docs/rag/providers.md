@@ -38,7 +38,7 @@
 
 manifest의 전체 필드는 `schema_version`, UTC `generated_at`, `provider`, `embedding_model`, `embedding_dimensions`, `chunk_size`, `chunk_overlap`, `collection`, `raw_posts_sha256`, `topic_rules_sha256`, `indexed_chunks`, `fingerprint`다. fingerprint가 포함하는 signature 필드는 schema version, collection, provider, embedding model/dimension, chunking 설정, raw posts SHA-256, topic rules SHA-256이며 `generated_at`과 `indexed_chunks`는 포함하지 않는다. `generated_at`은 manifest 생성 시각이자 호환 RAG service 세대의 generation identity/기록이고, `indexed_chunks`는 실제 Chroma count와 별도로 비교한다. `OPENAI_CHAT_MODEL`도 이 embedding signature에 포함되지 않는다.
 
-현재 schema version은 `2`다. v2는 답변 최신성을 topic 전체가 아니라 확인된 intent 안에서 판정할 수 있도록 각 청크의 `intent_key` metadata를 요구한다. v1 manifest 또는 intent metadata가 없는 과거 index는 호환되지 않는다.
+현재 schema version은 `5`이다. v5는 v4의 `document_type` 계약에 `historical` 값을 추가해 과거 참고 문서를 공지·일반 정적 안내와 구분한다. v1~v4 manifest 또는 이 metadata 계약이 다른 과거 index는 호환되지 않는다.
 
 API와 evaluation CLI는 요청·평가 시작 시 현재 설정과 파일을 사용해 signature를 다시 계산하고 manifest의 필드, content hash, 실제 Chroma chunk count를 비교한다. 하나라도 다르면 fail closed하며 provider를 호출하지 않는다. API는 채팅을 차단하고, 평가 CLI는 첫 질문 전에 실행 오류로 종료한다.
 

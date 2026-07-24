@@ -26,13 +26,13 @@ FIXED_TIME = datetime(2026, 7, 15, 3, 0, tzinfo=UTC)
 LATER_TIME = datetime(2026, 7, 15, 4, 0, tzinfo=UTC)
 
 
-def test_index_schema_version_requires_intent_metadata_pipeline() -> None:
-    assert INDEX_SCHEMA_VERSION == 2
+def test_index_schema_version_requires_historical_document_metadata_pipeline() -> None:
+    assert INDEX_SCHEMA_VERSION == 5
 
 
-def test_index_signature_rejects_pre_intent_schema_version(tmp_path) -> None:
+def test_index_signature_rejects_pre_historical_document_schema_version(tmp_path) -> None:
     payload = build_index_signature(make_settings(tmp_path)).model_dump()
-    payload["schema_version"] = 1
+    payload["schema_version"] = 4
 
     with pytest.raises(ValidationError, match="schema_version"):
         index_manifest.IndexSignature.model_validate(payload)

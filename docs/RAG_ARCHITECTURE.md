@@ -41,4 +41,4 @@ backend/.venv/Scripts/python.exe -m backend.scripts.index --reset
 
 질의와 평가는 현재 설정으로 manifest signature를 다시 계산해 일치 여부를 먼저 검사한다. 불일치한 인덱스에서는 provider를 호출하지 않고 fail closed한다.
 
-현재 `INDEX_SCHEMA_VERSION=2`는 청크의 intent metadata를 인덱스 계약에 포함한다. v1 인덱스는 정확도 우선 검색과 호환되지 않으므로 전체 재인덱싱 없이는 API와 평가가 진행되지 않는다.
+현재 `INDEX_SCHEMA_VERSION=5`는 청크의 intent·category·notice·document type metadata를 인덱스 계약에 포함하고 `historical` 참고 문서를 구분한다. v1~v4 인덱스는 정확도 우선 검색과 호환되지 않으므로 전체 재인덱싱 없이는 API와 평가가 진행되지 않는다.

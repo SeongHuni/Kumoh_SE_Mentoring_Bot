@@ -6,7 +6,7 @@
 
 - local provider는 결정적 hash embedding과 출처 기반 extractive answer를 제공한다.
 - OpenAI provider는 OpenAI Embeddings API와 Responses API를 지원하지만 현재 품질 snapshot은 local provider 기준이다.
-- API와 평가 CLI는 schema v2 strict index manifest가 현재 설정·원본·intent 규칙·청킹·collection과 일치할 때만 진행한다.
+- API와 평가 CLI는 schema v5 strict index manifest가 현재 설정·원본·intent 규칙·청킹·collection과 일치할 때만 진행한다.
 - 모든 첫 질문은 의도 확인을 거친다. 확인되지 않은 intent에서는 embedding, vector store, answer provider를 호출하지 않는다.
 - SE 게시판 수집은 운영자 서면 허가 또는 승인된 공식 API가 확보될 때까지 비활성 상태다.
 
@@ -19,7 +19,7 @@ flowchart TD
     T["data/topic_rules.json"] --> C
     C --> D["정규화·청킹"]
     D --> E["Embedding Provider"]
-    E --> F[("Chroma + schema v2 manifest")]
+    E --> F[("Chroma + schema v5 manifest")]
 
     Q["사용자 첫 질문"] --> M["manifest readiness"]
     M --> I["topic·intent 후보 분류"]

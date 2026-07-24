@@ -30,6 +30,8 @@ def freshness_key(post: BoardPost) -> tuple[int, datetime, datetime]:
 def latest_post_keys(posts: list[BoardPost]) -> set[tuple[str, str]]:
     latest: dict[str, BoardPost] = {}
     for post in posts:
+        if post.document_type != "notice":
+            continue
         current = latest.get(post.topic_key or "general")
         if current is None or freshness_key(post) > freshness_key(current):
             latest[post.topic_key or "general"] = post
@@ -42,6 +44,8 @@ def latest_intent_post(
 ) -> BoardPost | None:
     latest: BoardPost | None = None
     for post in posts:
+        if post.document_type != "notice":
+            continue
         if post.intent_key != intent_key:
             continue
         if latest is None or freshness_key(post) > freshness_key(latest):

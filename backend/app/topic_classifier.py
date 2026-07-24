@@ -20,6 +20,11 @@ def _fallback_intent(topic: TopicRule) -> IntentRule | None:
             (intent for intent in topic.intents if intent.key == "general.recent"),
             None,
         )
+    if topic.key == "registration":
+        return next(
+            (intent for intent in topic.intents if intent.key == "registration.main"),
+            None,
+        )
     return topic.intents[0] if topic.intents else None
 
 
@@ -27,15 +32,15 @@ def enrich_posts(posts: list[BoardPost], catalog: TopicCatalog) -> list[BoardPos
     topicized: list[BoardPost] = []
     for post in posts:
         override = catalog.rule_for(post.topic_key or "")
-        title_rule = catalog.classify(post.title)
+        title_rule = catalog.classify_title(post.title)
         rule = override or title_rule
         if override is None and title_rule.key == catalog.default_topic_key:
-            rule = catalog.classify(f"{post.title}\n{post.content}")
+            rule = catalog.classify_body(post.content)
         intent = _intent_for_key(rule, post.intent_key)
         if intent is None and rule.intents:
             intent = catalog.match_intent(post.title, rule)
             if intent is None:
-                intent = catalog.match_intent(f"{post.title}\n{post.content}", rule)
+                intent = catalog.match_intent_in_body(post.content, rule)
             if intent is None:
                 intent = _fallback_intent(rule)
         topicized.append(
@@ -43,7 +48,13 @@ def enrich_posts(posts: list[BoardPost], catalog: TopicCatalog) -> list[BoardPos
                 update={
                     "topic_key": rule.key,
                     "topic_label": rule.label,
+                    "category_key": rule.category_key or rule.key,
+                    "category_label": rule.category_label or rule.label,
                     "intent_key": intent.key if intent is not None else None,
+                    "notice_kind": catalog.classify_notice_kind(
+                        post.title,
+                        post.content,
+                    ),
                 }
             )
         )

@@ -221,6 +221,9 @@ def test_catalog_classifies_registration_subintents() -> None:
         "registration.course_basket",
         "registration.attendance",
         "registration.main",
+        "registration.guidance",
+        "registration.evaluation",
+        "registration.grades",
     ]
     assert (
         catalog.classify_intent("2026학년도 수강신청 안내", topic).key

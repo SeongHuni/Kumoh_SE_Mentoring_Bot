@@ -25,6 +25,9 @@ def test_chunk_post_preserves_source_metadata() -> None:
     assert chunks[0].topic_key == "general"
     assert chunks[0].topic_label == "전체 공지"
     assert chunks[0].intent_key is None
+    assert chunks[0].category_key == "other"
+    assert chunks[0].category_label == "기타"
+    assert chunks[0].notice_kind is None
     assert chunks[0].is_latest_topic is False
     assert chunks[0].text.startswith("제목: 수강신청 안내")
 
@@ -40,6 +43,9 @@ def test_chunk_post_preserves_enriched_topic_metadata() -> None:
         topic_key="course",
         topic_label="수업",
         intent_key="course_openings.lookup",
+        category_key="course",
+        category_label="수업",
+        notice_kind="application",
         is_latest_topic=True,
     )
 
@@ -48,4 +54,24 @@ def test_chunk_post_preserves_enriched_topic_metadata() -> None:
     assert chunk.topic_key == "course"
     assert chunk.topic_label == "수업"
     assert chunk.intent_key == "course_openings.lookup"
+    assert chunk.category_key == "course"
+    assert chunk.category_label == "수업"
+    assert chunk.notice_kind == "application"
     assert chunk.is_latest_topic is True
+
+
+def test_chunk_post_labels_historical_reference_content() -> None:
+    post = BoardPost(
+        id="career",
+        source="kumoh",
+        title="졸업 후 진로",
+        content="2011년 기준 취업률 정보입니다.",
+        url="https://example.com/career",
+        document_type="historical",
+    )
+
+    chunk = chunk_post(post)[0]
+
+    assert chunk.document_type == "historical"
+    assert "문서 상태: 역사 정보" in chunk.text
+    assert "현재 수치·현황 아님" in chunk.text

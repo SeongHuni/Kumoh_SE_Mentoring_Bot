@@ -25,6 +25,7 @@ def chunk(
     topic_key: str,
     intent_key: str,
     latest: bool,
+    notice_kind: str | None = None,
 ) -> TextChunk:
     return TextChunk(
         id=chunk_id,
@@ -39,6 +40,7 @@ def chunk(
         topic_label=topic_key,
         is_latest_topic=latest,
         intent_key=intent_key,
+        notice_kind=notice_kind,
     )
 
 
@@ -97,6 +99,7 @@ def capstone_notice() -> TextChunk:
         topic_key="capstone",
         intent_key="capstone.general",
         latest=True,
+        notice_kind="guide",
     )
 
 
@@ -157,6 +160,22 @@ def scholarship_bootcamp() -> TextChunk:
     )
 
 
+def extracurricular_bootcamp() -> TextChunk:
+    return chunk(
+        "extracurricular-bootcamp",
+        title="방산AI인재양성부트캠프사업단 소개 및 설명회 안내",
+        text=(
+            "제목: 방산AI인재양성부트캠프사업단 소개 및 설명회 안내\n"
+            "본문: 교육과정 이수 장학금과 취업 연계 및 인턴십 프로그램을 소개합니다."
+        ),
+        published_at="2026-06-17",
+        topic_key="extracurricular",
+        intent_key="extracurricular.general",
+        latest=True,
+        notice_kind="event",
+    )
+
+
 def older_scholarship_application() -> TextChunk:
     return chunk(
         "scholarship-application",
@@ -187,6 +206,54 @@ def general_ax_notice() -> TextChunk:
     )
 
 
+def extracurricular_recent_notice() -> TextChunk:
+    return chunk(
+        "extracurricular-recent",
+        title="소프트웨어전공 AX 역량 강화 공모전 기간 연장 안내",
+        text=(
+            "제목: 소프트웨어전공 AX 역량 강화 공모전 기간 연장 안내\n"
+            "본문: 학과 학생을 위한 AX 역량 강화 공모전 일정을 안내합니다."
+        ),
+        published_at="2026-06-17",
+        topic_key="extracurricular",
+        intent_key="extracurricular.general",
+        latest=True,
+        notice_kind="event",
+    )
+
+
+def scholarship_information_notice() -> TextChunk:
+    return chunk(
+        "scholarship-information",
+        title="2026-1학기 장학금 마일리지 확인 안내",
+        text=(
+            "제목: 2026-1학기 장학금 마일리지 확인 안내\n"
+            "본문: 장학금 마일리지 신청 이력을 확인할 수 있습니다."
+        ),
+        published_at="2026-06-16",
+        topic_key="scholarship",
+        intent_key="scholarship.general",
+        latest=True,
+        notice_kind="information",
+    )
+
+
+def graduation_allocation_notice() -> TextChunk:
+    return chunk(
+        "graduation-allocation",
+        title="2026학년도 전공배정 신청 안내",
+        text=(
+            "제목: 2026학년도 전공배정 신청 안내\n"
+            "본문: 전공배정 대상자와 신청 일정을 안내합니다."
+        ),
+        published_at="2026-05-01",
+        topic_key="graduation",
+        intent_key="graduation.general",
+        latest=True,
+        notice_kind="application",
+    )
+
+
 def post_for(item: TextChunk) -> BoardPost:
     return BoardPost(
         id=item.post_id,
@@ -199,6 +266,7 @@ def post_for(item: TextChunk) -> BoardPost:
         topic_key=item.topic_key,
         topic_label=item.topic_label,
         intent_key=item.intent_key,
+        notice_kind=item.notice_kind,
         is_latest_topic=item.is_latest_topic,
     )
 
@@ -364,6 +432,48 @@ def test_grounded_answer_has_sources_interpreted_intent_and_followups() -> None:
     assert len(provider.answer_calls) == 1
 
 
+def test_general_recent_searches_across_categorized_notices() -> None:
+    notice = extracurricular_recent_notice()
+    service, provider, store = service_for([notice])
+
+    result = service.ask(
+        "최근 학과 공지를 알려줘",
+        confirmed_intent_key="general.recent",
+    )
+
+    assert result.response_type == "answer"
+    assert [source.url for source in result.sources] == [notice.url]
+    assert store.list_calls == [None]
+    assert all(where is None for _, _, where in store.query_calls)
+    assert len(provider.answer_calls) == 1
+
+
+def test_application_request_rejects_information_only_notice() -> None:
+    service, provider, _ = service_for([scholarship_information_notice()])
+
+    result = service.ask(
+        "장학금 신청 공지를 알려줘",
+        confirmed_intent_key="scholarship.general",
+    )
+
+    assert result.response_type == "no_answer"
+    assert result.grounded is False
+    assert provider.answer_calls == []
+
+
+def test_graduation_requirements_do_not_use_unrelated_major_assignment_notice() -> None:
+    service, provider, _ = service_for([graduation_allocation_notice()])
+
+    result = service.ask(
+        "졸업 요건 이수학점을 알려줘",
+        confirmed_intent_key="graduation.general",
+    )
+
+    assert result.response_type == "no_answer"
+    assert result.grounded is False
+    assert provider.answer_calls == []
+
+
 @pytest.mark.parametrize(
     ("question", "confirmed_intent_key", "notice"),
     [
@@ -397,9 +507,9 @@ def test_broad_intents_fail_closed_when_request_evidence_is_missing(
     [
         ("최근 채용 공지를 찾아줘", "career.general", career_faculty_recruitment()),
         (
-            "장학 관련 방산AI인재양성부트캠프 설명회 공지를 찾아줘",
-            "scholarship.general",
-            scholarship_bootcamp(),
+            "방산AI인재양성부트캠프 설명회 공지를 찾아줘",
+            "extracurricular.general",
+            extracurricular_bootcamp(),
         ),
         (
             "AX 기반 역량 강화 프로젝트 공모 기간 연장 안내를 찾아줘",

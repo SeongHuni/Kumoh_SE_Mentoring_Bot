@@ -7,7 +7,12 @@ from backend.app.topic_rules import IntentRule, RetrievalPolicy
 # 이 intent들은 여러 하위 요청을 한 규칙으로 다루므로 topic 일치만으로는
 # 근거가 충분하지 않다. 질문의 구체어까지 문서에서 확인해 과잉 응답을 막는다.
 BROAD_INTENT_KEYS = frozenset(
-    {"career.general", "scholarship.general", "general.recent"}
+    {
+        "career.general",
+        "graduation.general",
+        "scholarship.general",
+        "general.recent",
+    }
 )
 BOARD_SCOPE_TERMS = frozenset(
     {"학과", "전공", "소프트웨어전공", "컴퓨터공학부", "학교"}

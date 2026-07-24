@@ -43,8 +43,109 @@ def settings(tmp_path: Path) -> Settings:
 def test_parse_args_disables_seboard_by_default() -> None:
     args = crawl.parse_args([])
 
+    assert args.kumoh_limit == 0
     assert args.seboard_limit == 0
     assert args.seboard_permission_confirmed is False
+    assert args.kumoh_all is False
+    assert args.kumoh_all_boards is False
+    assert args.kumoh_static is False
+    assert args.kumoh_since is None
+    assert args.candidate_output is None
+
+
+def test_parse_args_accepts_a_bounded_all_board_candidate_crawl(tmp_path: Path) -> None:
+    output = tmp_path / "candidates" / "kumoh-2024.json"
+
+    args = crawl.parse_args(
+        [
+            "--kumoh-all",
+            "--kumoh-all-boards",
+            "--kumoh-since",
+            "2024-01-01",
+            "--candidate-output",
+            str(output),
+        ]
+    )
+
+    assert args.kumoh_all is True
+    assert args.kumoh_all_boards is True
+    assert args.kumoh_since.isoformat() == "2024-01-01"
+    assert args.candidate_output == output
+
+
+def test_parse_args_accepts_kumoh_static_pages() -> None:
+    args = crawl.parse_args(["--kumoh-limit", "0", "--kumoh-static"])
+
+    assert args.kumoh_limit == 0
+    assert args.kumoh_static is True
+
+
+def test_community_board_collection_is_rejected_by_allowlist_policy(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    app_settings = settings(tmp_path)
+
+    monkeypatch.setattr(crawl, "get_settings", lambda: app_settings)
+
+    exit_code = crawl.main(
+        [
+            "--kumoh-all",
+            "--kumoh-all-boards",
+        ]
+    )
+
+    assert exit_code == 2
+    assert "정적 안내" in capsys.readouterr().err
+
+
+def test_community_board_limit_is_rejected_by_allowlist_policy(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    app_settings = settings(tmp_path)
+
+    monkeypatch.setattr(crawl, "get_settings", lambda: app_settings)
+
+    exit_code = crawl.main(["--kumoh-limit", "1"])
+
+    assert exit_code == 2
+    assert "정적 안내" in capsys.readouterr().err
+
+
+def test_static_candidate_scope_collects_static_pages(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app_settings = settings(tmp_path)
+    candidate_output = tmp_path / "candidates" / "kumoh-static.json"
+    constructor_calls: list[dict[str, object]] = []
+
+    class RecordingStatic:
+        def __init__(self, **kwargs: object) -> None:
+            constructor_calls.append(kwargs)
+
+        def crawl(self) -> list[BoardPost]:
+            return [post("static-faculty", "kumoh")]
+
+    monkeypatch.setattr(crawl, "get_settings", lambda: app_settings)
+    monkeypatch.setattr(crawl, "KumohStaticCrawler", RecordingStatic, raising=False)
+
+    exit_code = crawl.main(
+        [
+            "--kumoh-limit",
+            "0",
+            "--kumoh-static",
+            "--candidate-output",
+            str(candidate_output),
+        ]
+    )
+
+    assert exit_code == 0
+    assert len(constructor_calls) == 1
+    assert [item.id for item in load_posts(candidate_output)] == ["static-faculty"]
 
 
 def test_seboard_limit_requires_permission_before_crawler_creation(
@@ -81,11 +182,11 @@ def test_allow_partial_writes_candidate_without_overwriting_raw_posts(
     save_posts([original], app_settings.raw_posts_path)
     partial_path = tmp_path / "candidates" / "partial.json"
 
-    class GoodKumoh:
+    class GoodStatic:
         def __init__(self, **_kwargs) -> None:
             pass
 
-        def crawl(self, _limit: int) -> list[BoardPost]:
+        def crawl(self) -> list[BoardPost]:
             return [post("new", "kumoh")]
 
     class FailedSeBoard:
@@ -96,13 +197,12 @@ def test_allow_partial_writes_candidate_without_overwriting_raw_posts(
             raise RuntimeError("fixture failure")
 
     monkeypatch.setattr(crawl, "get_settings", lambda: app_settings)
-    monkeypatch.setattr(crawl, "KumohBoardCrawler", GoodKumoh)
+    monkeypatch.setattr(crawl, "KumohStaticCrawler", GoodStatic)
     monkeypatch.setattr(crawl, "SeBoardCrawler", FailedSeBoard)
 
     exit_code = crawl.main(
         [
-            "--kumoh-limit",
-            "1",
+            "--kumoh-static",
             "--seboard-limit",
             "1",
             "--seboard-permission-confirmed",

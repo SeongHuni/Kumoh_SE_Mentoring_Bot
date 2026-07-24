@@ -21,7 +21,7 @@ data/processed/*
 !data/processed/.gitkeep
 data/evaluation/reports/
 data/raw/candidates/
-data/audit/reports/
+data/audit/
 
 .DS_Store
 Thumbs.db

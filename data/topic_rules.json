@@ -1,5 +1,6 @@
 {
   "default_topic_key": "general",
+  "default_notice_kind_key": "information",
   "retrieval_policy": {
     "recency_terms": ["최근", "최신"],
     "generic_terms": [
@@ -26,11 +27,42 @@
       ["캡스톤디자인", "캡스톤 디자인"]
     ]
   },
+  "notice_kinds": [
+    {
+      "key": "application",
+      "label": "신청·모집",
+      "keywords": ["지원자 모집", "신청", "접수", "모집", "선발", "제출"]
+    },
+    {
+      "key": "policy",
+      "label": "제도·행정",
+      "keywords": ["공결신청 방법", "공결 신청 방법", "공결신청", "공결 신청", "공결", "학점인정", "개인정보", "시설 공사", "안전교육"]
+    },
+    {
+      "key": "event",
+      "label": "행사·프로그램",
+      "keywords": ["홈커밍데이", "오리엔테이션", "경진대회", "공모전", "해커톤", "설명회", "행사", "개최", "MT"]
+    },
+    {
+      "key": "guide",
+      "label": "운영·이용 안내",
+      "keywords": ["운영 계획", "운영계획", "수강지도", "방법 안내", "시행 안내", "성적열람", "강의평가", "일정"]
+    },
+    {
+      "key": "information",
+      "label": "일반 안내",
+      "keywords": ["기능 중단", "알림", "공지", "안내"]
+    }
+  ],
   "topics": [
     {
       "key": "course_openings",
       "label": "개설강좌조회",
+      "category_key": "course",
+      "category_label": "수업",
       "keywords": ["개설강좌", "개설 과목", "수강 가능 과목"],
+      "title_markers": [],
+      "body_action_markers": ["조회", "확인", "안내", "공개"],
       "evidence_markers": ["수강신청 안내"],
       "intents": [
         {
@@ -42,15 +74,33 @@
           "example": "이번 학기 개설강좌 조회 안내"
         }
       ],
-      "suggested_questions": [
-        "이번 학기 개설강좌를 알려줘",
-        "개설강좌 조회 방법은?"
-      ]
+      "suggested_questions": ["이번 학기 개설강좌를 알려줘", "개설강좌 조회 방법은?"]
     },
     {
       "key": "registration",
       "label": "수강신청",
-      "keywords": ["수강신청", "수강 신청", "수강변경", "수강 변경", "수강꾸러미", "조기취업자", "출석인정"],
+      "category_key": "course",
+      "category_label": "수업",
+      "keywords": [
+        "수강신청",
+        "수강 신청",
+        "수강변경",
+        "수강 변경",
+        "수강꾸러미",
+        "수강지도",
+        "수강 지도",
+        "조기취업자",
+        "출석인정",
+        "강의평가",
+        "성적열람",
+        "성적 이의",
+        "계절수업",
+        "전자출결",
+        "자율도전학점제",
+        "군복무 학점"
+      ],
+      "title_markers": ["[수업]", "[학부]"],
+      "body_action_markers": ["신청", "기간", "변경", "정정", "시행", "열람", "평가", "상담"],
       "evidence_markers": ["수강신청", "수강 신청", "수강변경", "수강 변경", "수강꾸러미", "조기취업자", "출석인정"],
       "intents": [
         {
@@ -84,97 +134,270 @@
           "evidence_markers": ["수강신청", "수강 신청"],
           "exclusion_markers": ["변경", "정정", "수강꾸러미", "출석인정"],
           "example": "2026학년도 수강신청 일정과 유의사항"
+        },
+        {
+          "key": "registration.guidance",
+          "label": "수강지도 상담",
+          "keywords": ["수강지도", "수강 지도"],
+          "evidence_markers": ["수강지도", "수강 지도"],
+          "exclusion_markers": [],
+          "example": "다음 학기 수강지도 상담 안내"
+        },
+        {
+          "key": "registration.evaluation",
+          "label": "강의평가",
+          "keywords": ["강의평가"],
+          "evidence_markers": ["강의평가"],
+          "exclusion_markers": [],
+          "example": "학부 강의평가 시행 안내"
+        },
+        {
+          "key": "registration.grades",
+          "label": "성적열람·이의신청",
+          "keywords": ["성적열람", "성적 이의"],
+          "evidence_markers": ["성적열람", "성적 이의"],
+          "exclusion_markers": [],
+          "example": "성적열람 및 성적이의신청 기간 안내"
         }
       ],
-      "suggested_questions": [
-        "수강신청 기간은 언제야?",
-        "수강신청 변경 방법은?"
-      ]
+      "suggested_questions": ["수강신청 기간은 언제야?", "수강신청 변경 방법은?", "강의평가 기간은 언제야?"]
     },
     {
       "key": "capstone",
       "label": "캡스톤디자인",
-      "keywords": ["캡스톤디자인", "캡스톤 디자인"],
+      "category_key": "research_capstone",
+      "category_label": "연구·캡스톤",
+      "keywords": ["캡스톤디자인", "캡스톤 디자인", "학부연구생", "연구실 모집", "연구실"],
+      "title_markers": [],
+      "body_action_markers": ["운영 계획", "운영계획", "신청", "모집", "접수", "연구 참여"],
       "evidence_markers": ["캡스톤디자인", "캡스톤 디자인"],
       "intents": [
         {
           "key": "capstone.general",
-          "label": "캡스톤디자인 일반",
-          "keywords": ["캡스톤디자인", "캡스톤 디자인"],
-          "evidence_markers": ["캡스톤디자인", "캡스톤 디자인"],
+          "label": "캡스톤디자인·학부연구 일반",
+          "keywords": ["캡스톤디자인", "캡스톤 디자인", "학부연구생", "연구실 모집"],
+          "evidence_markers": ["캡스톤디자인", "캡스톤 디자인", "학부연구생", "연구실 모집"],
           "exclusion_markers": [],
           "example": "캡스톤디자인 신청 및 일정 안내"
         }
       ],
-      "suggested_questions": [
-        "캡스톤디자인 신청 방법은?",
-        "캡스톤디자인 일정은?"
-      ]
+      "suggested_questions": ["캡스톤디자인 신청 방법은?", "캡스톤디자인 일정은?", "학부연구생 모집이 있어?"]
     },
     {
       "key": "career",
       "label": "진로·취업",
-      "keywords": ["취업", "채용", "인턴", "진로"],
+      "category_key": "career",
+      "category_label": "취업·진로",
+      "keywords": [
+        "취업한마당",
+        "채용설명회",
+        "채용상담회",
+        "연수연구원 모집",
+        "학교추천전형",
+        "기업탐방",
+        "교육생모집",
+        "아르바이트",
+        "부스트캠프",
+        "SSAFY",
+        "채용",
+        "초빙",
+        "인턴",
+        "취업",
+        "진로"
+      ],
+      "title_markers": ["[대학일자리플러스센터]", "[대학일지리플러스센터]"],
+      "body_action_markers": ["모집", "공고", "설명회", "상담회", "신청", "교육", "인턴"],
       "evidence_markers": ["취업", "채용", "초빙", "인턴", "진로"],
       "intents": [
         {
           "key": "career.general",
           "label": "진로·취업 일반",
-          "keywords": ["취업", "채용", "초빙", "인턴", "진로"],
-          "evidence_markers": ["취업", "채용", "초빙", "인턴", "진로"],
+          "keywords": ["취업", "채용", "초빙", "인턴", "진로", "SSAFY", "부스트캠프"],
+          "evidence_markers": ["취업", "채용", "초빙", "인턴", "진로", "SSAFY", "부스트캠프"],
           "exclusion_markers": [],
           "example": "진로·채용·인턴 관련 안내"
         }
       ],
-      "suggested_questions": [
-        "최근 취업 프로그램을 알려줘",
-        "인턴 관련 공지가 있어?"
-      ]
+      "suggested_questions": ["최근 취업 프로그램을 알려줘", "인턴 관련 공지가 있어?", "채용설명회가 있어?"]
     },
     {
       "key": "scholarship",
       "label": "장학금",
-      "keywords": ["장학금", "장학생", "장학"],
+      "category_key": "scholarship",
+      "category_label": "장학금",
+      "keywords": ["장학금", "장학생", "장학", "KIT인재인증", "K-WEGO", "지원금"],
+      "title_markers": ["[장학]"],
+      "body_action_markers": ["신청", "선발", "제출", "지급", "접수", "마감"],
       "evidence_markers": ["장학금", "장학생", "장학"],
       "intents": [
         {
           "key": "scholarship.general",
           "label": "장학 일반",
-          "keywords": ["장학금", "장학생", "장학"],
-          "evidence_markers": ["장학금", "장학생", "장학"],
+          "keywords": ["장학금", "장학생", "장학", "K-WEGO", "지원금"],
+          "evidence_markers": ["장학금", "장학생", "장학", "K-WEGO", "지원금"],
           "exclusion_markers": [],
           "example": "장학금 신청 및 장학생 선발 안내"
         }
       ],
-      "suggested_questions": [
-        "장학금 신청 공지를 알려줘",
-        "장학생 선발 기준은?"
-      ]
+      "suggested_questions": ["장학금 신청 공지를 알려줘", "장학생 선발 기준은?", "K-WEGO 안내가 있어?"]
     },
     {
       "key": "graduation",
-      "label": "졸업요건",
-      "keywords": ["졸업요건", "졸업 요건", "졸업인증"],
-      "evidence_markers": ["졸업요건", "졸업 요건", "졸업인증"],
+      "label": "학적·졸업",
+      "category_key": "academic",
+      "category_label": "학적·졸업",
+      "keywords": [
+        "졸업요건",
+        "졸업 요건",
+        "졸업인증",
+        "졸업사정",
+        "졸업예정자",
+        "졸업대상자",
+        "전공배정",
+        "마이크로디그리",
+        "부전공",
+        "복수전공",
+        "추가이수과정",
+        "전적대학 학점인정",
+        "편입생",
+        "모집단위 변경",
+        "소속 학과 변경"
+      ],
+      "title_markers": ["[학적]"],
+      "body_action_markers": ["신청", "변경", "열람", "이수", "포기", "제출", "안내"],
+      "evidence_markers": ["졸업요건", "졸업 요건", "졸업인증", "졸업사정", "마이크로디그리", "전공배정"],
       "intents": [
         {
           "key": "graduation.general",
-          "label": "졸업요건 일반",
-          "keywords": ["졸업요건", "졸업 요건", "졸업인증"],
-          "evidence_markers": ["졸업요건", "졸업 요건", "졸업인증"],
+          "label": "학적·졸업 일반",
+          "keywords": ["졸업요건", "졸업 요건", "졸업인증", "졸업사정", "마이크로디그리", "전공배정", "부전공"],
+          "evidence_markers": ["졸업요건", "졸업 요건", "졸업인증", "졸업사정", "마이크로디그리", "전공배정", "부전공"],
           "exclusion_markers": [],
-          "example": "졸업요건 및 졸업인증 기준 안내"
+          "example": "졸업요건과 졸업사정 안내"
         }
       ],
-      "suggested_questions": [
-        "졸업요건을 확인해줘",
-        "졸업인증 기준은?"
-      ]
+      "suggested_questions": ["졸업요건을 확인해줘", "마이크로디그리 신청 안내가 있어?", "전공배정 기간은 언제야?"]
+    },
+    {
+      "key": "extracurricular",
+      "label": "비교과·행사",
+      "category_key": "extracurricular",
+      "category_label": "비교과·행사",
+      "keywords": [
+        "프로그래밍 경진대회",
+        "홈커밍데이",
+        "오리엔테이션",
+        "전공탐방",
+        "입학식",
+        "공모전",
+        "해커톤",
+        "TOEIC",
+        "경진대회",
+        "독서클럽",
+        "캠프",
+        "부트캠프",
+        "방산AI인재양성부트캠프"
+      ],
+      "title_markers": ["[교내행사]", "[국립대학 육성사업]", "부트캠프"],
+      "body_action_markers": ["신청", "참가", "개최", "모집", "시행", "연장"],
+      "evidence_markers": ["공모전", "해커톤", "TOEIC", "홈커밍데이", "오리엔테이션"],
+      "intents": [
+        {
+          "key": "extracurricular.general",
+          "label": "비교과·행사 일반",
+          "keywords": ["공모전", "해커톤", "TOEIC", "홈커밍데이", "오리엔테이션", "부트캠프", "방산AI인재양성부트캠프", "경진대회"],
+          "evidence_markers": ["공모전", "해커톤", "TOEIC", "홈커밍데이", "오리엔테이션", "부트캠프", "방산AI인재양성부트캠프", "경진대회"],
+          "exclusion_markers": [],
+          "example": "비교과 프로그램과 행사 신청 안내"
+        }
+      ],
+      "suggested_questions": ["참여할 수 있는 비교과 프로그램이 있어?", "최근 공모전 안내를 알려줘", "학과 행사가 있어?"]
+    },
+    {
+      "key": "graduate",
+      "label": "대학원",
+      "category_key": "graduate",
+      "category_label": "대학원",
+      "keywords": ["학·석사학위 연계", "학석사학위 연계", "일반대학원", "대학원", "석사과정", "OPEN LAB", "사전이수"],
+      "title_markers": ["[대학원]"],
+      "body_action_markers": ["모집", "설명회", "신청", "지원", "접수", "안내"],
+      "evidence_markers": ["대학원", "학·석사", "학석사", "OPEN LAB", "석사과정"],
+      "intents": [
+        {
+          "key": "graduate.general",
+          "label": "대학원 입학·연계과정",
+          "keywords": ["대학원", "학·석사", "학석사", "OPEN LAB", "사전이수"],
+          "evidence_markers": ["대학원", "학·석사", "학석사", "OPEN LAB", "사전이수"],
+          "exclusion_markers": [],
+          "example": "대학원 신입생 모집과 학석사 연계과정 안내"
+        }
+      ],
+      "suggested_questions": ["대학원 모집 안내가 있어?", "학석사 연계과정은 어떻게 지원해?", "OPEN LAB 일정이 있어?"]
+    },
+    {
+      "key": "student_council",
+      "label": "학생회",
+      "category_key": "student_council",
+      "category_label": "학생회",
+      "keywords": ["학생회", "사물함", "회비", "동아리", "전학년 MT"],
+      "title_markers": ["[학생회]"],
+      "body_action_markers": ["신청", "모집", "안내", "납부", "배정"],
+      "evidence_markers": ["학생회", "사물함", "회비", "동아리", "MT"],
+      "intents": [
+        {
+          "key": "student_council.general",
+          "label": "학생회 생활 안내",
+          "keywords": ["학생회", "사물함", "회비", "동아리", "MT"],
+          "evidence_markers": ["학생회", "사물함", "회비", "동아리", "MT"],
+          "exclusion_markers": [],
+          "example": "학생회 MT와 사물함 신청 안내"
+        }
+      ],
+      "suggested_questions": ["학생회 공지가 있어?", "사물함 신청 방법을 알려줘", "MT 안내가 있어?"]
+    },
+    {
+      "key": "administration",
+      "label": "행정·안내",
+      "category_key": "administration",
+      "category_label": "행정·안내",
+      "keywords": [
+        "공결신청",
+        "공결",
+        "안전교육",
+        "시설 공사",
+        "차량 5부제",
+        "개인정보",
+        "전임교원",
+        "교원 초빙",
+        "공개강의 심사",
+        "학사안내",
+        "알림 기능 중단",
+        "서비스 중단",
+        "금오톡톡"
+      ],
+      "title_markers": ["[일반]"],
+      "body_action_markers": ["신청", "제출", "시행", "안내", "중단", "변경"],
+      "evidence_markers": ["공결", "안전교육", "시설", "개인정보", "전임교원", "교원 초빙"],
+      "intents": [
+        {
+          "key": "administration.general",
+          "label": "학사 행정·안내",
+          "keywords": ["공결", "안전교육", "시설", "개인정보", "전임교원", "교원 초빙", "금오톡톡"],
+          "evidence_markers": ["공결", "안전교육", "시설", "개인정보", "전임교원", "교원 초빙", "금오톡톡"],
+          "exclusion_markers": [],
+          "example": "공결 신청과 학사 행정 안내"
+        }
+      ],
+      "suggested_questions": ["공결 신청 방법을 알려줘", "안전교육 안내가 있어?", "시설 공지 확인해줘"]
     },
     {
       "key": "general",
       "label": "전체 공지",
+      "category_key": "other",
+      "category_label": "기타",
       "keywords": [],
+      "title_markers": [],
+      "body_action_markers": [],
       "evidence_markers": [],
       "intents": [
         {
@@ -189,15 +412,12 @@
           "key": "general.recent",
           "label": "전체 최신 공지",
           "keywords": ["최근 공지", "최신 공지", "학과 공지", "공지"],
-          "evidence_markers": ["공지", "안내"],
+          "evidence_markers": ["공지", "안내", "공고"],
           "exclusion_markers": [],
           "example": "최근 학과 공지 안내"
         }
       ],
-      "suggested_questions": [
-        "최근 학과 공지를 알려줘",
-        "소프트웨어전공 공지를 알려줘"
-      ]
+      "suggested_questions": ["최근 학과 공지를 알려줘", "소프트웨어전공 공지를 알려줘"]
     }
   ]
 }
