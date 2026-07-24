@@ -180,12 +180,15 @@ def _has_intent_conflict(
     intent: IntentOption,
     intent_rule: IntentRule | None,
     body: str,
+    *,
+    allow_cross_topic: bool,
 ) -> bool:
-    if chunk.topic_key != intent.topic_key:
-        return True
     explicit_intent_key = (chunk.intent_key or "").strip()
-    if explicit_intent_key and explicit_intent_key != intent.intent_key:
-        return True
+    if not allow_cross_topic:
+        if chunk.topic_key != intent.topic_key:
+            return True
+        if explicit_intent_key and explicit_intent_key != intent.intent_key:
+            return True
     if intent_rule is None:
         return False
 
@@ -289,11 +292,14 @@ def rerank(
     *,
     intent_rule: IntentRule | None = None,
     rrf_k: int = 60,
+    allow_cross_topic: bool = False,
 ) -> list[RerankedCandidate]:
     if intent.topic_key != query_intent.topic_key:
         raise ValueError("intent and query_intent topic must match")
     if intent_rule is not None and intent_rule.key != intent.intent_key:
         raise ValueError("intent_rule key must match intent key")
+    if not isinstance(allow_cross_topic, bool):
+        raise ValueError("allow_cross_topic must be a bool")
     validated_rrf_k = _validate_rrf_k(rrf_k)
 
     markers = _markers(intent, query_intent, intent_rule)
@@ -313,6 +319,7 @@ def rerank(
             intent,
             intent_rule,
             body,
+            allow_cross_topic=allow_cross_topic,
         )
         reranked.append(
             RerankedCandidate(

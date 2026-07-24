@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from backend.app.config import Settings
 from backend.app.provider_factory import effective_models, selected_provider_name
 
-INDEX_SCHEMA_VERSION = 2
+INDEX_SCHEMA_VERSION = 5
 MANIFEST_FILENAME = "index-manifest.json"
 SIGNATURE_FIELDS = (
     "schema_version",
@@ -53,7 +53,7 @@ IndexReason = Literal[
 class IndexSignature(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    schema_version: Literal[2] = INDEX_SCHEMA_VERSION
+    schema_version: Literal[5] = INDEX_SCHEMA_VERSION
     collection: str = Field(min_length=1)
     provider: Literal["local", "openai"]
     embedding_model: str = Field(min_length=1)

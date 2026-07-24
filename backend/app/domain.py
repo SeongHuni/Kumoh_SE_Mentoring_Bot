@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -17,12 +18,16 @@ class BoardPost(BaseModel):
     content: str
     author: str = ""
     published_at: str | None = None
+    document_type: Literal["notice", "static", "historical"] = "notice"
     url: str
     attachments: list[Attachment] = Field(default_factory=list)
     crawled_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     topic_key: str | None = None
     topic_label: str | None = None
+    category_key: str | None = None
+    category_label: str | None = None
     intent_key: str | None = None
+    notice_kind: str | None = None
     is_latest_topic: bool = False
 
     @field_validator("id", "source", "title", "content", "url")
@@ -42,11 +47,15 @@ class TextChunk(BaseModel):
     text: str
     url: str
     published_at: str | None
+    document_type: Literal["notice", "static", "historical"] = "notice"
     chunk_index: int
     topic_key: str
     topic_label: str
     is_latest_topic: bool
     intent_key: str | None = None
+    category_key: str = "other"
+    category_label: str = "기타"
+    notice_kind: str | None = None
 
 
 class RetrievedChunk(BaseModel):

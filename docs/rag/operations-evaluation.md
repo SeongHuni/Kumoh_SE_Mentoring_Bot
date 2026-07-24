@@ -34,15 +34,20 @@
 
 `CHROMA_PATH/index-manifest.json`은 provider, embedding model/dimension, chunking, collection, raw/topic SHA-256, chunk count와 signature fingerprint를 기록한다. provider·모델·차원·collection·chunking·원본·topic rules가 바뀌면 `index --reset`을 실행하고, `OPENAI_CHAT_MODEL`만 바뀌면 재인덱싱하지 않는다.
 
-현재 index schema는 v2이며 청크의 `intent_key` metadata를 전제로 한다. v1 index는 API와 평가에서 `needs_reindex`로 거절한다.
+현재 index schema는 v5이며 청크의 `intent_key`, `category_key`, `category_label`, `notice_kind`, `document_type` metadata를 전제로 한다. `document_type=historical`은 과거 참고 정보이며 최근 공지·최신성 경쟁에서 제외된다. v1~v4 index는 API와 평가에서 `needs_reindex`로 거절한다.
 
 ## 운영 절차
 
-허용된 학과 source만 수집하는 기본 명령은 다음과 같다. SE 게시판은 권한과 승인된 API가 확인되기 전까지 `--seboard-limit 0`을 유지한다.
+허용된 학과 source만 수집하는 기본 명령은 다음과 같다. 학과 사이트에서는 전공소개·교육목표·교육과정·졸업 후 진로·비식별 교수소개·동아리명/동아리 소개의 정적 6페이지만 수집한다. `--kumoh-limit`, `--kumoh-all`, `--kumoh-all-boards`는 정책상 오류로 종료한다. 학과 홈페이지 공지사항을 포함한 모든 학과 게시판, 주요성과(`sub0103`), 금오공과대학교 학사안내 URL 계열(`www.kumoh.ac.kr/ko/sub06_01_*`)은 수집·저장하지 않는다. SE 게시판은 권한과 승인된 API가 확인되기 전까지 `--seboard-limit 0`을 유지한다.
 
 ```powershell
-backend/.venv/Scripts/python.exe -m backend.scripts.crawl --kumoh-limit 50 --seboard-limit 0
-backend/.venv/Scripts/python.exe -m backend.scripts.index --reset
+backend/.venv/Scripts/python.exe -m backend.scripts.crawl --kumoh-static --candidate-output data/raw/candidates/kumoh-community-2024.json --seboard-limit 0
+```
+
+학과 게시판 전체 수집은 더 이상 허용하지 않는다. `--kumoh-static`은 전공소개(`sub0101`), 교육목표(`sub0102`), 교육과정(`sub0105_2`), 졸업 후 진로(`sub0104`), 비식별 교수소개(`sub0401`), 동아리명·동아리 소개(`sub0504`)만 수집한다. 전공소개에서는 해당 섹션만 남기고 상세 교육목표·교육과정과 의미 중복을 제거한다. 졸업 후 진로는 `historical` 참고 문서로 저장해 현재 취업률·현황 답변과 최근 공지에 사용하지 않는다. 주요성과(`sub0103`)는 수상·성과 제외 정책에 따라 차단한다. 동아리 페이지에서는 회장·부회장 등 개인 식별 정보가 아닌 이름과 소개만 남긴다. 수집 결과는 반드시 `--candidate-output data/raw/candidates/<name>.json`으로 먼저 저장한다. 후보 output은 `RAW_POSTS_PATH`와 같을 수 없으며, 검토·승격 전에는 인덱싱에 사용하지 않는다.
+
+```powershell
+backend/.venv/Scripts/python.exe -m backend.scripts.crawl --kumoh-static --candidate-output data/raw/candidates/kumoh-allowlist.json --seboard-limit 0
 ```
 
 원본 변경, topic rule 변경, provider/embedding 변경, collection·chunking 변경 후에는 index → evaluation → audit 순서로 재검증한다. 인덱싱은 임베딩 수·차원과 입력 signature를 먼저 확인하고, 성공한 Chroma 저장 뒤 manifest를 기록한다. manifest 누락·손상, 설정·content hash·실제 chunk count 불일치는 전체 재인덱싱으로 복구한다.
@@ -107,7 +112,7 @@ backend/.venv/Scripts/python.exe -m backend.scripts.audit_data
 
 데이터 감사는 명시 옵션이 없으면 설정된 `RAW_POSTS_PATH`와 `TOPIC_RULES_PATH`를 읽고 `data/audit/reports/latest.json`, `latest.md`에 보고서를 쓴다. 기본 required source는 `kumoh`와 `seboard`이며 `--posts`, `--topic-rules`, `--output-dir`, `--stale-after-days`, `--required-source`로 조정할 수 있다.
 
-`audit_data` exit 1은 command failure가 아니라 품질 warning 존재를 뜻한다. 2026-07-16 snapshot은 50 posts, 3 warnings/exit 1이며 SE source 누락과 `course_openings`·`graduation` 빈 topic이 원인이다. 최신 수치는 [`../PROJECT_STATUS.md`](../PROJECT_STATUS.md)를 우선한다.
+`audit_data` exit 1은 command failure가 아니라 품질 warning 존재를 뜻한다. 현재는 학과 홈페이지 공지사항을 삭제하는 정책 때문에 canonical 원본이 의도적으로 비어 있으므로, 기본 감사는 빈 원본 오류가 정상이다. 검토 후보를 점검할 때는 `--posts data/raw/candidates/<name>.json --required-source kumoh`를 명시한다. 2026-07-16의 50 posts/3 warnings는 역사 snapshot이며, 최신 수치는 [`../PROJECT_STATUS.md`](../PROJECT_STATUS.md)를 우선한다.
 
 | exit | 의미 | 조치 |
 | ---: | --- | --- |
@@ -143,4 +148,4 @@ backend/.venv/Scripts/python.exe -m backend.scripts.evaluate --provider configur
 
 provider 또는 데이터가 바뀌면 우선 provider-matched 31문항 이상 회귀평가를 실행한다. threshold를 실제로 변경하려면 별도의 retrieval diagnostic/raw candidate score instrumentation으로 positive/negative 분포를 수집해야 한다. 이 instrumentation과 diagnostic 도구는 현재 미구현 open item이다. 구현되기 전에는 운영자가 `0.20` 등 추정값을 production validated threshold로 사용하거나 기록하지 않는다. OpenAI로 전환할 때도 provider-matched reindex/evaluation 후 별도 분포 수집과 calibration을 거쳐야 한다.
 
-평가 질문은 기대 topic, confirmed/actual intent, source intent, intent별 latest-only URL, grounded 거절, source 제목·날짜·대상·신청 경로 일치 여부를 확인해야 한다. 세부 수치와 현재 snapshot은 [`../PROJECT_STATUS.md`](../PROJECT_STATUS.md) 및 생성 report를 참조한다.
+평가 질문은 기대 topic, confirmed/actual intent, source의 공식 원문 연결, intent별 latest-only URL, grounded 거절, source 제목·날짜·대상·신청 경로 일치 여부를 확인해야 한다. `general.recent`는 category를 가로질러 각 실제 intent의 최신 source를 허용하고, 이름을 명시한 직접 조회는 latest-only 검사를 생략할 수 있다. 세부 수치와 현재 snapshot은 [`../PROJECT_STATUS.md`](../PROJECT_STATUS.md) 및 생성 report를 참조한다.

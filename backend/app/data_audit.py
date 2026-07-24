@@ -70,8 +70,11 @@ def audit_posts(
                 )
             )
 
-    for post in enriched:
-        if parse_published_at(post.published_at) is None:
+    for raw_post, post in zip(post_list, enriched, strict=True):
+        if (
+            post.document_type == "notice"
+            and parse_published_at(post.published_at) is None
+        ):
             issues.append(
                 AuditIssue(
                     code="missing_published_at",
@@ -83,20 +86,25 @@ def audit_posts(
                     message="게시일이 없거나 ISO 날짜로 해석되지 않습니다.",
                 )
             )
-        if post.topic_key and catalog.rule_for(post.topic_key):
-            classified = catalog.classify(f"{post.title}\n{post.content}").key
-            if classified != post.topic_key:
+        if raw_post.topic_key and catalog.rule_for(raw_post.topic_key):
+            title_rule = catalog.classify_title(raw_post.title)
+            classified = (
+                catalog.classify_body(raw_post.content)
+                if title_rule.key == catalog.default_topic_key
+                else title_rule
+            )
+            if classified.key != raw_post.topic_key:
                 issues.append(
                     AuditIssue(
                         code="topic_override_mismatch",
-                        source=post.source,
-                        topic_key=post.topic_key,
-                        post_id=post.id,
-                        title=post.title,
-                        url=post.url,
+                        source=raw_post.source,
+                        topic_key=raw_post.topic_key,
+                        post_id=raw_post.id,
+                        title=raw_post.title,
+                        url=raw_post.url,
                         message=(
-                            f"규칙 분류는 {classified}이지만 override는 "
-                            f"{post.topic_key}입니다."
+                            f"규칙 분류는 {classified.key}이지만 override는 "
+                            f"{raw_post.topic_key}입니다."
                         ),
                     )
                 )
@@ -116,13 +124,14 @@ def audit_posts(
             )
         )
         if latest is None:
-            issues.append(
-                AuditIssue(
-                    code="empty_topic",
-                    topic_key=rule.key,
-                    message=f"주제에 게시글이 없습니다: {rule.key}",
+            if rule.key != catalog.default_topic_key:
+                issues.append(
+                    AuditIssue(
+                        code="empty_topic",
+                        topic_key=rule.key,
+                        message=f"주제에 게시글이 없습니다: {rule.key}",
+                    )
                 )
-            )
             continue
         published = parse_published_at(latest.published_at)
         if published is not None and now - published > timedelta(days=stale_after_days):

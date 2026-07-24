@@ -71,6 +71,94 @@ def test_audit_reports_missing_or_invalid_published_date() -> None:
     assert [issue.code for issue in report.issues].count("missing_published_at") == 2
 
 
+def test_audit_allows_undated_static_documents() -> None:
+    static = post("static", published_at=None).model_copy(
+        update={"document_type": "static"}
+    )
+
+    report = audit_posts(
+        [static],
+        catalog=catalog(),
+        required_sources=("kumoh",),
+        stale_after_days=180,
+        generated_at=datetime(2026, 7, 13, tzinfo=UTC),
+    )
+
+    assert "missing_published_at" not in [issue.code for issue in report.issues]
+
+
+def test_audit_allows_undated_historical_documents() -> None:
+    historical = post("career", published_at=None).model_copy(
+        update={"document_type": "historical"}
+    )
+
+    report = audit_posts(
+        [historical],
+        catalog=catalog(),
+        required_sources=("kumoh",),
+        stale_after_days=180,
+        generated_at=datetime(2026, 7, 13, tzinfo=UTC),
+    )
+
+    assert "missing_published_at" not in [issue.code for issue in report.issues]
+
+
+def test_audit_only_checks_explicit_topic_overrides() -> None:
+    rules = TopicCatalog(
+        default_topic_key="general",
+        rules=(
+            TopicRule("course", "수업", ("수강",), ()),
+            TopicRule("academic", "학적", ("졸업요건",), ()),
+            TopicRule("general", "전체", (), ()),
+        ),
+    )
+    inferred = BoardPost(
+        id="inferred",
+        source="kumoh",
+        title="수강 안내",
+        content="졸업요건이라는 단어가 본문에 한 번 등장합니다.",
+        url="https://example.com/inferred",
+        published_at="2026-07-01",
+    )
+    overridden = inferred.model_copy(
+        update={
+            "id": "override",
+            "title": "졸업요건 안내",
+            "content": "졸업요건을 확인하세요.",
+            "topic_key": "course",
+        }
+    )
+
+    report = audit_posts(
+        [inferred, overridden],
+        catalog=rules,
+        required_sources=("kumoh",),
+        stale_after_days=180,
+        generated_at=datetime(2026, 7, 13, tzinfo=UTC),
+    )
+
+    mismatch_ids = {
+        issue.post_id for issue in report.issues if issue.code == "topic_override_mismatch"
+    }
+    assert mismatch_ids == {"override"}
+
+
+def test_audit_does_not_require_a_post_for_the_default_fallback_topic() -> None:
+    report = audit_posts(
+        [post("only-course")],
+        catalog=catalog(),
+        required_sources=("kumoh",),
+        stale_after_days=180,
+        generated_at=datetime(2025, 8, 8, tzinfo=UTC),
+    )
+
+    empty_topics = {
+        issue.topic_key for issue in report.issues if issue.code == "empty_topic"
+    }
+    assert "graduation" in empty_topics
+    assert "general" not in empty_topics
+
+
 def test_audit_rejects_empty_input() -> None:
     with pytest.raises(ValueError, match="비어"):
         audit_posts(

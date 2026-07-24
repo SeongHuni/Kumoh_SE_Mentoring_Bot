@@ -187,6 +187,7 @@ def evaluate_cases(
             )
 
     intents_by_url, latest_by_intent = _post_evidence(posts)
+    latest_urls_across_intents = set().union(*latest_by_intent.values())
     results: list[EvaluationResult] = []
 
     for case in case_list:
@@ -207,8 +208,11 @@ def evaluate_cases(
             else None
         )
         interpreted_intent_match = actual_intent_key == case.expected_intent_key
+        cross_topic_recent = case.expected_intent_key == "general.recent"
         source_intent_match = all(
-            case.expected_intent_key in intents_by_url.get(source.url, set())
+            bool(intents_by_url.get(source.url, set()))
+            if cross_topic_recent
+            else case.expected_intent_key in intents_by_url.get(source.url, set())
             for source in actual.sources
         )
         intent_match = interpreted_intent_match and source_intent_match
@@ -235,7 +239,11 @@ def evaluate_cases(
 
         latest_only_match: bool | None = None
         if case.expected_latest_only:
-            allowed_urls = latest_by_intent.get(case.expected_intent_key, set())
+            allowed_urls = (
+                latest_urls_across_intents
+                if cross_topic_recent
+                else latest_by_intent.get(case.expected_intent_key, set())
+            )
             source_urls = [source.url for source in actual.sources]
             latest_only_match = all(url in allowed_urls for url in source_urls)
             if case.expected_grounded and not source_urls:

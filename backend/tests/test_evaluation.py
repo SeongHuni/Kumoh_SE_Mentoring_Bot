@@ -440,6 +440,40 @@ def test_evaluate_cases_scopes_latest_urls_for_general_and_specific_topics() -> 
     assert "해당 intent의 최신 source가 아닌 URL이 포함됐습니다." in results[1].failures
 
 
+def test_evaluate_cases_allows_latest_categorized_source_for_general_recent() -> None:
+    payload = valid_case("general-cross-topic-latest")
+    payload.update(
+        question="최근 학과 공지를 알려줘",
+        expected_topic_key="general",
+        confirmed_intent_key="general.recent",
+        expected_intent_key="general.recent",
+        expected_source_title_contains=[],
+    )
+    categorized_latest = post(
+        "course-latest",
+        "course_openings",
+        True,
+        intent_key="course_openings.lookup",
+    )
+
+    result = evaluate_cases(
+        [EvaluationCase.model_validate(payload)],
+        catalog=catalog(),
+        posts=[categorized_latest],
+        ask=lambda _question, _intent: response(
+            True,
+            categorized_latest.url,
+            categorized_latest.title,
+            intent_key="general.recent",
+            topic_key="general",
+        ),
+    )[0]
+
+    assert result.checks.intent_match is True
+    assert result.checks.latest_only_match is True
+    assert result.passed is True
+
+
 def test_build_evaluation_report_excludes_inapplicable_checks() -> None:
     results = [
         EvaluationResult(

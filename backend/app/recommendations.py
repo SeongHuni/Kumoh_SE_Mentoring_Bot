@@ -38,12 +38,20 @@ def recent_notices(
         (
             post
             for post in posts
-            if intent_key is not None and post.intent_key == intent_key
+            if (
+                intent_key is not None
+                and post.intent_key == intent_key
+                and post.document_type == "notice"
+            )
         ),
         key=freshness_key,
         reverse=True,
     )
-    latest = [post for post in posts if post.is_latest_topic]
+    latest = [
+        post
+        for post in posts
+        if post.is_latest_topic and post.document_type == "notice"
+    ]
     related = [post for post in latest if post.topic_key == topic_key]
     others = [post for post in latest if post.topic_key != topic_key]
     ordered = (

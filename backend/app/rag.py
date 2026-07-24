@@ -32,6 +32,13 @@ NO_ANSWER = (
 )
 CLARIFICATION = "질문 의도를 이렇게 이해했습니다. 무엇을 찾을지 선택해 주세요."
 
+NOTICE_KIND_COMPATIBILITY: dict[str, frozenset[str]] = {
+    "application": frozenset({"application", "guide"}),
+    "policy": frozenset({"policy", "guide"}),
+    "event": frozenset({"event", "guide"}),
+    "guide": frozenset({"guide", "application", "policy"}),
+}
+
 
 def _intent_payload(intent: IntentOption) -> ClarificationOption:
     return ClarificationOption(**asdict(intent))
@@ -70,6 +77,22 @@ def _validate_min_score(value: object) -> float:
     if not math.isfinite(score) or score < 0:
         raise ValueError("min_score must be a finite nonnegative number")
     return score
+
+
+def _matches_requested_notice_kind(
+    candidate_kind: str | None,
+    requested_kind: str | None,
+) -> bool:
+    """Keep generic notices broad, but do not substitute a different notice type."""
+
+    if (
+        requested_kind is None
+        or requested_kind == "information"
+        or candidate_kind is None
+    ):
+        return True
+    allowed = NOTICE_KIND_COMPATIBILITY.get(requested_kind, {requested_kind})
+    return candidate_kind in allowed
 
 
 class RAGService:
@@ -145,18 +168,32 @@ class RAGService:
             catalog=self.topic_catalog,
         )
         plan = build_query_plan(question, confirmed, query_intent)
-        hybrid = self.hybrid_retriever.retrieve(plan, topic_key=confirmed.topic_key)
+        cross_topic_recent = confirmed.intent_key == "general.recent"
+        hybrid = self.hybrid_retriever.retrieve(
+            plan,
+            topic_key=None if cross_topic_recent else confirmed.topic_key,
+        )
         reranked = rerank(
             hybrid,
             confirmed,
             query_intent,
             intent_rule=intent_rule,
+            allow_cross_topic=cross_topic_recent,
         )
         decisions = evaluate_candidates(reranked)
         relevant = [
             candidate
             for candidate in relevant_candidates(decisions)
             if candidate.score >= self.min_score
+        ]
+        requested_notice_kind = self.topic_catalog.classify_notice_kind(question, "")
+        relevant = [
+            candidate
+            for candidate in relevant
+            if _matches_requested_notice_kind(
+                candidate.candidate.chunk.notice_kind,
+                requested_notice_kind,
+            )
         ]
         freshest = select_freshest(
             relevant,

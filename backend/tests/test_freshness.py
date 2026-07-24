@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 
 from backend.app.domain import BoardPost
-from backend.app.freshness import freshness_key, latest_post_keys
+from backend.app.freshness import freshness_key, latest_intent_post, latest_post_keys
 
 
 def post(post_id: str, published_at: str | None, crawled_at: datetime) -> BoardPost:
@@ -28,3 +28,32 @@ def test_missing_published_at_falls_back_to_crawled_at() -> None:
     second = post("second", None, datetime(2026, 3, 21, tzinfo=UTC))
 
     assert latest_post_keys([first, second]) == {("kumoh", "second")}
+
+
+def test_static_documents_do_not_become_latest_notices() -> None:
+    notice = post("notice", "2026-03-20", datetime(2026, 3, 21, tzinfo=UTC))
+    static = post("static", None, datetime(2026, 7, 24, tzinfo=UTC)).model_copy(
+        update={"document_type": "static"}
+    )
+
+    assert latest_post_keys([notice, static]) == {("kumoh", "notice")}
+
+
+def test_historical_documents_do_not_become_latest_notices() -> None:
+    notice = post("notice", "2026-03-20", datetime(2026, 3, 21, tzinfo=UTC))
+    historical = post("career", None, datetime(2026, 7, 24, tzinfo=UTC)).model_copy(
+        update={"document_type": "historical"}
+    )
+
+    assert latest_post_keys([notice, historical]) == {("kumoh", "notice")}
+
+
+def test_historical_documents_do_not_become_latest_intent_posts() -> None:
+    historical = post("career", None, datetime(2026, 7, 24, tzinfo=UTC)).model_copy(
+        update={"document_type": "historical", "intent_key": "career.general"}
+    )
+    notice = post("notice", "2026-03-20", datetime(2026, 3, 21, tzinfo=UTC)).model_copy(
+        update={"intent_key": "career.general"}
+    )
+
+    assert latest_intent_post([historical, notice], "career.general") == notice

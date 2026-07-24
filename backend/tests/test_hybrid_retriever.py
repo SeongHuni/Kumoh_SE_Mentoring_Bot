@@ -171,6 +171,28 @@ def test_retrieve_uses_all_topic_chunks_and_global_dense_ranks() -> None:
     assert by_id["main"].chunk.intent_key == "registration.main"
 
 
+def test_retrieve_without_topic_scope_uses_the_entire_corpus() -> None:
+    main = make_chunk("main", "2026 수강신청 일정 안내", "수강신청 기간")
+    provider = FakeProvider()
+    store = FakeVectorStore(
+        [main],
+        [
+            [RetrievedChunk(chunk=main, score=0.9)],
+            [RetrievedChunk(chunk=main, score=0.8)],
+        ],
+    )
+    plan = QueryPlan("최근 학과 공지", ("최근 학과 공지", "전체 공지"), "공지")
+
+    results = HybridRetriever(provider, store, lexical_top_k=1, dense_top_k=1).retrieve(
+        plan,
+        topic_key=None,
+    )
+
+    assert [item.chunk.id for item in results] == ["main"]
+    assert store.list_calls == [None]
+    assert all(call[2] is None for call in store.query_calls)
+
+
 def test_retrieve_fails_closed_for_empty_corpus_without_embedding_or_dense_calls() -> None:
     provider = FakeProvider()
     store = FakeVectorStore([], [])

@@ -36,6 +36,8 @@ def chunk_post(post: BoardPost, chunk_size: int = 900, overlap: int = 150) -> li
     header = f"제목: {post.title}"
     if post.published_at:
         header += f"\n작성일: {post.published_at}"
+    if post.document_type == "historical":
+        header += "\n문서 상태: 역사 정보 (현재 수치·현황 아님)"
     text = normalize_text(f"{header}\n본문: {post.content}")
     chunks: list[TextChunk] = []
     start = 0
@@ -54,11 +56,15 @@ def chunk_post(post: BoardPost, chunk_size: int = 900, overlap: int = 150) -> li
                     text=body,
                     url=post.url,
                     published_at=post.published_at,
+                    document_type=post.document_type,
                     chunk_index=index,
                     topic_key=post.topic_key or "general",
                     topic_label=post.topic_label or "전체 공지",
                     is_latest_topic=post.is_latest_topic,
                     intent_key=post.intent_key,
+                    category_key=post.category_key or "other",
+                    category_label=post.category_label or "기타",
+                    notice_kind=post.notice_kind,
                 )
             )
         if end >= len(text):
