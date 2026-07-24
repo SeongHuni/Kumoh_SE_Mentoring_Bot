@@ -14,7 +14,7 @@ git log --oneline -12
 Get-Content docs/PROJECT_STATUS.md -Encoding utf8
 ```
 
-현재 구현은 질문 의도 확인, query rewrite/HyDE, BM25+dense hybrid RRF, reranker, CRAG식 관련성 판정, intent별 날짜 최신성, 구체 요청 근거 판정, context compression, 출처·추천 질문·최근 공지 UI까지 연결되어 있다. 게시글은 멘토링 category와 `notice_kind`, 공지·정적 안내·역사 참고를 구분하는 `document_type`도 보존하며, `general.recent`는 category를 가로질러 최신 공식 공지만 찾는다. 다만 현 수집 정책은 전공소개·교육목표·교육과정·졸업 후 진로·비식별 교수소개·동아리명/소개 6개 정적 페이지로 한정되어 있고 canonical snapshot은 0건, schema v5 Chroma 인덱스도 0청크·manifest 없음 상태다. 검토를 마친 allowlist source를 넣어 재인덱싱하기 전에는 채팅을 제공하지 않는다.
+현재 구현은 질문 의도 확인, query rewrite/HyDE, BM25+dense hybrid RRF, reranker, CRAG식 관련성 판정, intent별 날짜 최신성, 구체 요청 근거 판정, context compression, 출처·추천 질문·최근 공지 UI까지 연결되어 있다. 게시글은 멘토링 category와 `notice_kind`, 공지·정적 안내·역사 참고를 구분하는 `document_type`도 보존하며, `general.recent`는 category를 가로질러 최신 공식 공지만 찾는다. 현 수집 정책은 전공소개·교육목표·교육과정·졸업 후 진로·비식별 교수소개·동아리명/소개 6개 정적 페이지로 한정되어 있고, 검토를 마친 6건이 canonical snapshot과 local provider의 schema v5 Chroma 12청크 인덱스에 반영되어 있다.
 
 ## 이번 작업에서 완료한 핵심
 
@@ -27,7 +27,7 @@ Get-Content docs/PROJECT_STATUS.md -Encoding utf8
 - 답변 context는 관련 문장만 압축하고 metadata·canonical URL을 보존한다.
 - frontend는 의도 선택, 중복 없는 재요청, 답변 시작 위치 자동 스크롤, 가독성 있는 줄바꿈, 출처·다음 질문·최근 공지를 제공한다.
 - index schema를 v5로 올려 `document_type=historical`을 포함한 intent·category·notice metadata 계약이 다른 과거 인덱스를 거절한다. 정적 안내와 역사 참고 문서는 최신 공지 선택과 최근 공지 목록에 참여하지 않는다.
-- 학과 사이트는 전공소개(`sub0101`)·교육목표(`sub0102`)·교육과정(`sub0105_2`)·졸업 후 진로(`sub0104`)·비식별 교수소개(`sub0401`)·동아리명/동아리 소개(`sub0504`)만 수집한다. 전공소개는 해당 섹션만 남기고 상세 교육목표·교육과정과 의미 중복을 제거하며, 졸업 후 진로는 `historical` 참고 문서로 저장한다. 주요성과(`sub0103`)는 수상·성과 제외 정책으로 거절한다. `KumohBoardCrawler`와 CLI의 게시판 옵션은 allowlist 밖이므로 거절하며, 기존 canonical·후보·인덱스·생성 보고서의 범위 밖 데이터도 삭제했다. `--kumoh-static`은 이 6페이지를 수집한다. 교수 이름·전화·이메일과 동아리 회장·부회장·연락처는 저장하지 않는다. 현재 후보는 총 6건이며 아직 canonical 원본으로 승격하지 않았다.
+- 학과 사이트는 전공소개(`sub0101`)·교육목표(`sub0102`)·교육과정(`sub0105_2`)·졸업 후 진로(`sub0104`)·비식별 교수소개(`sub0401`)·동아리명/동아리 소개(`sub0504`)만 수집한다. 전공소개는 해당 섹션만 남기고 상세 교육목표·교육과정과 의미 중복을 제거하며, 졸업 후 진로는 `historical` 참고 문서로 저장한다. 주요성과(`sub0103`)는 수상·성과 제외 정책으로 거절한다. `KumohBoardCrawler`와 CLI의 게시판 옵션은 allowlist 밖이므로 거절하며, 기존 canonical·후보·인덱스·생성 보고서의 범위 밖 데이터도 삭제했다. `--kumoh-static`은 이 6페이지를 수집한다. 교수 이름·전화·이메일과 동아리 회장·부회장·연락처는 저장하지 않는다. 현재 6건을 canonical 원본으로 승격하고 local index에 12청크를 생성했다.
 
 주요 구현 커밋은 `2a46123`(RAG orchestration), `a660368`(intent evaluation), `6701f61`(intent UI), `075f797`(stale broad-intent 거절), `94a540e`(답변 표시 UX)다. 문서 이후의 통합 상태는 커밋 해시를 추측하지 말고 위 `git` 명령으로 확인한다.
 
@@ -35,10 +35,10 @@ Get-Content docs/PROJECT_STATUS.md -Encoding utf8
 
 ```powershell
 $env:AI_PROVIDER="local"
-# 승인된 원본을 data/raw/posts.json에 넣은 뒤에만 실행
+# 현재 승인된 6건 canonical 원본 기준
 backend/.venv/Scripts/python.exe -m backend.scripts.index --reset
 backend/.venv/Scripts/python.exe -m backend.scripts.evaluate --provider configured --minimum-cases 31
-backend/.venv/Scripts/python.exe -m backend.scripts.audit_data
+backend/.venv/Scripts/python.exe -m backend.scripts.audit_data --required-source kumoh
 
 backend/.venv/Scripts/python.exe -m pytest -c backend/pyproject.toml backend/tests --cov=backend.app --cov=backend.scripts --cov-config=backend/pyproject.toml --cov-report=term-missing
 backend/.venv/Scripts/python.exe -m ruff check backend
@@ -52,16 +52,16 @@ npm --prefix frontend run build
 
 - backend: 459 passed, coverage 93.82%, Ruff 통과 (의미 중복 제거·historical 문서·`llm_category` 정책 포함)
 - frontend: 6 files / 91 tests, typecheck·lint·build 통과
-- evaluation (삭제 전 historical snapshot): 31/31, schema v4 84 chunks, exit 0; 현재 원본이 비어 있어 현 정책 기준 재평가 대기
-- data audit: canonical 빈 원본 오류가 정상; 6건 allowlist 후보는 10 warnings, exit 1
+- evaluation (삭제 전 historical snapshot): 31/31, schema v4 84 chunks, exit 0; 현재 6건·12청크 기준 재평가 대기
+- data audit: canonical 6건, `--required-source kumoh` 기준 `empty_topic` 10 warnings, exit 1
 - production dependency audit: 0 vulnerabilities
 
 Next build는 `frontend/next-env.d.ts`를 자동 변경할 수 있다. 생성 변경이 제품 변경이 아니라면 기존 저장소 형식으로 되돌리고 `git diff --check`를 확인한다.
 
 ## 다음 권장 작업
 
-1. 6건 allowlist Kumoh 후보를 source·URL·비식별 본문 범위 기준으로 검토·승격한다. 정책이 바뀌기 전에는 SE·학과 게시판·기타 학과 페이지를 추가하지 않는다.
-2. 승인된 원본이 생기면 전체 인덱싱·평가·감사를 실행해 새 baseline과 회귀 질문을 만든다. 빈 canonical 원본으로는 인덱싱하지 않는다.
+1. 현재 6건 canonical·12청크 local index의 topic/category 매핑을 검토한다. 정책이 바뀌기 전에는 SE·학과 게시판·기타 학과 페이지를 추가하지 않는다.
+2. 현재 원본·인덱스 기준 평가 baseline과 회귀 질문을 만든다. 감사의 10개 `empty_topic` 경고는 정적 allowlist 범위 한계로 기록한다.
 3. Docker가 있는 호스트에서 Compose build/start/health transition을 검증한다. 현재 호스트에는 Docker executable이 없다.
 4. OpenAI provider를 사용할 경우 local 인덱스를 재사용하지 않는다. provider-matched reindex와 별도 threshold calibration이 선행 조건이다.
 5. 390px 모바일과 다른 브라우저의 visual regression을 자동화한다.

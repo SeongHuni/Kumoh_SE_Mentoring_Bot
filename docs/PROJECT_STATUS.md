@@ -20,7 +20,7 @@
 - 학과 사이트 수집 범위는 전공소개(`sub0101`)·교육목표(`sub0102`)·교육과정(`sub0105_2`)·졸업 후 진로(`sub0104`)·비식별 교수소개(`sub0401`)·동아리명/동아리 소개(`sub0504`)의 정적 6페이지뿐이다. 전공소개는 해당 섹션만 보존하고 상세 교육목표·교육과정과 의미 중복을 제거한다. 졸업 후 진로는 `historical` 참고 문서로 저장해 최신성·최근 공지에 사용하지 않는다. 주요성과(`sub0103`)는 수상·성과 제외 정책에 따라, 학과 게시판 전체와 나머지 학과 페이지는 crawler가 거절한다.
 - 금오공과대학교 학사안내 사이트(`www.kumoh.ac.kr/ko/sub06_01_*`)도 수집·저장하지 않는다. 게시판·정적 안내 crawler 모두에서 URL 계열을 거절하며, 현재 원본·후보·로컬 인덱스에서 관련 데이터는 0건이다.
 - 교수소개에서는 이름·전화·이메일을 제거하고 소속·전공 분야만 남긴다. 동아리 페이지에서는 회장·부회장·연락처 대신 동아리명과 동아리 소개만 남긴다.
-- 정책 적용 직후 canonical 원본은 의도적으로 비어 있고 Chroma 인덱스도 비웠다. 검토를 마친 6개 allowlist 후보를 원본으로 승격·재인덱싱하기 전에는 채팅을 제공하지 않는다.
+- 검토를 마친 6개 allowlist 후보를 canonical 원본으로 승격했고, local provider로 schema v5 Chroma 인덱스 12청크를 재생성했다. SE source는 여전히 비활성 상태다.
 
 핵심 결정 3개:
 
@@ -34,12 +34,12 @@
 | --- | --- | --- | --- |
 | 의도 확인 API | 완료 | `clarification` / `answer` / `no_answer`, confirmed intent 검증 | 실제 사용자 질문 로그 기반 intent catalog 확장 |
 | 정확도 우선 RAG | 완료 | BM25+dense RRF, deterministic reranker, CRAG, 최신성, compression | OpenAI provider 별도 평가·calibration |
-| 로컬 인덱스 | 대기 | schema v5, canonical 0 posts, Chroma 0 chunks, manifest 없음 | 승인된 원본을 넣은 뒤 전체 재생성 |
-| 평가 | 대기 | 기존 31/31은 공지사항 삭제 전의 역사 결과이며 현재 원본에는 적용하지 않음 | 원본·인덱스 생성 뒤 재평가 |
+| 로컬 인덱스 | 완료 | schema v5, canonical 6 posts, Chroma 12 chunks, local manifest 생성 | 현재 6건 기준 평가 baseline 생성 |
+| 평가 | 대기 | 기존 31/31은 공지사항 삭제 전의 역사 결과이며 현재 6건 원본에는 적용하지 않음 | 현재 원본·인덱스 기준 재평가 |
 | 백엔드 품질 gate | 통과 | 459 tests, 93.82% coverage, Ruff 통과 (`llm_category` 입력 계약 포함) | 운영 부하·장애 주입 테스트 |
 | 프론트엔드 품질 gate | 통과 | 6 files / 91 tests, typecheck, ESLint, Next production build | 390px 모바일 visual regression 자동화 |
 | 브라우저 통합 검증 | 통과 | 의도 카드 → 선택 → 최신 근거 답변, 자동 스크롤, 출처·추천·최근 공지, console error 0 | 자동화된 cross-browser E2E |
-| 데이터 감사 | 대기/경고 있음 | canonical 빈 원본은 감사 불가가 정상; allowlist 후보 6건, 10 warnings | 후보 검토·승격 |
+| 데이터 감사 | 경고 있음 | canonical 6건 감사 결과 `empty_topic` 10건; 정적 6페이지 allowlist의 의도된 범위 경고 | 정적 자료의 topic/category 매핑 검토 |
 | 의존성 | 통과 | `npm audit --omit=dev`: 0 vulnerabilities | 정기 재검증 |
 | Docker runtime | 미검증 | 현재 호스트에 Docker executable 없음 | Docker host에서 config/build/health 검증 |
 | 원격 CI·배포 | 미확인 | 로컬 검증만 수행 | push 후 GitHub Actions와 branch protection 확인 |
@@ -49,21 +49,21 @@
 | 항목 | 값 |
 | --- | --- |
 | canonical 원본 | `data/raw/posts.json` |
-| 게시글 | 0 (`data/raw/posts.json`은 빈 배열) |
-| 인덱스 | schema v5, 0 chunks, index manifest 없음 |
-| 인덱스 생성 시각 | 해당 없음 — 수집 범위 축소와 함께 초기화 |
+| 게시글 | 6 (`data/raw/posts.json`) |
+| 인덱스 | schema v5, 12 chunks, local provider manifest 생성 |
+| 인덱스 생성 시각 | 2026-07-24T07:25:24.674270Z |
 | 평가 | 대기 — 기존 31/31은 삭제 전 역사 결과 |
-| 데이터 감사 | canonical은 빈 원본 오류가 정상; 후보 감사는 10 warnings, exit 1 |
+| 데이터 감사 | canonical 6건, `--required-source kumoh` 기준 `empty_topic` 10 warnings, exit 1 |
 
-검토 후보 `data/raw/candidates/kumoh-community-2024.json`은 6건이다. 전공소개(`sub0101`)는 전공소개 섹션만 212자로 정제했고, 교육목표(`sub0102`), 교육과정(`sub0105_2`), 비식별 교수소개(`sub0401`), 동아리명·동아리 소개(`sub0504`)는 허용 본문만 보존했다. 졸업 후 진로(`sub0104`)는 `document_type=historical`로 표시한다. 모든 학과 게시판, 주요성과(`sub0103`)·대학원·학생회 등 나머지 학과 페이지, 금오공과대학교 학사안내 URL 계열은 0건이다. 교수의 이름·전화·이메일과 동아리 회장·부회장·연락처는 저장하지 않는다. 운영 원본으로 승격하지 않았다.
+검토 후보 `data/raw/candidates/kumoh-community-2024.json` 6건을 `data/raw/posts.json`으로 승격했다. 전공소개(`sub0101`)는 전공소개 섹션만 212자로 정제했고, 교육목표(`sub0102`), 교육과정(`sub0105_2`), 비식별 교수소개(`sub0401`), 동아리명·동아리 소개(`sub0504`)는 허용 본문만 보존했다. 졸업 후 진로(`sub0104`)는 `document_type=historical`로 표시한다. 모든 학과 게시판, 주요성과(`sub0103`)·대학원·학생회 등 나머지 학과 페이지, 금오공과대학교 학사안내 URL 계열은 0건이다. 교수의 이름·전화·이메일과 동아리 회장·부회장·연락처는 저장하지 않는다. 인덱스에는 분류·intent metadata를 파생해 반영했다.
 
-후보 감사는 10건의 `empty_topic` 경고를 냈다. allowlist가 멘토링용 정적 6페이지로 제한되어 공지·신청·모집 중심 topic에 직접 근거가 없는 것이 원인이다. 이는 허용 범위의 의도된 한계이며, canonical 원본의 감사 결과가 아니다.
+현재 canonical 감사는 10건의 `empty_topic` 경고를 냈다. `--required-source kumoh`로 SE 비활성 정책을 반영했으며, allowlist가 멘토링용 정적 6페이지로 제한되어 공지·신청·모집 중심 topic에 직접 근거가 없는 것이 원인이다. 이는 허용 범위의 의도된 한계다.
 
 이 snapshot은 저장된 원본의 상태일 뿐 공식 사이트의 실시간 최신성을 보증하지 않는다. 중요한 일정은 응답의 canonical URL과 게시일을 원문에서 다시 확인한다.
 
 ## 기존 회귀 시나리오 (삭제 전 역사 기록)
 
-아래 결과는 삭제 전 canonical 50건·84 청크 인덱스에서의 회귀 기록이다. 현재 원본과 인덱스는 비어 있으므로 재현 가능한 현재 결과로 해석하지 않는다.
+아래 결과는 삭제 전 canonical 50건·84 청크 인덱스에서의 회귀 기록이다. 현재 6건·12청크 원본과 인덱스에서 재현 가능한 현재 결과로 해석하지 않는다.
 
 | 질문 | 확인 intent | 기대 결과 |
 | --- | --- | --- |
@@ -87,8 +87,8 @@
 
 ## 남은 우선순위
 
-1. 현재 6건 allowlist 후보를 source·URL·비식별 본문 범위 기준으로 검토·승격한다. 정책이 바뀌기 전에는 SE·학과 게시판·기타 학과 페이지를 추가하지 않는다.
-2. 승인된 원본이 생기면 `index --reset` → 평가 → 감사 순으로 새 baseline을 만든다. 빈 canonical 원본으로는 인덱싱하지 않는다.
+1. 현재 6건 정적 원본의 topic/category 매핑을 검토하고, 범위 밖인 SE·학과 게시판·기타 학과 페이지는 추가하지 않는다.
+2. 현재 6건·12청크 local index 기준으로 평가 baseline을 만들고, 감사의 10개 `empty_topic` 경고를 범위 한계로 기록한다.
 3. OpenAI provider 검증: provider-matched reindex → 31건 이상 평가 → raw candidate 분포 수집 → threshold calibration을 수행한다.
 4. 운영 검증: Docker Compose runtime, 원격 CI, 390px 모바일·다른 브라우저 E2E를 증거와 함께 기록한다.
 5. 운영성: 개인정보 없는 검색 지연·intent·거절 사유 telemetry, rate limit, backup/restore, 증분 update/delete를 설계한다.

@@ -1,6 +1,6 @@
 # SE Mentor Bot
 
-학과 홈페이지 공지사항은 SE 게시판을 우선 source로 쓰는 정책에 따라 수집·저장하지 않는 정확도 우선 RAG 챗봇입니다. 현재 canonical 원본과 로컬 인덱스는 비어 있으며, 승인된 SE source 또는 검토 후보의 허용 문서를 승격·재인덱싱하기 전에는 채팅을 제공하지 않습니다. 첫 질문에서는 해석한 의도와 예시 선택지를 먼저 보여주고, 준비된 인덱스에서는 확인된 의도에 대한 근거만 답변에 사용합니다.
+학과 홈페이지 공지사항은 SE 게시판을 우선 source로 쓰는 정책에 따라 수집·저장하지 않는 정확도 우선 RAG 챗봇입니다. 현재 canonical 원본에는 정책 검토를 마친 학과 정적 페이지 6건이 있고, 로컬 인덱스에는 12개 청크가 반영되어 있습니다. SE source는 여전히 비활성 상태이며, 첫 질문에서는 해석한 의도와 예시 선택지를 먼저 보여주고 확인된 의도에 대한 근거만 답변에 사용합니다.
 
 현재 수치·준비도·우선순위 TODO·검증 기준은 [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md)를 기준으로 합니다. 다음 작업자는 [`docs/HANDOFF.md`](docs/HANDOFF.md)에서 시작하세요. RAG 단계별 흐름과 변경 시 재인덱싱 기준은 [`docs/RAG_ARCHITECTURE.md`](docs/RAG_ARCHITECTURE.md), 운영 명령과 평가 기준은 [`docs/rag/operations-evaluation.md`](docs/rag/operations-evaluation.md)를 참고하세요.
 
