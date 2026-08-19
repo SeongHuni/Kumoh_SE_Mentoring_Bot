@@ -1,86 +1,35 @@
 from __future__ import annotations
 
-from dataclasses import asdict
 from functools import lru_cache
 
-from chromadb.errors import ChromaError
 from fastapi import FastAPI, HTTPException
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
-from openai import APIError
+from openai import APIConnectionError, APIError, AuthenticationError
 
+from backend.app.chroma_store import ChromaDataStore, ChromaStoreError
 from backend.app.config import get_settings
-from backend.app.domain import BoardPost
-from backend.app.index_manifest import IndexCompatibility, assess_index_compatibility
-from backend.app.intent_analysis import analyze_intents, validate_confirmation
-from backend.app.provider_factory import create_provider, effective_models, selected_provider_name
 from backend.app.rag import RAGService
-from backend.app.schemas import (
-    ChatRequest,
-    ChatResponse,
-    ClarificationOption,
-    HealthResponse,
-    LiveResponse,
-)
-from backend.app.storage import load_posts
-from backend.app.topic_classifier import enrich_posts
-from backend.app.topic_rules import TopicCatalog, load_topic_catalog
-from backend.app.vector_store import ChromaVectorStore
+from backend.app.schemas import ChatRequest, ChatResponse, HealthResponse, LiveResponse
 
 settings = get_settings()
-app = FastAPI(
-    title="SE Mentor Bot API",
-    version="0.1.0",
-    description="공개 학과 게시글을 근거로 답변하는 RAG 챗봇 API",
-)
+app = FastAPI(title="SE Mentor Bot API")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=list(settings.cors_origins),
+    allow_origins=["http://localhost:3000"],
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
-def get_vector_store() -> ChromaVectorStore:
-    return ChromaVectorStore(settings.chroma_path, settings.chroma_collection)
+@lru_cache(maxsize=1)
+def get_store() -> ChromaDataStore:
+    return ChromaDataStore(get_settings())
 
 
-@lru_cache(maxsize=4)
-def get_topic_catalog(index_fingerprint: str) -> TopicCatalog:
-    return load_topic_catalog(settings.topic_rules_path)
-
-
-@lru_cache(maxsize=4)
-def get_enriched_posts(index_fingerprint: str) -> list[BoardPost]:
-    try:
-        return enrich_posts(
-            load_posts(settings.raw_posts_path),
-            get_topic_catalog(index_fingerprint),
-        )
-    except FileNotFoundError:
-        return []
-
-
-@lru_cache(maxsize=4)
-def get_rag_service(index_fingerprint: str, index_generation: str) -> RAGService:
-    provider = create_provider(settings)
-    return RAGService(
-        provider=provider,
-        vector_store=get_vector_store(),
-        top_k=settings.rag_top_k,
-        min_score=settings.rag_min_score,
-        topic_catalog=get_topic_catalog(index_fingerprint),
-        posts=get_enriched_posts(index_fingerprint),
-    )
-
-
-def get_index_compatibility() -> IndexCompatibility:
-    try:
-        store = get_vector_store()
-    except (OSError, ValueError, ChromaError):
-        return IndexCompatibility(False, "index_unavailable", 0)
-    return assess_index_compatibility(settings=settings, store=store)
+def get_rag_service() -> RAGService:
+    return RAGService(get_settings(), get_store())
 
 
 @app.get("/", include_in_schema=False)
@@ -95,102 +44,72 @@ def live() -> LiveResponse:
 
 @app.get("/api/health", response_model=HealthResponse)
 def health() -> HealthResponse:
-    compatibility = get_index_compatibility()
-    provider_name = selected_provider_name(settings)
-    chat_model, embedding_model = effective_models(settings)
-    configured = provider_name == "local" or bool(settings.openai_api_key)
-    if not configured:
+    current = get_settings()
+    try:
+        index = get_store().inspect()
+    except ChromaStoreError:
+        return HealthResponse(
+            status="unavailable",
+            collection=current.chroma_collection,
+            indexed_chunks=0,
+            embedding_model=current.embedding_model,
+            answer_model=current.answer_model,
+            chunk_size_tokens=current.chunk_size_tokens,
+            chunk_overlap_tokens=current.chunk_overlap_tokens,
+            embedding_api_configured=bool(current.embedding_api_key),
+            answer_api_configured=bool(current.answer_api_key),
+            index_compatible=False,
+            index_reason="collection_unavailable",
+        )
+
+    if not current.api_keys_configured:
         status = "needs_configuration"
-    elif compatibility.reason == "index_unavailable":
-        status = "unavailable"
-    elif compatibility.reason == "empty_index":
+    elif index.count == 0:
         status = "needs_index"
-    elif not compatibility.compatible:
+    elif not index.compatible:
         status = "needs_reindex"
     else:
         status = "ready"
     return HealthResponse(
         status=status,
-        provider=provider_name,
-        openai_configured=bool(settings.openai_api_key),
-        indexed_chunks=compatibility.indexed_chunks,
-        chat_model=chat_model,
-        embedding_model=embedding_model,
-        index_compatible=compatibility.compatible,
-        index_reason=compatibility.reason,
+        collection=current.chroma_collection,
+        indexed_chunks=index.count,
+        embedding_model=current.embedding_model,
+        answer_model=current.answer_model,
+        chunk_size_tokens=current.chunk_size_tokens,
+        chunk_overlap_tokens=current.chunk_overlap_tokens,
+        embedding_api_configured=bool(current.embedding_api_key),
+        answer_api_configured=bool(current.answer_api_key),
+        index_compatible=index.compatible,
+        index_reason=index.reason,
     )
 
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(payload: ChatRequest) -> ChatResponse:
-    try:
-        catalog = load_topic_catalog(settings.topic_rules_path)
-    except (OSError, UnicodeError, ValueError) as exc:
+    current = get_settings()
+    if not current.api_keys_configured:
         raise HTTPException(
             status_code=503,
-            detail="주제 규칙 파일을 확인하세요. 읽거나 검증할 수 없습니다.",
-        ) from exc
-
-    analysis = analyze_intents(payload.question, catalog)
-    confirmed = (
-        validate_confirmation(analysis, payload.confirmed_intent_key)
-        if payload.confirmed_intent_key is not None
-        else None
-    )
-    if confirmed is None:
-        return ChatResponse(
-            response_type="clarification",
-            answer="질문 의도를 이렇게 이해했습니다. 무엇을 찾을지 선택해 주세요.",
-            sources=[],
-            grounded=False,
-            interpreted_intent=ClarificationOption(**asdict(analysis.primary)),
-            clarification_options=[
-                ClarificationOption(**asdict(option)) for option in analysis.options
-            ],
-            recent_notices=[],
-        )
-
-    if selected_provider_name(settings) == "openai" and not settings.openai_api_key:
-        raise HTTPException(
-            status_code=503,
-            detail="AI_PROVIDER=openai 설정에는 OPENAI_API_KEY가 필요합니다.",
-        )
-
-    compatibility = get_index_compatibility()
-    if compatibility.reason == "index_unavailable":
-        raise HTTPException(
-            status_code=503,
-            detail="인덱스 저장소 상태를 확인할 수 없습니다. 잠시 후 /api/health를 확인하세요.",
-        )
-    if compatibility.reason == "empty_index":
-        raise HTTPException(
-            status_code=409,
-            detail=(
-                "벡터 인덱스가 비어 있습니다. 인덱싱을 먼저 실행하세요: "
-                "python -m backend.scripts.index --reset"
-            ),
-        )
-    if (
-        not compatibility.compatible
-        or compatibility.fingerprint is None
-        or compatibility.generation is None
-    ):
-        raise HTTPException(
-            status_code=409,
-            detail=(
-                "현재 설정 또는 데이터와 인덱스가 일치하지 않습니다. "
-                "python -m backend.scripts.index --reset을 실행하세요."
-            ),
+            detail="EMBEDDING_API_KEY와 ANSWER_API_KEY를 환경 변수에 설정해 주세요.",
         )
     try:
-        service = get_rag_service(
-            compatibility.fingerprint,
-            compatibility.generation,
+        index = get_store().inspect()
+    except ChromaStoreError as exc:
+        raise HTTPException(status_code=503, detail="Chroma 데이터를 열 수 없습니다.") from exc
+    if index.count == 0:
+        raise HTTPException(status_code=409, detail="Chroma 컬렉션이 비어 있습니다.")
+    if not index.compatible:
+        raise HTTPException(
+            status_code=409,
+            detail="Chroma 컬렉션 설정이 현재 임베딩·청킹 설정과 일치하지 않습니다.",
         )
-        return await run_in_threadpool(
-            service.ask,
-            payload.question,
-            confirmed_intent_key=confirmed.intent_key,
-        )
-    except APIError as exc:
-        raise HTTPException(status_code=502, detail="OpenAI API 요청에 실패했습니다.") from exc
+    try:
+        service = get_rag_service()
+        return await run_in_threadpool(service.ask, payload.question)
+    except AuthenticationError as exc:
+        raise HTTPException(status_code=502, detail="AI API 키 인증에 실패했습니다.") from exc
+    except (APIConnectionError, APIError) as exc:
+        raise HTTPException(status_code=502, detail="AI API 요청에 실패했습니다.") from exc
+    except ChromaStoreError as exc:
+        raise HTTPException(status_code=503, detail="Chroma 검색에 실패했습니다.") from exc

@@ -9,8 +9,7 @@ services:
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     volumes:
-      - ./data:/app/data
-      - ./chroma_db:/app/chroma_db
+      - ./chroma-data:/app/chroma-data:ro
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/live', timeout=3)"]
       interval: 10s

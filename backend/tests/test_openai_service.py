@@ -1,51 +1,45 @@
 from types import SimpleNamespace
-from unittest.mock import Mock
 
-import pytest
-from backend.app.openai_service import OpenAIProvider
+from backend.app.chroma_store import RetrievedDocument
+from backend.app.openai_service import OpenAIRagClient, format_as_bullets
+from backend.app.schemas import Source
 
 
-def test_openai_embeddings_send_configured_dimensions_and_preserve_order() -> None:
-    create = Mock(
-        return_value=SimpleNamespace(
-            data=[
-                SimpleNamespace(index=1, embedding=[0.0, 1.0]),
-                SimpleNamespace(index=0, embedding=[1.0, 0.0]),
-            ]
-        )
-    )
-    client = SimpleNamespace(embeddings=SimpleNamespace(create=create))
-    provider = OpenAIProvider(
-        api_key="test-key",
-        embedding_model="test-embedding",
-        chat_model="test-chat",
-        dimensions=2,
-        client=client,
-    )
+class FakeResponses:
+    def __init__(self) -> None:
+        self.request: dict[str, object] | None = None
 
-    result = provider.embed(["첫 번째", "두 번째"])
+    def create(self, **kwargs: object) -> SimpleNamespace:
+        self.request = kwargs
+        return SimpleNamespace(output_text="첫 번째 안내\n둘째 안내")
 
-    assert result == [[1.0, 0.0], [0.0, 1.0]]
-    create.assert_called_once_with(
-        model="test-embedding",
-        input=["첫 번째", "두 번째"],
-        encoding_format="float",
-        dimensions=2,
+
+def document() -> RetrievedDocument:
+    return RetrievedDocument(
+        text="notice content",
+        source=Source(
+            title="Notice",
+            url="https://example.com/notice",
+            source="notice",
+            published_at=None,
+            score=0.9,
+        ),
+        category="academic",
     )
 
 
-@pytest.mark.parametrize("texts", [[], ["   "]])
-def test_openai_embeddings_reject_empty_inputs(texts) -> None:
-    client = SimpleNamespace(embeddings=SimpleNamespace(create=Mock()))
-    provider = OpenAIProvider(
-        api_key="test-key",
-        embedding_model="test-embedding",
-        chat_model="test-chat",
-        dimensions=256,
-        client=client,
-    )
+def test_answer_requests_bullets_and_normalizes_plain_lines() -> None:
+    responses = FakeResponses()
+    service = object.__new__(OpenAIRagClient)
+    service.answer_client = SimpleNamespace(responses=responses)
+    service.settings = SimpleNamespace(answer_model="test-model")
 
-    with pytest.raises(ValueError, match="비어"):
-        provider.embed(texts)
+    answer = service.answer("question", [document()])
 
-    client.embeddings.create.assert_not_called()
+    assert answer == "- 첫 번째 안내\n- 둘째 안내"
+    assert responses.request is not None
+    assert "개조식" in str(responses.request["instructions"])
+
+
+def test_format_as_bullets_preserves_existing_bullets() -> None:
+    assert format_as_bullets("- 첫 번째\n- 둘째") == "- 첫 번째\n- 둘째"

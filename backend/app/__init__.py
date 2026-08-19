@@ -1,1 +1,1 @@
-"""Application modules for the SE Mentor Bot."""
+"""Application modules for the Chroma-backed RAG API."""
