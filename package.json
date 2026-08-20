@@ -1,0 +1,29 @@
+{
+  "name": "kumoh-se-mentoring-bot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "금오공대 소프트웨어전공 RAG 챗봇 — 청킹 실험부터 웹 서비스까지",
+  "scripts": {
+    "chroma": "docker compose up -d",
+    "load": "node scripts/load-chroma.js",
+    "ask": "node scripts/ask.js",
+    "chroma:stop": "docker compose down",
+    "chroma:logs": "docker compose logs -f chroma",
+    "eval": "node scripts/eval-chroma.js",
+    "chat": "node scripts/chat.js",
+    "demo": "node scripts/chat.js \"수강지도 상담은 언제야?\" \"그럼 승인 안 되면?\"",
+    "chroma:py": "chroma run --path ./chroma-data --port 8000",
+    "chat:k8": "node scripts/chat.js --k 8",
+    "chat:noboost": "node scripts/chat-noboost.js",
+    "api": "node server/index.js",
+    "web": "npm --prefix frontend run dev",
+    "web:build": "npm --prefix frontend run build",
+    "web:test": "npm --prefix frontend run test"
+  },
+  "dependencies": {
+    "chromadb": "^3.5.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

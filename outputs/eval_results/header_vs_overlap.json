@@ -1,0 +1,55 @@
+{
+  "dataset": "human_made_data",
+  "question_count": 300,
+  "results": [
+    {
+      "experiment": "D_500",
+      "header": true,
+      "overlap": 0,
+      "chunk_count": 1474,
+      "recall_at_1": 0.37333333333333335,
+      "recall_at_3": 0.5933333333333334,
+      "recall_at_5": 0.74,
+      "mrr_at_5": 0.5032777777777777,
+      "context_precision_at_5": 0.19266666666666712,
+      "question_count": 300
+    },
+    {
+      "experiment": "K_500_ov50",
+      "header": true,
+      "overlap": 50,
+      "chunk_count": 1503,
+      "recall_at_1": 0.37666666666666665,
+      "recall_at_3": 0.6,
+      "recall_at_5": 0.7333333333333333,
+      "mrr_at_5": 0.5058333333333332,
+      "context_precision_at_5": 0.19200000000000042,
+      "question_count": 300
+    },
+    {
+      "experiment": "N_500_nohdr",
+      "header": false,
+      "overlap": 0,
+      "chunk_count": 1474,
+      "recall_at_1": 0.38,
+      "recall_at_3": 0.62,
+      "recall_at_5": 0.73,
+      "mrr_at_5": 0.5095555555555558,
+      "context_precision_at_5": 0.1673333333333336,
+      "question_count": 300
+    },
+    {
+      "experiment": "O_500_nohdr_ov50",
+      "header": false,
+      "overlap": 50,
+      "chunk_count": 1503,
+      "recall_at_1": 0.37666666666666665,
+      "recall_at_3": 0.6133333333333333,
+      "recall_at_5": 0.76,
+      "mrr_at_5": 0.5124444444444446,
+      "context_precision_at_5": 0.1740000000000004,
+      "question_count": 300
+    }
+  ],
+  "evaluated_at": "2026-08-08T06:42:23.790Z"
+}

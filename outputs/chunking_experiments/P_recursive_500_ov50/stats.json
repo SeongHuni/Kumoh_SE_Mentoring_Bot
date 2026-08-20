@@ -1,0 +1,26 @@
+{
+  "experiment": "P_recursive_500_ov50",
+  "experiment_label": "P",
+  "meaning": "Recursive 500 tokens, overlap 50",
+  "baseline_experiment": "H_recursive_500",
+  "splitting_method": "recursive_character_overlap",
+  "source_file": "document통합파일(에타리뷰분리).json",
+  "document_count": 850,
+  "chunk_count": 1482,
+  "chunk_size_tokens": 500,
+  "chunk_overlap_tokens": 50,
+  "token_count_method": "estimated_local_no_tiktoken",
+  "estimated_tokens": {
+    "total": 554415,
+    "min": 65,
+    "median": 396,
+    "p90": 544,
+    "max": 618
+  },
+  "chunks_per_document": {
+    "min": 1,
+    "median": 1,
+    "max": 13
+  },
+  "created_at": "2026-08-10T13:02:02.868Z"
+}

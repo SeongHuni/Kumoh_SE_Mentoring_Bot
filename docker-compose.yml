@@ -1,0 +1,13 @@
+services:
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: chroma
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    # 이미지 기본 config.yaml의 persist_path가 /data 이므로 여기에 붙인다.
+    volumes:
+      - ./chroma-data:/data
+    # healthcheck는 두지 않는다. Rust 기반 공식 이미지에는 curl/wget이 없어
+    # 컨테이너 안에서 HTTP를 찔러볼 방법이 없다. 대신 scripts/load-chroma.js가
+    # 호스트에서 heartbeat를 재시도하며 기다린다.

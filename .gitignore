@@ -1,0 +1,33 @@
+# 비밀
+.secrets/
+embedding-api-key.txt
+.env
+.env.local
+frontend/.env.local
+
+# 의존성
+node_modules/
+frontend/node_modules/
+
+# 빌드 산출물
+frontend/.next/
+frontend/out/
+dist/
+
+# 런타임 데이터 (재생성 가능)
+chroma-data/
+chroma-data-python-backup/
+outputs/.embedding_cache/
+
+# 대용량 중간 산출물 (outputs/chunking_experiments/<exp>/chunks.jsonl 은 추적)
+outputs/chunking_experiments/**/embeddings.jsonl
+outputs/chunking_experiments/**/embedding_progress.json
+outputs/chunking_experiments/**/sentence_embeddings.jsonl
+
+# 로그
+*.log
+*.log.err
+
+# 파이썬
+__pycache__/
+*.pyc

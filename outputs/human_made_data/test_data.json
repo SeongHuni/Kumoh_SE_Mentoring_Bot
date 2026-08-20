@@ -1,0 +1,1808 @@
+{
+  "schema_version": "1.0",
+  "dataset_name": "rag_general_retrieval_test_300",
+  "description": "Questions only. Join with answer_data.json by id.",
+  "question_count": 300,
+  "items": [
+    {
+      "id": "web200_kumoh-notice-38424",
+      "question": "금오톡톡 알림 서비스가 중단되는 이유와 중단 일시는 언제인가요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-41057",
+      "question": "kit Engineering Fair 2024에 참가하기 위해 판넬 검수 자료는 언제까지 제출해야 하나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-36812",
+      "question": "지도교수 상담을 Pass 받기 위해 필요한 조건은 무엇인가요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-43682",
+      "question": "연구활동종사자 정기안전교육은 언제까지 이수해야 하나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-39911",
+      "question": "경북 과학문화 토크콘서트에 참석하려면 사전 등록이 필요한가요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-48156",
+      "question": "튜터링 프로그램에 참여하기 위해 어떤 서류를 제출해야 하나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-39639",
+      "question": "안전교육 이수 기간이 연기된 이유는 무엇인가요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-46626",
+      "question": "튜터링 프로그램의 장학금 지급 기준은 어떻게 되나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-44246",
+      "question": "DB134의 기자재 점검은 언제 이루어지며, 사용 금지 시간은 어떻게 되나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-46795",
+      "question": "학생 차량 5부제에서 제외받기 위해 필요한 서류는 무엇인가요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-41307",
+      "question": "TA 멘토로 선정된 후 결과 서류를 언제까지 제출해야 하나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-41377",
+      "question": "KIT 인재 인증제도에 대해 자세히 알고 싶어요. 어떤 점이 바뀌나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-38733",
+      "question": "내 지도교수가 변경되었는데, 어떻게 확인하나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-47771",
+      "question": "디지털관에서 외부인을 발견했을 때 어떻게 해야 하나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-36632",
+      "question": "과잠을 수령할 때 주의할 점은 무엇인가요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-40074",
+      "question": "학술전자정보박람회에 참여하려면 어떻게 해야 하나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34433",
+      "question": "지도교수님이 퇴임하신 후 상담은 어떻게 진행하나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-44248",
+      "question": "KIT 인재 인증자 선발 기준은 무엇인가요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-38608",
+      "question": "풀스택 개발자 양성과정 강의지원조교는 어떻게 지원하나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34937",
+      "question": "안전교육을 이수하지 않으면 어떤 불이익이 있나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45787",
+      "question": "캡스톤디자인1 수업에 참여하기 위해 팀을 어떻게 구성해야 하나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45727",
+      "question": "공동체 팀장으로 선발된 경우, 결과서류 제출 기한은 언제인가요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-41503",
+      "question": "캡스톤디자인2 수업의 주제 제안서는 언제까지 제출해야 하나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-41386",
+      "question": "2025 동경 Smart Tech Link Expo Series 프로그램에 어떻게 신청하나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-38426",
+      "question": "강의평가를 하지 않으면 성적 열람에 어떤 불이익이 있나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-44578",
+      "question": "수강지도 상담은 어떻게 신청해야 하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-38457",
+      "question": "자율도전학점제 신청 시 제출해야 할 서류는 무엇인가요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-49234",
+      "question": "방산특화딥러닝 과목은 기존 딥러닝 과목과 어떤 차이가 있나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-42179",
+      "question": "조기취업자 출석인정 신청은 어떻게 하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-42176",
+      "question": "전공 필수 교과목의 증원 신청은 어떻게 하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-48152",
+      "question": "취업진로교육 대체이수 신청은 어떻게 하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45797",
+      "question": "2025-2학기 출결사항은 어떻게 확인하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34436",
+      "question": "수강꾸러미 신청 시 유의해야 할 점은 무엇인가요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45790",
+      "question": "강의평가는 언제까지 참여해야 하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34786",
+      "question": "2024-1학기 공결신청은 어떻게 하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-44849",
+      "question": "오픈소스소프트웨어와 웹프로그래밍 수업이 합반될 경우 어떻게 해야 하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-37919",
+      "question": "사회봉사 교과목 봉사실적 제출은 언제까지 하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-44996",
+      "question": "수강신청 변경 및 정정 기간은 어떻게 되나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-39419",
+      "question": "지도교수님과의 상담은 어떻게 진행하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-39487",
+      "question": "후수교과목 수강신청 허락서는 어떻게 제출하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-41461",
+      "question": "강의평가를 완료하지 않으면 성적을 어떻게 조회할 수 있나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-44902",
+      "question": "공결 신청 시 어떤 증빙서류가 필요한가요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-39279",
+      "question": "수강신청 가능 여부를 어떻게 확인하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45919",
+      "question": "일반대학원 교과목 사전이수 신청은 어떻게 하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-44673",
+      "question": "네이버웍스에 가입하지 않은 경우 어떻게 해야 하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-44670",
+      "question": "수강꾸러미 변경 사항은 어디서 확인하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45003",
+      "question": "캡스톤디자인1 강의실은 어떻게 확인하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45890",
+      "question": "수강지도 상담 양식은 어디서 받을 수 있나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34393",
+      "question": "응용SW개발 분야 강사 양성과정은 언제 모집하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45892",
+      "question": "학점이월제에 대해 자세히 알고 싶어요.",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45910",
+      "question": "2025학년도 이후 입학한 학생이 교양 과목을 수강할 때 필수 이수 과목은 무엇인가요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-36453",
+      "question": "지도교수 상담 시 제출해야 하는 양식은 어떻게 작성하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45905",
+      "question": "김선명 교수님과의 수강 상담은 언제까지 신청해야 하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-46262",
+      "question": "임베디드 컴퓨팅 수업에 추가로 수강할 수 있는 인원은 몇 명인가요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-36898",
+      "question": "홈커밍데이 전시회에 참여하려면 어떤 준비를 해야 하나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-38763",
+      "question": "특강이 취소된 이유는 무엇인가요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-49258",
+      "question": "방산 AI 과정에 참여하려면 어떤 조건이 필요한가요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-40366",
+      "question": "엽기떡볶이 행사에 참여하려면 어떻게 해야 하나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-47718",
+      "question": "홈커밍데이 발표 신청은 언제까지 해야 하나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-46636",
+      "question": "SEcon 발표는 어떤 주제로 진행할 수 있나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-47789",
+      "question": "SEcon 발표에 참여하려면 어떤 주제를 준비해야 하나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-40368",
+      "question": "E-스포츠 대회에 참가하려면 어떤 절차를 따라야 하나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-38666",
+      "question": "창의융합종합설계1 수업의 팀 구성은 어떻게 해야 하나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-36767",
+      "question": "홈커밍데이에 참여하려면 어떻게 신청하나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34745",
+      "question": "캡스톤디자인 지원을 위해 필요한 서류는 무엇인가요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-39762",
+      "question": "프로그래밍 대회에 참가하려면 어떤 조건이 있나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34909",
+      "question": "TA 멘토 신청 시 어떤 자격 요건이 필요한가요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-43405",
+      "question": "홈커밍데이에 제출할 질문은 어떻게 제출하나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45782",
+      "question": "SEcon 발표 내용은 어디에서 확인할 수 있나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45785",
+      "question": "C/C++ 프로그래밍 기초 특강 강사 지원은 어떻게 하나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-39747",
+      "question": "캡스톤디자인 경진대회에 참여하려면 어떤 절차를 따라야 하나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-43973",
+      "question": "홈커밍데이에 참여할 팀은 배치도를 어디서 확인할 수 있나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-38668",
+      "question": "산업체 특강에 참여하고 싶다면 어떻게 해야 하나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-46714",
+      "question": "TA멘토링 시간에 어떤 질문을 할 수 있나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45553",
+      "question": "캡스톤 디자인 팀이 선정되면 어떤 서류를 제출해야 하나요?",
+      "source_category": "연구·캡스톤",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-49254",
+      "question": "캡스톤디자인1 수업에서 팀 구성을 어떻게 해야 하나요?",
+      "source_category": "연구·캡스톤",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-43632",
+      "question": "학술대회 참가비는 어떻게 신청하나요?",
+      "source_category": "연구·캡스톤",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34424",
+      "question": "신임 교수님들에 대한 정보는 어디서 확인할 수 있나요?",
+      "source_category": "연구·캡스톤",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34421",
+      "question": "캡스톤디자인 잔액 반납은 어떻게 하나요?",
+      "source_category": "연구·캡스톤",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34756",
+      "question": "논문 게재 후 생협 상품권은 어떻게 신청하나요?",
+      "source_category": "연구·캡스톤",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-44838",
+      "question": "지도교수님과 주제 상담을 언제까지 진행해야 하나요?",
+      "source_category": "연구·캡스톤",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45780",
+      "question": "KLE Lab.의 SIG 멤버로 참여하려면 어떻게 신청하나요?",
+      "source_category": "연구·캡스톤",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34758",
+      "question": "학부생 학술대회 참가비 지원을 받으려면 어떤 조건이 필요한가요?",
+      "source_category": "연구·캡스톤",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-41518",
+      "question": "캡스톤디자인 잔액 반납은 언제까지 해야 하나요?",
+      "source_category": "연구·캡스톤",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-44993",
+      "question": "지도교수님 변경을 원할 때 어떻게 문의하나요?",
+      "source_category": "연구·캡스톤",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-44847",
+      "question": "C++프로그래밍 수업의 추가 신청은 언제부터 가능한가요?",
+      "source_category": "연구·캡스톤",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34427",
+      "question": "학·석사 연계과정 지원 시 제출해야 할 서류는 무엇인가요?",
+      "source_category": "대학원",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-41516",
+      "question": "학·석사 연계과정의 전형 일정은 어떻게 되나요?",
+      "source_category": "대학원",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-48752",
+      "question": "2026학년도 후기 학·석사 연계과정 지원은 언제부터 시작되나요?",
+      "source_category": "대학원",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-37068",
+      "question": "2024학년도 2학기 학·석사 연계과정 지원은 어떻게 진행되나요?",
+      "source_category": "대학원",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-39427",
+      "question": "2024학년도 2학기 일반대학원 교과목 사전이수 신청은 언제까지 해야 하나요?",
+      "source_category": "대학원",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-38761",
+      "question": "졸업사정 자료는 어떻게 열람할 수 있나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-38402",
+      "question": "조기졸업 신청은 어떤 자격이 필요한가요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-47040",
+      "question": "추가이수과정을 포기하려면 어떤 절차를 따라야 하나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34915",
+      "question": "졸업생으로서 도서관 이용이 어려운 이유가 무엇인가요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45795",
+      "question": "취업진로교육 대체이수 신청은 어떻게 하나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-42207",
+      "question": "취업진로상담 교과목은 어떻게 이수해야 하나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-41507",
+      "question": "2025학년도부터 변경되는 졸업 학점 기준은 무엇인가요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-44853",
+      "question": "마이크로디그리 이수 신청은 어떻게 하나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45699",
+      "question": "졸업논문 심사결과보고서는 언제까지 제출해야 하나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-41410",
+      "question": "2025학년도부터 졸업요건이 어떻게 변경되는지 알고 싶어요.",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34841",
+      "question": "2024년 8월 졸업예정자인데, 졸업사정 결과를 어떻게 확인할 수 있나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45629",
+      "question": "추가이수과정을 포기하고 싶다면 어떻게 신청하나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-41448",
+      "question": "2024학년도 전기 졸업예정자인데, 추가이수과정 포기 신청은 어떻게 하나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-41441",
+      "question": "마이크로디그리 과정 신청은 언제 가능한가요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-42435",
+      "question": "졸업자격이 변경되었는데, 어떤 점이 달라졌는지 알고 싶어요.",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-44658",
+      "question": "게임 개발 관련 교육 과정은 어떻게 신청하나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-41711",
+      "question": "졸업요건에 대한 공지가 여러 번 있었는데, 꼭 확인해야 할 사항은 무엇인가요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45096",
+      "question": "2025학년도 전기 졸업예정자인데, 졸업사정 내역은 어떻게 확인하나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-41714",
+      "question": "졸업자격인증 마일리지에 대한 구체적인 내용은 무엇인가요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45001",
+      "question": "졸업 전에 취업진로상담 교과목을 몇 회 이수해야 하나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-38931",
+      "question": "마이크로디그리 이수 신청은 언제부터 언제까지 가능한가요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45810",
+      "question": "조기졸업 신청은 어떻게 하고, 신청 기간은 언제인가요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-46268",
+      "question": "취업진로상담 교과목 이수 여부는 어디에서 확인할 수 있나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-46347",
+      "question": "증명서 발급은 어떻게 해야 하나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45877",
+      "question": "졸업사정 자료는 언제부터 열람할 수 있나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-35748",
+      "question": "성적장학생 선발을 위한 외국어 성적표 제출 기한은 언제인가요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-47185",
+      "question": "이정연 장학금 수여식은 언제 열렸나요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-47043",
+      "question": "KIT역량장학금 신청 자격은 무엇인가요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34409",
+      "question": "신입생 멘토 신청은 어떻게 하나요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-43488",
+      "question": "2025학년도 2학기 외국어성적표 제출 기한이 언제인가요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-44370",
+      "question": "외국어성적우수장학금 신청 자격이 어떻게 되나요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34828",
+      "question": "이정연 장학금 신청은 어떻게 하나요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-38605",
+      "question": "2024-2학기 외국어성적우수장학금 기준점수 입력 기간은 언제인가요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-44375",
+      "question": "2025-2학기 외국어성적우수장학금 신청 자격은 무엇인가요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-41501",
+      "question": "창의공동체 멘토 신청은 어떻게 하나요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-41413",
+      "question": "BISKIT에서 자기주도활동 실적 입력 기한은 언제인가요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-35291",
+      "question": "이정연 장학금 수여식은 언제 열리나요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-43178",
+      "question": "2025학년도 이정연 장학금 수여식은 언제인가요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34390",
+      "question": "2024-1학기 외국어성적우수장학금 신청 기한은 언제인가요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-43113",
+      "question": "이정연 장학금 수여식에 참여하려면 언제까지 도착해야 하나요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34387",
+      "question": "외국어성적우수장학금 신청 자격은 어떻게 되나요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-42801",
+      "question": "이정연 장학금 신청은 어떻게 하나요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-46904",
+      "question": "2026학년도 이정연 장학금 수여식에 언제 가야 하나요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-36331",
+      "question": "대통령과학장학금 신청기간은 언제인가요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-38595",
+      "question": "외국어성적우수장학금 제출점수 입력은 어떻게 하나요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-35909",
+      "question": "취업한마당에 참여하면 어떤 혜택이 있나요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-48162",
+      "question": "ETRI 석사후연수연구원 지원 자격은 무엇인가요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-38782",
+      "question": "일루에서 채용조건은 어떻게 되나요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34430",
+      "question": "한국전력기술 현장실습생 모집에 대해 자세히 알고 싶어요.",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45732",
+      "question": "KT에이블스쿨 설명회에 참여하려면 어떻게 해야 하나요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-36639",
+      "question": "지도교수 상담을 받으려면 어떤 준비가 필요하고, 언제 예약해야 하나요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-47571",
+      "question": "SE Board의 업데이트 내용은 무엇인지 확인할 수 있나요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-36669",
+      "question": "지도교수 상담 예약은 어떻게 하나요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-41237",
+      "question": "상담 예약을 하려면 어떤 내용을 준비해야 하나요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-36664",
+      "question": "지도교수 상담을 받기 위해 어떤 양식을 제출해야 하나요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-43964",
+      "question": "지도학생 상담은 어떻게 예약하나요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-44033",
+      "question": "취업진로교육 대체이수 신청은 어떻게 하나요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-48756",
+      "question": "채용설명회에 참여하려면 어떻게 신청해야 하나요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45083",
+      "question": "항공·방산 기업체 채용설명회에 참여하려면 언제까지 신청해야 하나요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-40849",
+      "question": "지도교수 상담을 예약하려면 어떻게 해야 하나요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-46615",
+      "question": "농구 동아리에 가입하려면 어떤 절차가 필요한가요?",
+      "source_category": "학생회",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-36863",
+      "question": "바보코딩 챌린지에 참여하려면 언제까지 신청해야 하나요?",
+      "source_category": "학생회",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-36860",
+      "question": "롤토체스 토너먼트에 참여하려면 어떤 절차가 필요한가요?",
+      "source_category": "학생회",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-39633",
+      "question": "축구 동아리에 가입하고 싶으면 어떻게 해야 하나요?",
+      "source_category": "학생회",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-35462",
+      "question": "공학용 계산기 대여는 어떻게 신청하나요?",
+      "source_category": "학생회",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-41075",
+      "question": "학생회 선거 결과에 이의 제기를 하려면 어떻게 해야 하나요?",
+      "source_category": "학생회",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-42372",
+      "question": "학생회비를 납부하면 어떤 혜택이 있나요?",
+      "source_category": "학생회",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-41829",
+      "question": "학생회 부장 모집에 지원하려면 어떻게 해야 하나요?",
+      "source_category": "학생회",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-37991",
+      "question": "바보코딩 챌린지 결과는 언제 발표되나요?",
+      "source_category": "학생회",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34600",
+      "question": "SOFT 축구동아리에 가입하려면 어떤 절차가 필요한가요?",
+      "source_category": "학생회",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34848",
+      "question": "MT 참가 신청은 언제까지 해야 하나요?",
+      "source_category": "학생회",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-42366",
+      "question": "학생회 차장단 모집에 지원하려면 어떤 조건이 필요한가요?",
+      "source_category": "학생회",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-45128",
+      "question": "개강파티에 참석하려면 어떤 절차를 따라야 하나요?",
+      "source_category": "학생회",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34406",
+      "question": "창융 프로젝트에 참여하고 싶으면 어떻게 연락하나요?",
+      "source_category": "기타",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34589",
+      "question": "프로그래밍 입문 멘토에 지원하려면 어떻게 해야 하나요?",
+      "source_category": "기타",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-34460",
+      "question": "실시간 채팅 서비스 프로젝트에 참여하고 싶은데 어떻게 하면 되나요?",
+      "source_category": "기타",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_kumoh-notice-43664",
+      "question": "산학협력단 전산팀 계약직에 지원하려면 어떤 조건이 필요한가요?",
+      "source_category": "기타",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web200_everytime_객체지향소프트웨어공학_이종열_review_6",
+      "question": "객체지향소프트웨어공학 수업에 대한 강의평이 궁금한데, 어떤 내용이 있나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_객체지향소프트웨어공학_이종열_review_7",
+      "question": "객체지향소프트웨어공학 수업의 문제점은 무엇인가요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_객체지향소프트웨어공학_이종열_review_4",
+      "question": "이종열 교수님의 객체지향소프트웨어공학 수업에서 족보 없이 산출물을 작성하는 방법은 무엇인가요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_객체지향소프트웨어공학_이종열_review_5",
+      "question": "이종열 교수님의 객체지향소프트웨어공학 수업은 어떤 방식으로 진행되나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_웹서버프로그래밍_김성렬_summary",
+      "question": "웹서버프로그래밍 수업의 과제나 조모임에 대한 정보는 어디서 확인할 수 있나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_객체지향소프트웨어공학_이종열_review_2",
+      "question": "객체지향소프트웨어공학 수업에서 조가 랜덤으로 배정되면 어떻게 대처해야 하나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_객체지향소프트웨어공학_이종열_review_3",
+      "question": "객체지향소프트웨어공학 수업에서 과제를 수행하기 위해 필요한 자료는 어떻게 찾나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_객체지향소프트웨어공학_이종열_review_1",
+      "question": "객체지향소프트웨어공학 수업의 과제 양이 줄어들었지만 여전히 많다고 느끼는데, 과제를 효율적으로 관리하는 방법이 있을까요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_4차산업핵심기술_김시관_review_1",
+      "question": "4차산업핵심기술 수업에서 발표만으로 A+를 받을 수 있는 이유는 무엇인가요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_인공지능_김영우_review_2",
+      "question": "인공지능 수업에서 과제를 잘 수행하기 위한 팁이 있을까요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_자료구조_이현아_summary",
+      "question": "자료구조 수업의 출결 방식은 어떻게 되나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_인공지능_김영우_review_3",
+      "question": "인공지능 수업의 시험 난이도는 어떻게 조절되나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_객체지향소프트웨어공학_이종열_review_8",
+      "question": "객체지향소프트웨어공학 수업에서 과제가 얼마나 중요한가요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_인공지능_김영우_review_1",
+      "question": "인공지능 수업에서 성적을 잘 받으려면 어떤 점을 주의해야 하나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_객체지향소프트웨어공학_이종열_review_9",
+      "question": "객체지향소프트웨어공학 수업에서 교수님의 피드백은 어떤가요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_빅데이터_이광희_summary",
+      "question": "빅데이터 과목의 평균 평점이 낮은 이유는 무엇인가요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_인공지능_김영우_review_4",
+      "question": "인공지능 수업의 과제는 어떤가요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_자바프로그래밍_김병만_review_1",
+      "question": "자바프로그래밍 수업의 시험 난이도는 어떤가요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_인공지능_김영우_review_5",
+      "question": "인공지능 수업에서 사전 지식이 없는 학생은 어떻게 해야 하나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_자바프로그래밍_김병만_review_3",
+      "question": "자바프로그래밍 수업에서 시험 준비는 어떻게 해야 하나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_자바프로그래밍_김병만_review_2",
+      "question": "자바프로그래밍 수업에서 기초를 배우는 데 어떤 도움이 되나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_운영체제_이해연_review_1",
+      "question": "운영체제 수업에서 중간 기말 시험 준비는 어떻게 하나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_자바프로그래밍_김병만_review_5",
+      "question": "자바프로그래밍 수업에서 성적을 잘 받으려면 어떻게 공부해야 하나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_운영체제_이해연_review_2",
+      "question": "운영체제 수업에서 좋은 성적을 받기 위해 필요한 공부 시간은 얼마나 될까요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_everytime_자바프로그래밍_김병만_review_4",
+      "question": "자바프로그래밍 수업의 난이도는 어떻게 되나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web200_static-major-achievements",
+      "question": "소프트웨어전공의 취업률은 어느 정도인가요?",
+      "source_category": "기타",
+      "source_type": "학과공식사이트"
+    },
+    {
+      "id": "web200_static-faculty",
+      "question": "소프트웨어전공에서 배우는 전공 과목은 어떤 것들이 있나요?",
+      "source_category": "기타",
+      "source_type": "학과공식사이트"
+    },
+    {
+      "id": "web200_static-education-objectives",
+      "question": "소프트웨어전공의 교육 목표는 무엇인가요?",
+      "source_category": "기타",
+      "source_type": "학과공식사이트"
+    },
+    {
+      "id": "web200_static-department-introduction",
+      "question": "소프트웨어전공에서 어떤 프로젝트 수업이 있나요?",
+      "source_category": "기타",
+      "source_type": "학과공식사이트"
+    },
+    {
+      "id": "web200_static-curriculum",
+      "question": "졸업하기 위해 필요한 학점은 어떻게 되나요?",
+      "source_category": "학적·졸업",
+      "source_type": "학과공식사이트"
+    },
+    {
+      "id": "web200_static-career",
+      "question": "소프트웨어전공을 마친 뒤 갈 수 있는 직무나 산업 분야를 공식 자료에서 확인하고 싶습니다.",
+      "source_category": "취업·진로",
+      "source_type": "학과공식사이트"
+    },
+    {
+      "id": "web200_static-clubs",
+      "question": "소프트웨어전공 동아리에 가입하려면 어떻게 해야 하나요?",
+      "source_category": "학생회",
+      "source_type": "학과공식사이트"
+    },
+    {
+      "id": "web300extra_kumoh-notice-41314",
+      "question": "2024-2학기 KIT 서로도움 공동체 장학금의 결과보고서 제출 기한은 언제인가요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-46066",
+      "question": "Microsoft Cybersecurity School 과정에 지원하기 위한 자격 요건은 무엇인가요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-44308",
+      "question": "수도 계량기 교체로 인한 단수 일정은 어떻게 되나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-45608",
+      "question": "삼성청년 SW·AI 아카데미 지원 마감일은 언제인가요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-35539",
+      "question": "교내에서 정기 TOEIC 시험을 응시하려면 어떤 절차를 따라야 하나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-44835",
+      "question": "전공필수 과목 추가 신청은 어떻게 하나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-40091",
+      "question": "캡스톤디자인 지원금 지급 일정은 어떻게 되나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-40024",
+      "question": "이혜숙 교수님의 수업이 휴강되었는데, 어떤 과목인지 알려주세요.",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-45121",
+      "question": "사물함 정리와 관련하여 이전 사용자 물품은 어디에 옮겨졌나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-35235",
+      "question": "캡스톤디자인 결과서류 제출 마감일은 언제인가요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-40837",
+      "question": "정후보와 부후보의 입후보 자격 요건은 무엇인가요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-38143",
+      "question": "캡스톤디자인 결과서류 제출 기한은 언제인가요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-42501",
+      "question": "백준 금오공대SE 그룹에 참여하려면 어떻게 해야 하나요?",
+      "source_category": "행정·안내",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-45902",
+      "question": "현장실습 중 다른 교과목을 수강할 수 있는 예외 조건은 무엇인가요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-46260",
+      "question": "전자출결 앱 설치 후 출결 상태는 언제 확인해야 하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-44130",
+      "question": "기말고사 특식 신청은 어떻게 하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-42636",
+      "question": "취업진로교육을 이수하지 않으면 졸업할 수 없나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-36460",
+      "question": "수강지도 상담 양식은 어디서 받을 수 있나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-49330",
+      "question": "수강지도 상담을 받지 않으면 어떤 불이익이 있나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-40756",
+      "question": "파이썬 프로그램 실행 시 발생한 에러를 어떻게 해결하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-46382",
+      "question": "군복무 중 취득한 학점을 인정받으려면 어떤 절차를 따라야 하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-42884",
+      "question": "사회봉사1을 이수해야 하는 졸업 요건에 대해 자세히 알고 싶어요.",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-45887",
+      "question": "선형대수학 강의 시간이 변경되었는데, 어떻게 확인할 수 있나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-38511",
+      "question": "강의평가를 하지 않으면 성적 열람이 불가능한가요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-45883",
+      "question": "수강꾸러미 신청은 어떻게 진행되나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-38854",
+      "question": "2024학년도 2학기 수강꾸러미 신청은 언제부터 언제까지인가요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-44496",
+      "question": "수강꾸러미 신청 결과는 어떻게 확인하나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-38597",
+      "question": "현장실습 중 다른 교과목을 수강할 수 있는 예외 조건은 무엇인가요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-41118",
+      "question": "2024학년도 2학기 개설 교과목의 수강 제한 인원은 어떻게 결정되나요?",
+      "source_category": "수업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-47960",
+      "question": "홈커밍데이 전시에 참여하려면 어떤 준비가 필요한가요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-43421",
+      "question": "SEcon에 참석하려면 어떤 조건을 충족해야 하나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-45724",
+      "question": "TA 멘토로 선발된 후 제출해야 하는 서류는 무엇인가요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-39491",
+      "question": "Tensorflow 딥러닝 기초 프로그래밍 캠프에 참여하려면 어떤 자격이 필요한가요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-36585",
+      "question": "풀스택 개발자 양성과정에 지원하려면 언제까지 신청해야 하나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-42455",
+      "question": "큐비트 매칭 프로그램에 참여하려면 어떻게 신청하나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-45178",
+      "question": "SEcon 발표 내용은 어디서 확인할 수 있나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-34670",
+      "question": "프로보노 ICT멘토링 프로그램의 온라인 OT는 언제 진행되나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-45145",
+      "question": "ICPC 예선 등록은 언제까지 해야 하나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-38146",
+      "question": "홈커밍데이 Q&A 리스트는 어디서 확인할 수 있나요?",
+      "source_category": "비교과·행사",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-45619",
+      "question": "융합프로젝트 TA 멘토링의 정기 멘토링 시간은 어떻게 되나요?",
+      "source_category": "연구·캡스톤",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-45190",
+      "question": "학술대회 참가비 지원을 받으려면 어떤 절차를 따라야 하나요?",
+      "source_category": "연구·캡스톤",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-34679",
+      "question": "학부생 학술대회 참가비 지원을 받기 위해 필요한 서류는 무엇인가요?",
+      "source_category": "연구·캡스톤",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-34682",
+      "question": "SCI급 논문을 게재한 경우 어떤 지원을 받을 수 있나요?",
+      "source_category": "연구·캡스톤",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-46822",
+      "question": "캡스톤디자인 멘토링은 어떻게 신청하나요?",
+      "source_category": "연구·캡스톤",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-36564",
+      "question": "XRM Lab에 지원하려면 어떤 서류를 제출해야 하나요?",
+      "source_category": "연구·캡스톤",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-45627",
+      "question": "전공박람회 아르바이트는 어떻게 신청하나요?",
+      "source_category": "대학원",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-45677",
+      "question": "대학원 신입생 모집 설명회에 참여하려면 어떻게 해야 하나요?",
+      "source_category": "대학원",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-45875",
+      "question": "2024학년도 이전 입학자의 교양심화과정 변경 사항은 무엇인가요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-42083",
+      "question": "이해연 교수 Lab에서 공부하려면 어떤 요건이 필요한가요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-44487",
+      "question": "졸업사정 자료는 어떻게 열람하나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-46374",
+      "question": "취업진로교육 과목을 이수하지 않으면 졸업할 수 없다고 들었는데, 구체적으로 어떻게 이수해야 하나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-44423",
+      "question": "마이크로디그리 과정 이수를 위한 신청서 제출 마감일이 언제인가요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-38418",
+      "question": "VR 게임 개발 과정에 참여하면 어떤 혜택이 있나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-48969",
+      "question": "마이크로디그리 신청은 어떻게 진행되며, 신청 기간은 언제인가요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-44417",
+      "question": "추가이수과정을 포기하면 이미 취득한 학점은 어떻게 되나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-38711",
+      "question": "부전공 이수 신청은 어떤 자격이 필요한가요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-38714",
+      "question": "추가이수과정 포기 신청은 어떻게 하나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-34415",
+      "question": "졸업예비사정 내역은 어떻게 열람하나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-40398",
+      "question": "웹 개발 스터디에 참여하려면 어떻게 신청하나요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-44286",
+      "question": "조기졸업 신청은 어떤 자격이 필요한가요?",
+      "source_category": "학적·졸업",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-48049",
+      "question": "2026년도 석사우수장학금 신청을 위해 어떤 서류를 제출해야 하나요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-35179",
+      "question": "대구은행장학문화재단 장학생 신청은 어떻게 하나요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-46670",
+      "question": "이정연 장학금 신청 자격은 어떻게 되나요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-47153",
+      "question": "KICS 장학금 신청은 언제까지 해야 하나요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-40502",
+      "question": "2025학년도 성적장학생 선발을 위한 외국어 성적표는 언제까지 제출해야 하나요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-47098",
+      "question": "2026-2학기 성적장학생 선발을 위한 외국어 성적표 제출 기한은 언제인가요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-38627",
+      "question": "BISKIT에서 자기주도활동 실적 입력은 어떻게 하나요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-38632",
+      "question": "KIT 인재인증을 받으려면 어떤 기준이 있나요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-34940",
+      "question": "튜터링 프로그램에 참여하기 위해 필요한 서류는 무엇인가요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-48775",
+      "question": "BISKIT에서 자기주도활동 마일리지 입력은 어떻게 하나요?",
+      "source_category": "장학금",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-45039",
+      "question": "2025 국립금오공과대학교 취업한마당에 참여하려면 어떻게 등록하나요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-42439",
+      "question": "2025년 취업진로교육 동영상 강의는 언제부터 수강할 수 있나요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-44625",
+      "question": "인피니트헬스케어에 지원하려면 어떤 서류가 필요한가요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-44019",
+      "question": "지도교수 상담은 어떻게 예약하나요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-44972",
+      "question": "삼성 청년 SW·AI 아카데미 설명회에 참여하려면 어떻게 신청하나요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-43868",
+      "question": "한국전력기술 장기 현장실습에 참여하려면 신청 기간은 언제인가요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-44126",
+      "question": "지도교수 상담에서 어떤 내용을 이야기할 수 있나요?",
+      "source_category": "취업·진로",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-34607",
+      "question": "BOSS 동아리에 지원하려면 어떤 조건이 필요한가요?",
+      "source_category": "학생회",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-40145",
+      "question": "주점 운영에 참여하려면 신청 기한은 언제까지인가요?",
+      "source_category": "학생회",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-34616",
+      "question": "학생회 지원 시 어떤 조건을 충족해야 하나요?",
+      "source_category": "학생회",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-34676",
+      "question": "사물함을 신청하고 싶은데, 신청 기간이 언제인지 알고 싶어요.",
+      "source_category": "학생회",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-41831",
+      "question": "과대표 지원 방법은 어떻게 되나요?",
+      "source_category": "학생회",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_kumoh-notice-42392",
+      "question": "사물함 철거는 언제까지 해야 하나요?",
+      "source_category": "학생회",
+      "source_type": "se게시판"
+    },
+    {
+      "id": "web300extra_everytime_운영체제_이해연_review_3",
+      "question": "운영체제 수업의 교수님은 어떤 분인가요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web300extra_everytime_디자인패턴_전태수_summary",
+      "question": "디자인패턴 수업의 평균 평점은 어떻게 되나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web300extra_everytime_자바프로그래밍_김병만_review_7",
+      "question": "자바프로그래밍 수업에서 과제는 어떤 식으로 진행되나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web300extra_everytime_운영체제_이해연_review_4",
+      "question": "운영체제 수업의 단점은 무엇인가요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web300extra_everytime_자바프로그래밍_김병만_review_6",
+      "question": "자바프로그래밍 수업의 강의 방식은 어떤가요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web300extra_everytime_자바프로그래밍_김병만_review_9",
+      "question": "자바프로그래밍 수업의 난이도는 어떤가요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web300extra_everytime_자바프로그래밍_김병만_review_8",
+      "question": "자바프로그래밍 수업에서 도움이 될 만한 점은 무엇인가요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web300extra_everytime_창의프로젝트_이규원_review_5",
+      "question": "창의프로젝트 수업은 팀 프로젝트인데, 개인 과제는 언제까지 제출해야 하나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web300extra_everytime_창의프로젝트_이규원_review_4",
+      "question": "창의프로젝트 수업에서 성적은 어떻게 평가되나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web300extra_everytime_창의프로젝트_이규원_review_2",
+      "question": "창의프로젝트 수업에서 팀 프로젝트를 시작하기 전에 어떤 준비를 해야 하나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web300extra_everytime_창의프로젝트_이규원_review_1",
+      "question": "창의프로젝트 수업의 출석 방식은 어떻게 되나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web300extra_everytime_창의프로젝트_이규원_summary",
+      "question": "창의프로젝트 과목의 평균 평점은 어떻게 되나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web300extra_everytime_모바일프로그래밍_김시관_summary",
+      "question": "모바일프로그래밍 수업의 평균 평점은 어떻게 되나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web300extra_everytime_웹프로그래밍_김성렬_summary",
+      "question": "웹프로그래밍 수업의 출결 방식은 어떤가요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web300extra_everytime_웹프로그래밍_김성렬_review_13",
+      "question": "웹프로그래밍 수업에서 교수님이 내신 퀴즈는 어떤 식으로 진행되나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web300extra_everytime_웹프로그래밍_김성렬_review_12",
+      "question": "웹프로그래밍 수업의 기말고사는 어떻게 준비해야 하나요?",
+      "source_category": "강의평",
+      "source_type": "에브리타임"
+    },
+    {
+      "id": "web300extra_kumoh-notice-45012",
+      "question": "사물함 신청은 언제까지 해야 하나요?",
+      "source_category": "학생회",
+      "source_type": "se게시판"
+    }
+  ]
+}

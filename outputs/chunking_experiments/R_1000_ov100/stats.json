@@ -1,0 +1,26 @@
+{
+  "experiment": "R_1000_ov100",
+  "experiment_label": "R",
+  "meaning": "Fixed 1000 tokens, overlap 100",
+  "baseline_experiment": "F_1000",
+  "splitting_method": "fixed_size_overlap",
+  "source_file": "document통합파일(에타리뷰분리).json",
+  "document_count": 850,
+  "chunk_count": 1001,
+  "chunk_size_tokens": 1000,
+  "chunk_overlap_tokens": 100,
+  "token_count_method": "estimated_local_no_tiktoken",
+  "estimated_tokens": {
+    "total": 513066,
+    "min": 70,
+    "median": 463,
+    "p90": 989,
+    "max": 1103
+  },
+  "chunks_per_document": {
+    "min": 1,
+    "median": 1,
+    "max": 7
+  },
+  "created_at": "2026-08-10T13:02:03.257Z"
+}

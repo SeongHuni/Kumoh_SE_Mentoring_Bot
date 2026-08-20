@@ -1,0 +1,12 @@
+{
+  "backend": "chroma",
+  "collection": "sw_notice_d500",
+  "recall_at_3": 0.8625,
+  "recall_at_5": 0.9125,
+  "mrr_at_5": 0.7229166666666667,
+  "context_precision_at_5": 0.2924999999999998,
+  "mean_latency_ms": 27.70368875000001,
+  "p90_latency_ms": 31.1997,
+  "question_count": 80,
+  "evaluated_at": "2026-08-03T09:00:53.949Z"
+}

@@ -1,0 +1,127 @@
+{
+  "dataset": "human_made_data",
+  "question_count": 300,
+  "results": [
+    {
+      "experiment": "O_500_nohdr_ov50",
+      "chunk_count": 1503,
+      "recall_at_1": 0.37666666666666665,
+      "recall_at_3": 0.6133333333333333,
+      "recall_at_5": 0.76,
+      "mrr_at_5": 0.5124444444444446
+    },
+    {
+      "experiment": "F_1000",
+      "chunk_count": 996,
+      "recall_at_1": 0.38,
+      "recall_at_3": 0.6233333333333333,
+      "recall_at_5": 0.7566666666666667,
+      "mrr_at_5": 0.5203333333333333
+    },
+    {
+      "experiment": "A_document",
+      "chunk_count": 850,
+      "recall_at_1": 0.3933333333333333,
+      "recall_at_3": 0.6166666666666667,
+      "recall_at_5": 0.7466666666666667,
+      "mrr_at_5": 0.5198333333333334
+    },
+    {
+      "experiment": "E_800",
+      "chunk_count": 1100,
+      "recall_at_1": 0.3566666666666667,
+      "recall_at_3": 0.6,
+      "recall_at_5": 0.7433333333333333,
+      "mrr_at_5": 0.49572222222222223
+    },
+    {
+      "experiment": "D_500",
+      "chunk_count": 1474,
+      "recall_at_1": 0.37333333333333335,
+      "recall_at_3": 0.5933333333333334,
+      "recall_at_5": 0.74,
+      "mrr_at_5": 0.5032777777777777
+    },
+    {
+      "experiment": "I_docspec",
+      "chunk_count": 1242,
+      "recall_at_1": 0.36,
+      "recall_at_3": 0.59,
+      "recall_at_5": 0.7333333333333333,
+      "mrr_at_5": 0.49616666666666676
+    },
+    {
+      "experiment": "K_500_ov50",
+      "chunk_count": 1503,
+      "recall_at_1": 0.37666666666666665,
+      "recall_at_3": 0.6,
+      "recall_at_5": 0.7333333333333333,
+      "mrr_at_5": 0.5058333333333332
+    },
+    {
+      "experiment": "H_recursive_500",
+      "chunk_count": 1448,
+      "recall_at_1": 0.39,
+      "recall_at_3": 0.5966666666666667,
+      "recall_at_5": 0.73,
+      "mrr_at_5": 0.5071666666666668
+    },
+    {
+      "experiment": "N_500_nohdr",
+      "chunk_count": 1474,
+      "recall_at_1": 0.38,
+      "recall_at_3": 0.62,
+      "recall_at_5": 0.73,
+      "mrr_at_5": 0.5095555555555558
+    },
+    {
+      "experiment": "L_500_ov100",
+      "chunk_count": 1531,
+      "recall_at_1": 0.38666666666666666,
+      "recall_at_3": 0.6,
+      "recall_at_5": 0.72,
+      "mrr_at_5": 0.5072222222222222
+    },
+    {
+      "experiment": "M_500_ov150",
+      "chunk_count": 1581,
+      "recall_at_1": 0.4,
+      "recall_at_3": 0.6,
+      "recall_at_5": 0.72,
+      "mrr_at_5": 0.514
+    },
+    {
+      "experiment": "C_300",
+      "chunk_count": 2184,
+      "recall_at_1": 0.42,
+      "recall_at_3": 0.6166666666666667,
+      "recall_at_5": 0.71,
+      "mrr_at_5": 0.5274444444444443
+    },
+    {
+      "experiment": "J_semantic",
+      "chunk_count": 1437,
+      "recall_at_1": 0.41333333333333333,
+      "recall_at_3": 0.6333333333333333,
+      "recall_at_5": 0.71,
+      "mrr_at_5": 0.5237777777777779
+    },
+    {
+      "experiment": "B_150",
+      "chunk_count": 4206,
+      "recall_at_1": 0.4066666666666667,
+      "recall_at_3": 0.5833333333333334,
+      "recall_at_5": 0.69,
+      "mrr_at_5": 0.5067222222222223
+    },
+    {
+      "experiment": "G_recursive_300",
+      "chunk_count": 2134,
+      "recall_at_1": 0.41333333333333333,
+      "recall_at_3": 0.6,
+      "recall_at_5": 0.69,
+      "mrr_at_5": 0.5167777777777777
+    }
+  ],
+  "evaluated_at": "2026-08-10T12:28:08.057Z"
+}

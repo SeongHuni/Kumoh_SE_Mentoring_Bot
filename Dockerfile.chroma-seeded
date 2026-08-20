@@ -1,0 +1,14 @@
+# 적재가 끝난 Chroma 인덱스를 그대로 담은 이미지.
+# 동료는 이 이미지만 받으면 임베딩 재생성 없이 바로 검색을 쓸 수 있다.
+#
+#   docker build -f Dockerfile.chroma-seeded -t sw-rag-chroma:d500 .
+#   docker run -d -p 8000:8000 --name chroma sw-rag-chroma:d500
+#
+# 주의: 데이터가 이미지 레이어에 들어가므로 컨테이너를 지우면 그 안에서 추가한 변경은 사라진다.
+# 공유용 읽기 전용 스냅샷 용도이고, 재적재가 필요하면 docker-compose.yml(볼륨 마운트)을 쓴다.
+FROM chromadb/chroma:latest
+
+# 이미지 기본 config.yaml의 persist_path가 /data 다.
+COPY chroma-data/ /data/
+
+EXPOSE 8000

@@ -1,0 +1,164 @@
+{
+  "targets": {
+    "수업": 13,
+    "행정·안내": 11,
+    "강의평": 10,
+    "학적·졸업": 8,
+    "장학금": 8,
+    "비교과·행사": 8,
+    "취업·진로": 6,
+    "연구·캡스톤": 6,
+    "학생회": 5,
+    "대학원": 3,
+    "기타": 2
+  },
+  "categories": {
+    "수업": {
+      "target": 13,
+      "sampled_count": 13,
+      "sampled_ids": [
+        "kumoh-notice-44578",
+        "kumoh-notice-45829",
+        "kumoh-notice-38994",
+        "kumoh-notice-44405",
+        "kumoh-notice-34436",
+        "kumoh-notice-48512",
+        "kumoh-notice-44816",
+        "kumoh-notice-38854",
+        "kumoh-notice-35016",
+        "kumoh-notice-41575",
+        "kumoh-notice-48778",
+        "kumoh-notice-34625",
+        "kumoh-notice-39381"
+      ]
+    },
+    "행정·안내": {
+      "target": 11,
+      "sampled_count": 11,
+      "sampled_ids": [
+        "kumoh-notice-35056",
+        "kumoh-notice-46795",
+        "kumoh-notice-35325",
+        "kumoh-notice-45599",
+        "kumoh-notice-40332",
+        "kumoh-notice-36632",
+        "kumoh-notice-40727",
+        "kumoh-notice-34937",
+        "kumoh-notice-34396",
+        "kumoh-notice-44068",
+        "kumoh-notice-41545"
+      ]
+    },
+    "강의평": {
+      "target": 10,
+      "sampled_count": 10,
+      "sampled_ids": [
+        "everytime_컴퓨터네트워크_김선명_review_13",
+        "everytime_컴퓨터네트워크_김선명_summary",
+        "everytime_객체지향소프트웨어공학_이종열_review_5",
+        "everytime_모바일프로그래밍_김시관_review_1",
+        "everytime_컴퓨터구조_이해연_review_4",
+        "everytime_자료구조_이현아_review_6",
+        "everytime_윈도우즈프로그래밍_김영원_review_4",
+        "everytime_컴퓨터네트워크_김선명_review_12",
+        "everytime_C++프로그래밍_이현아_review_1",
+        "everytime_모바일프로그래밍_김시관_review_5"
+      ]
+    },
+    "학적·졸업": {
+      "target": 8,
+      "sampled_count": 8,
+      "sampled_ids": [
+        "kumoh-notice-45808",
+        "kumoh-notice-45001",
+        "kumoh-notice-38761",
+        "kumoh-notice-44487",
+        "kumoh-notice-42207",
+        "kumoh-notice-49099",
+        "kumoh-notice-41507",
+        "kumoh-notice-41547"
+      ]
+    },
+    "장학금": {
+      "target": 8,
+      "sampled_count": 8,
+      "sampled_ids": [
+        "kumoh-notice-45831",
+        "kumoh-notice-38632",
+        "kumoh-notice-49070",
+        "kumoh-notice-41413",
+        "kumoh-notice-41498",
+        "kumoh-notice-40502",
+        "kumoh-notice-45653",
+        "kumoh-notice-44370"
+      ]
+    },
+    "비교과·행사": {
+      "target": 8,
+      "sampled_count": 8,
+      "sampled_ids": [
+        "kumoh-notice-49258",
+        "kumoh-notice-34495",
+        "kumoh-notice-43667",
+        "kumoh-notice-40785",
+        "kumoh-notice-36898",
+        "kumoh-notice-49035",
+        "kumoh-notice-38666",
+        "kumoh-notice-43973"
+      ]
+    },
+    "취업·진로": {
+      "target": 6,
+      "sampled_count": 6,
+      "sampled_ids": [
+        "kumoh-notice-37455",
+        "kumoh-notice-44019",
+        "kumoh-notice-48162",
+        "kumoh-notice-36669",
+        "kumoh-notice-36664",
+        "kumoh-notice-41237"
+      ]
+    },
+    "연구·캡스톤": {
+      "target": 6,
+      "sampled_count": 6,
+      "sampled_ids": [
+        "kumoh-notice-34463",
+        "kumoh-notice-44541",
+        "kumoh-notice-35022",
+        "kumoh-notice-41436",
+        "kumoh-notice-45780",
+        "kumoh-notice-34679"
+      ]
+    },
+    "학생회": {
+      "target": 5,
+      "sampled_count": 5,
+      "sampled_ids": [
+        "kumoh-notice-34600",
+        "kumoh-notice-35157",
+        "kumoh-notice-34607",
+        "kumoh-notice-36860",
+        "kumoh-notice-46279"
+      ]
+    },
+    "대학원": {
+      "target": 3,
+      "sampled_count": 3,
+      "sampled_ids": [
+        "kumoh-notice-45863",
+        "kumoh-notice-49206",
+        "kumoh-notice-44025"
+      ]
+    },
+    "기타": {
+      "target": 2,
+      "sampled_count": 2,
+      "sampled_ids": [
+        "static-major-achievements",
+        "kumoh-notice-34460"
+      ]
+    }
+  },
+  "created_at": "2026-07-28T08:55:19.229Z"
+}

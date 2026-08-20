@@ -1,0 +1,47 @@
+{
+  "experiment": "K_500_ov50",
+  "experiment_label": "K",
+  "meaning": "500 tokens, overlap 50 (10%)",
+  "source_file": "document통합파일(에타리뷰분리).json",
+  "document_count": 850,
+  "chunk_count": 1503,
+  "chunk_size_tokens": 500,
+  "chunk_overlap_tokens": 50,
+  "splitting_method": "fixed_size_overlap",
+  "token_count_method": "estimated_local_no_tiktoken",
+  "estimated_tokens": {
+    "total": 550962,
+    "min": 51,
+    "median": 391,
+    "p75": 511,
+    "p90": 542,
+    "p95": 551,
+    "max": 583
+  },
+  "chunks_per_document": {
+    "min": 1,
+    "median": 1,
+    "p75": 2,
+    "p90": 3,
+    "max": 13
+  },
+  "source_counts": {
+    "se게시판": 1282,
+    "에브리타임": 202,
+    "학과공식사이트": 19
+  },
+  "category_counts": {
+    "행정·안내": 228,
+    "수업": 288,
+    "비교과·행사": 201,
+    "연구·캡스톤": 89,
+    "대학원": 14,
+    "학적·졸업": 158,
+    "장학금": 109,
+    "취업·진로": 89,
+    "학생회": 108,
+    "기타": 17,
+    "강의평": 202
+  },
+  "created_at": "2026-08-03T08:06:56.434Z"
+}

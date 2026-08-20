@@ -1,0 +1,47 @@
+{
+  "experiment": "J_semantic",
+  "experiment_label": "J",
+  "meaning": "Semantic Chunking (인접 유사도 기반 경계 + 강제 병합 오버라이드)",
+  "splitting_method": "semantic",
+  "source_file": "document통합파일(에타리뷰분리).json",
+  "document_count": 850,
+  "chunk_count": 1437,
+  "chunk_size_tokens": null,
+  "chunk_overlap_tokens": 0,
+  "token_count_method": "estimated_local_no_tiktoken",
+  "estimated_tokens": {
+    "total": 525537,
+    "min": 70,
+    "median": 325,
+    "p75": 493,
+    "p90": 625,
+    "p95": 737,
+    "max": 940
+  },
+  "chunks_per_document": {
+    "min": 1,
+    "median": 1,
+    "p75": 2,
+    "p90": 3,
+    "max": 13
+  },
+  "source_counts": {
+    "se게시판": 1206,
+    "에브리타임": 215,
+    "학과공식사이트": 16
+  },
+  "category_counts": {
+    "행정·안내": 218,
+    "수업": 259,
+    "비교과·행사": 188,
+    "연구·캡스톤": 87,
+    "대학원": 18,
+    "학적·졸업": 142,
+    "장학금": 108,
+    "취업·진로": 86,
+    "학생회": 102,
+    "기타": 14,
+    "강의평": 215
+  },
+  "created_at": "2026-07-28T08:51:31.446Z"
+}

@@ -1,0 +1,47 @@
+{
+  "experiment": "H_recursive_500",
+  "experiment_label": "H",
+  "meaning": "Recursive Character Splitting (목표 500 tok)",
+  "splitting_method": "recursive_character",
+  "source_file": "document통합파일(에타리뷰분리).json",
+  "document_count": 850,
+  "chunk_count": 1448,
+  "chunk_size_tokens": 500,
+  "chunk_overlap_tokens": 0,
+  "token_count_method": "estimated_local_no_tiktoken",
+  "estimated_tokens": {
+    "total": 526169,
+    "min": 51,
+    "median": 386,
+    "p75": 497,
+    "p90": 539,
+    "p95": 549,
+    "max": 568
+  },
+  "chunks_per_document": {
+    "min": 1,
+    "median": 1,
+    "p75": 2,
+    "p90": 3,
+    "max": 13
+  },
+  "source_counts": {
+    "se게시판": 1227,
+    "에브리타임": 202,
+    "학과공식사이트": 19
+  },
+  "category_counts": {
+    "행정·안내": 217,
+    "수업": 265,
+    "비교과·행사": 199,
+    "연구·캡스톤": 86,
+    "대학원": 14,
+    "학적·졸업": 153,
+    "장학금": 103,
+    "취업·진로": 88,
+    "학생회": 104,
+    "기타": 17,
+    "강의평": 202
+  },
+  "created_at": "2026-07-28T08:43:30.589Z"
+}

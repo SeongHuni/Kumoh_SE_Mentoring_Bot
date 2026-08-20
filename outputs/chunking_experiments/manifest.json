@@ -1,0 +1,205 @@
+{
+  "source_file": "document통합파일(에타리뷰분리).json",
+  "document_count": 850,
+  "experiments": [
+    {
+      "experiment": "A_document",
+      "label": "A",
+      "chunk_size_tokens": null,
+      "chunk_overlap_tokens": 0,
+      "chunk_count": 850,
+      "chunks_file": "outputs/chunking_experiments/A_document/chunks.jsonl",
+      "stats_file": "outputs/chunking_experiments/A_document/stats.json",
+      "embeddings_file": "outputs/chunking_experiments/A_document/embeddings.jsonl"
+    },
+    {
+      "experiment": "B_150",
+      "label": "B",
+      "chunk_size_tokens": 150,
+      "chunk_overlap_tokens": 0,
+      "chunk_count": 4206,
+      "chunks_file": "outputs/chunking_experiments/B_150/chunks.jsonl",
+      "stats_file": "outputs/chunking_experiments/B_150/stats.json",
+      "embeddings_file": "outputs/chunking_experiments/B_150/embeddings.jsonl"
+    },
+    {
+      "experiment": "C_300",
+      "label": "C",
+      "chunk_size_tokens": 300,
+      "chunk_overlap_tokens": 0,
+      "chunk_count": 2184,
+      "chunks_file": "outputs/chunking_experiments/C_300/chunks.jsonl",
+      "stats_file": "outputs/chunking_experiments/C_300/stats.json",
+      "embeddings_file": "outputs/chunking_experiments/C_300/embeddings.jsonl"
+    },
+    {
+      "experiment": "D_500",
+      "label": "D",
+      "chunk_size_tokens": 500,
+      "chunk_overlap_tokens": 0,
+      "chunk_count": 1474,
+      "chunks_file": "outputs/chunking_experiments/D_500/chunks.jsonl",
+      "stats_file": "outputs/chunking_experiments/D_500/stats.json",
+      "embeddings_file": "outputs/chunking_experiments/D_500/embeddings.jsonl"
+    },
+    {
+      "experiment": "E_800",
+      "label": "E",
+      "chunk_size_tokens": 800,
+      "chunk_overlap_tokens": 0,
+      "chunk_count": 1100,
+      "chunks_file": "outputs/chunking_experiments/E_800/chunks.jsonl",
+      "stats_file": "outputs/chunking_experiments/E_800/stats.json",
+      "embeddings_file": "outputs/chunking_experiments/E_800/embeddings.jsonl"
+    },
+    {
+      "experiment": "F_1000",
+      "label": "F",
+      "chunk_size_tokens": 1000,
+      "chunk_overlap_tokens": 0,
+      "chunk_count": 996,
+      "chunks_file": "outputs/chunking_experiments/F_1000/chunks.jsonl",
+      "stats_file": "outputs/chunking_experiments/F_1000/stats.json",
+      "embeddings_file": "outputs/chunking_experiments/F_1000/embeddings.jsonl"
+    },
+    {
+      "experiment": "G_recursive_300",
+      "label": "G",
+      "chunk_size_tokens": 300,
+      "chunk_overlap_tokens": 0,
+      "splitting_method": "recursive_character",
+      "chunk_count": 2134,
+      "chunks_file": "outputs\\chunking_experiments\\G_recursive_300\\chunks.jsonl",
+      "stats_file": "outputs\\chunking_experiments\\G_recursive_300\\stats.json",
+      "embeddings_file": "outputs\\chunking_experiments\\G_recursive_300\\embeddings.jsonl"
+    },
+    {
+      "experiment": "H_recursive_500",
+      "label": "H",
+      "chunk_size_tokens": 500,
+      "chunk_overlap_tokens": 0,
+      "splitting_method": "recursive_character",
+      "chunk_count": 1448,
+      "chunks_file": "outputs\\chunking_experiments\\H_recursive_500\\chunks.jsonl",
+      "stats_file": "outputs\\chunking_experiments\\H_recursive_500\\stats.json",
+      "embeddings_file": "outputs\\chunking_experiments\\H_recursive_500\\embeddings.jsonl"
+    },
+    {
+      "experiment": "I_docspec",
+      "label": "I",
+      "chunk_size_tokens": null,
+      "chunk_overlap_tokens": 0,
+      "splitting_method": "document_specific",
+      "chunk_count": 1242,
+      "chunks_file": "outputs\\chunking_experiments\\I_docspec\\chunks.jsonl",
+      "stats_file": "outputs\\chunking_experiments\\I_docspec\\stats.json",
+      "embeddings_file": "outputs\\chunking_experiments\\I_docspec\\embeddings.jsonl"
+    },
+    {
+      "experiment": "J_semantic",
+      "label": "J",
+      "chunk_size_tokens": null,
+      "chunk_overlap_tokens": 0,
+      "splitting_method": "semantic",
+      "chunk_count": 1437,
+      "chunks_file": "outputs\\chunking_experiments\\J_semantic\\chunks.jsonl",
+      "stats_file": "outputs\\chunking_experiments\\J_semantic\\stats.json",
+      "embeddings_file": "outputs\\chunking_experiments\\J_semantic\\embeddings.jsonl"
+    },
+    {
+      "experiment": "K_500_ov50",
+      "label": "K",
+      "chunk_size_tokens": 500,
+      "chunk_overlap_tokens": 50,
+      "splitting_method": "fixed_size_overlap",
+      "chunk_count": 1503,
+      "chunks_file": "outputs\\chunking_experiments\\K_500_ov50\\chunks.jsonl",
+      "stats_file": "outputs\\chunking_experiments\\K_500_ov50\\stats.json",
+      "embeddings_file": "outputs\\chunking_experiments\\K_500_ov50\\embeddings.jsonl"
+    },
+    {
+      "experiment": "L_500_ov100",
+      "label": "L",
+      "chunk_size_tokens": 500,
+      "chunk_overlap_tokens": 100,
+      "splitting_method": "fixed_size_overlap",
+      "chunk_count": 1531,
+      "chunks_file": "outputs\\chunking_experiments\\L_500_ov100\\chunks.jsonl",
+      "stats_file": "outputs\\chunking_experiments\\L_500_ov100\\stats.json",
+      "embeddings_file": "outputs\\chunking_experiments\\L_500_ov100\\embeddings.jsonl"
+    },
+    {
+      "experiment": "M_500_ov150",
+      "label": "M",
+      "chunk_size_tokens": 500,
+      "chunk_overlap_tokens": 150,
+      "splitting_method": "fixed_size_overlap",
+      "chunk_count": 1581,
+      "chunks_file": "outputs\\chunking_experiments\\M_500_ov150\\chunks.jsonl",
+      "stats_file": "outputs\\chunking_experiments\\M_500_ov150\\stats.json",
+      "embeddings_file": "outputs\\chunking_experiments\\M_500_ov150\\embeddings.jsonl"
+    },
+    {
+      "experiment": "N_500_nohdr",
+      "label": "N",
+      "chunk_size_tokens": 500,
+      "chunk_overlap_tokens": 0,
+      "splitting_method": "fixed_size_no_header",
+      "header_included": false,
+      "chunk_count": 1474,
+      "chunks_file": "outputs\\chunking_experiments\\N_500_nohdr\\chunks.jsonl",
+      "stats_file": "outputs\\chunking_experiments\\N_500_nohdr\\stats.json",
+      "embeddings_file": "outputs\\chunking_experiments\\N_500_nohdr\\embeddings.jsonl"
+    },
+    {
+      "experiment": "O_500_nohdr_ov50",
+      "label": "O",
+      "chunk_size_tokens": 500,
+      "chunk_overlap_tokens": 50,
+      "splitting_method": "fixed_size_no_header",
+      "header_included": false,
+      "chunk_count": 1503,
+      "chunks_file": "outputs\\chunking_experiments\\O_500_nohdr_ov50\\chunks.jsonl",
+      "stats_file": "outputs\\chunking_experiments\\O_500_nohdr_ov50\\stats.json",
+      "embeddings_file": "outputs\\chunking_experiments\\O_500_nohdr_ov50\\embeddings.jsonl"
+    },
+    {
+      "experiment": "P_recursive_500_ov50",
+      "label": "P",
+      "chunk_size_tokens": 500,
+      "chunk_overlap_tokens": 50,
+      "splitting_method": "recursive_character_overlap",
+      "baseline_experiment": "H_recursive_500",
+      "chunk_count": 1482,
+      "chunks_file": "outputs\\chunking_experiments\\P_recursive_500_ov50\\chunks.jsonl",
+      "stats_file": "outputs\\chunking_experiments\\P_recursive_500_ov50\\stats.json",
+      "embeddings_file": "outputs\\chunking_experiments\\P_recursive_500_ov50\\embeddings.jsonl"
+    },
+    {
+      "experiment": "Q_300_ov30",
+      "label": "Q",
+      "chunk_size_tokens": 300,
+      "chunk_overlap_tokens": 30,
+      "splitting_method": "fixed_size_overlap",
+      "baseline_experiment": "C_300",
+      "chunk_count": 2271,
+      "chunks_file": "outputs\\chunking_experiments\\Q_300_ov30\\chunks.jsonl",
+      "stats_file": "outputs\\chunking_experiments\\Q_300_ov30\\stats.json",
+      "embeddings_file": "outputs\\chunking_experiments\\Q_300_ov30\\embeddings.jsonl"
+    },
+    {
+      "experiment": "R_1000_ov100",
+      "label": "R",
+      "chunk_size_tokens": 1000,
+      "chunk_overlap_tokens": 100,
+      "splitting_method": "fixed_size_overlap",
+      "baseline_experiment": "F_1000",
+      "chunk_count": 1001,
+      "chunks_file": "outputs\\chunking_experiments\\R_1000_ov100\\chunks.jsonl",
+      "stats_file": "outputs\\chunking_experiments\\R_1000_ov100\\stats.json",
+      "embeddings_file": "outputs\\chunking_experiments\\R_1000_ov100\\embeddings.jsonl"
+    }
+  ],
+  "created_at": "2026-07-26T05:59:24.655Z",
+  "updated_at": "2026-08-10T13:02:03.267Z"
+}

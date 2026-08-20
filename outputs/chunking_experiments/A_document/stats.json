@@ -1,0 +1,46 @@
+{
+  "experiment": "A_document",
+  "experiment_label": "A",
+  "meaning": "Chunking 안 함 (Baseline)",
+  "source_file": "document통합파일(에타리뷰분리).json",
+  "document_count": 850,
+  "chunk_count": 850,
+  "chunk_size_tokens": null,
+  "chunk_overlap_tokens": 0,
+  "token_count_method": "estimated_local_no_tiktoken",
+  "estimated_tokens": {
+    "total": 494747,
+    "min": 70,
+    "median": 445,
+    "p75": 784,
+    "p90": 1183,
+    "p95": 1427,
+    "max": 4988
+  },
+  "chunks_per_document": {
+    "min": 1,
+    "median": 1,
+    "p75": 1,
+    "p90": 1,
+    "max": 1
+  },
+  "source_counts": {
+    "se게시판": 647,
+    "에브리타임": 196,
+    "학과공식사이트": 7
+  },
+  "category_counts": {
+    "행정·안내": 123,
+    "수업": 116,
+    "비교과·행사": 110,
+    "연구·캡스톤": 50,
+    "대학원": 13,
+    "학적·졸업": 65,
+    "장학금": 47,
+    "취업·진로": 51,
+    "학생회": 69,
+    "기타": 10,
+    "강의평": 196
+  },
+  "created_at": "2026-07-26T05:59:24.714Z"
+}
