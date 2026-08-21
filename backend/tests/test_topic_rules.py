@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pytest
 from backend.app.topic_rules import load_topic_catalog
@@ -45,3 +46,10 @@ def test_catalog_rejects_missing_default_topic(tmp_path) -> None:
 
     with pytest.raises(ValueError, match="default_topic_key"):
         load_topic_catalog(path)
+
+
+def test_catalog_classifies_course_evaluation_queries() -> None:
+    catalog = load_topic_catalog(Path("data/topic_rules.json"))
+
+    assert catalog.classify("강의평 언제 해?").key == "course_evaluation"
+    assert catalog.classify("강의 평가 기간을 알려줘").key == "course_evaluation"

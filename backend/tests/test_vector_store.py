@@ -88,3 +88,40 @@ def test_query_forwards_latest_topic_filter() -> None:
     assert store.collection.query.call_args.kwargs["where"] == {
         "is_latest_topic": True
     }
+
+
+def test_query_accepts_legacy_chroma_metadata() -> None:
+    store = ChromaVectorStore.__new__(ChromaVectorStore)
+    store.collection = Mock()
+    store.collection.count.return_value = 1
+    store.collection.query.return_value = {
+        "ids": [["legacy:1:0"]],
+        "documents": [["기존 공지 본문"]],
+        "metadatas": [
+            [
+                {
+                    "original_id": "legacy:1",
+                    "source": "학과 게시판",
+                    "title": "기존 공지",
+                    "source_url": "https://example.com/legacy/1",
+                    "published_at": "2026-01-01",
+                    "chunk_index": 0,
+                }
+            ]
+        ],
+        "distances": [[0.0]],
+    }
+
+    result = store.query([1.0, 0.0], top_k=1)
+
+    assert result[0].chunk.post_id == "legacy:1"
+    assert result[0].chunk.url == "https://example.com/legacy/1"
+    assert result[0].chunk.topic_key == "general"
+
+
+def test_legacy_collection_does_not_support_topic_filters() -> None:
+    store = ChromaVectorStore.__new__(ChromaVectorStore)
+    store.collection = Mock()
+    store.collection.peek.return_value = {"metadatas": [{"original_id": "legacy:1"}]}
+
+    assert store.supports_topic_filters() is False

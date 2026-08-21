@@ -8,7 +8,14 @@ from backend.app.domain import AnswerSource, RecentNotice
 
 
 class ChatRequest(BaseModel):
-    question: str = Field(min_length=2, max_length=500)
+    """챗봇 답변을 요청하는 본문입니다."""
+
+    question: str = Field(
+        min_length=2,
+        max_length=500,
+        description="학과 공지 또는 SE 게시판에서 찾을 질문입니다.",
+        examples=["캡스톤디자인 신청 방법을 알려줘"],
+    )
 
     @field_validator("question")
     @classmethod
@@ -17,17 +24,35 @@ class ChatRequest(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    answer: str
-    sources: list[AnswerSource]
-    grounded: bool
-    suggested_questions: list[str] = Field(default_factory=list)
-    recent_notices: list[RecentNotice] = Field(default_factory=list)
+    """검색된 게시글을 근거로 생성한 챗봇 답변입니다."""
+
+    answer: str = Field(description="출처 표기가 포함된 답변 본문입니다.")
+    sources: list[AnswerSource] = Field(description="답변의 근거로 사용한 원문 게시글입니다.")
+    grounded: bool = Field(description="검색된 출처를 근거로 답변했는지 여부입니다.")
+    suggested_questions: list[str] = Field(
+        default_factory=list,
+        description="후속으로 물어볼 수 있는 추천 질문입니다.",
+    )
+    recent_notices: list[RecentNotice] = Field(
+        default_factory=list,
+        description="관련 최근 공지 목록입니다. 현재 화면에서는 표시하지 않습니다.",
+    )
+
+
+class ApiError(BaseModel):
+    """API 요청을 처리하지 못했을 때의 오류 응답입니다."""
+
+    detail: str = Field(description="오류 원인입니다.", examples=["벡터 인덱스가 비어 있습니다."])
 
 
 class HealthResponse(BaseModel):
-    status: Literal["ready", "needs_configuration", "needs_index"]
-    provider: Literal["local", "openai"]
-    openai_configured: bool
-    indexed_chunks: int
-    chat_model: str
-    embedding_model: str
+    """현재 RAG 서비스의 준비 상태입니다."""
+
+    status: Literal["ready", "needs_configuration", "needs_index"] = Field(
+        description="ready이면 채팅 요청을 처리할 수 있습니다."
+    )
+    provider: Literal["local", "openai"] = Field(description="현재 선택된 답변 제공자입니다.")
+    openai_configured: bool = Field(description="OpenAI 키 또는 로컬 제공자가 준비됐는지 여부입니다.")
+    indexed_chunks: int = Field(description="Chroma DB에 저장된 검색 청크 수입니다.")
+    chat_model: str = Field(description="현재 답변 모델 이름입니다.")
+    embedding_model: str = Field(description="현재 임베딩 모델 이름입니다.")

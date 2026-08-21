@@ -1,11 +1,14 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { ChatMessage } from "./components/ChatMessage";
 import type { AssistantMessage, Message, UserMessage } from "./components/types";
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Local-network and production proxies use `/api`, while the client app adds
+// the endpoint path below. Keep both an origin URL and `/api` as valid config.
+const apiUrl = configuredApiUrl.replace(/\/api\/?$/, "");
 const suggestions = [
   "최근 수강신청 공지를 알려줘",
   "캡스톤디자인 신청 방법이 뭐야?",
@@ -27,6 +30,19 @@ export default function Home() {
   const [question, setQuestion] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const latestMessageRef = useRef<HTMLDivElement>(null);
+  const hasConversation = messages.length > 1;
+
+  useEffect(() => {
+    if (messages.length < 2) return;
+
+    requestAnimationFrame(() => {
+      const latestMessage = latestMessageRef.current;
+      if (typeof latestMessage?.scrollIntoView === "function") {
+        latestMessage.scrollIntoView({ behavior: "smooth", block: "end" });
+      }
+    });
+  }, [isLoading, messages.length]);
 
   async function submitQuestion(rawQuestion: string) {
     const trimmed = rawQuestion.trim();
@@ -88,31 +104,19 @@ export default function Home() {
 
   return (
     <main className="page-shell">
-      <div className="ambient ambient-one" />
-      <div className="ambient ambient-two" />
-
-      <section className="chat-frame" aria-label="SE 멘토 챗봇">
+      <section
+        className={`chat-frame ${hasConversation ? "has-conversation" : "is-empty"}`}
+        aria-label="SE 멘토 챗봇"
+      >
         <header className="topbar">
           <div className="brand-mark" aria-hidden="true">
             SE
           </div>
           <div className="brand-copy">
-            <p className="eyebrow">SOFTWARE ENGINEERING</p>
+            <p className="eyebrow">금오공과대학교 소프트웨어전공</p>
             <h1>SE Mentor Bot</h1>
           </div>
-          <div className="status-pill">
-            <span className="status-dot" />
-            RAG prototype
-          </div>
         </header>
-
-        <div className="intro-strip">
-          <div>
-            <span className="intro-label">OFFICIAL SOURCES</span>
-            <strong>흩어진 학과 정보를 한 번에</strong>
-          </div>
-          <p>검색된 게시글만 근거로 답하고 원문 링크를 함께 제공합니다.</p>
-        </div>
 
         <div className="message-list" aria-live="polite">
           {messages.map((message) => (
@@ -170,6 +174,7 @@ export default function Home() {
           </form>
           <p className="disclaimer">답변은 참고용입니다. 중요한 학사 일정은 원문 공지를 다시 확인하세요.</p>
         </footer>
+        <div ref={latestMessageRef} aria-hidden="true" />
       </section>
     </main>
   );

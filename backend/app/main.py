@@ -11,7 +11,7 @@ from backend.app.config import get_settings
 from backend.app.domain import BoardPost
 from backend.app.provider_factory import create_provider, effective_models, selected_provider_name
 from backend.app.rag import RAGService
-from backend.app.schemas import ChatRequest, ChatResponse, HealthResponse
+from backend.app.schemas import ApiError, ChatRequest, ChatResponse, HealthResponse
 from backend.app.storage import load_posts
 from backend.app.topic_classifier import enrich_posts
 from backend.app.topic_rules import TopicCatalog, load_topic_catalog
@@ -21,7 +21,15 @@ settings = get_settings()
 app = FastAPI(
     title="SE Mentor Bot API",
     version="0.1.0",
-    description="공개 학과 게시글을 근거로 답변하는 RAG 챗봇 API",
+    summary="금오공과대학교 소프트웨어전공 공지 기반 RAG 챗봇 API",
+    description=(
+        "공개 학과 게시글과 SE 게시판을 검색해 답변하고, "
+        "답변에 사용한 원문 게시글을 함께 반환합니다."
+    ),
+    openapi_tags=[
+        {"name": "System", "description": "서비스와 인덱스의 준비 상태를 확인합니다."},
+        {"name": "Chat", "description": "검색 근거와 함께 챗봇 답변을 생성합니다."},
+    ],
 )
 app.add_middleware(
     CORSMiddleware,
@@ -68,7 +76,12 @@ def root() -> dict[str, str]:
     return {"name": "SE Mentor Bot API", "docs": "/docs"}
 
 
-@app.get("/api/health", response_model=HealthResponse)
+@app.get(
+    "/api/health",
+    response_model=HealthResponse,
+    tags=["System"],
+    summary="서비스 상태 확인",
+)
 def health() -> HealthResponse:
     try:
         count = get_vector_store().count()
@@ -88,7 +101,16 @@ def health() -> HealthResponse:
     )
 
 
-@app.post("/api/chat", response_model=ChatResponse)
+@app.post(
+    "/api/chat",
+    response_model=ChatResponse,
+    tags=["Chat"],
+    summary="게시글 근거 기반 답변 생성",
+    responses={
+        409: {"model": ApiError, "description": "검색 인덱스가 비어 있습니다."},
+        502: {"model": ApiError, "description": "OpenAI 요청에 실패했습니다."},
+    },
+)
 async def chat(payload: ChatRequest) -> ChatResponse:
     if get_vector_store().count() == 0:
         raise HTTPException(

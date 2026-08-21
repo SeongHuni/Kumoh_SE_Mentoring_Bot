@@ -21,6 +21,14 @@ class ChromaVectorStore:
             metadata={"hnsw:space": "cosine"},
         )
 
+    def supports_topic_filters(self) -> bool:
+        """Return whether this collection has the metadata used by topic filtering."""
+        metadata = self.collection.peek(limit=1).get("metadatas", [])
+        if not metadata:
+            return True
+        first = metadata[0] or {}
+        return "topic_key" in first and "is_latest_topic" in first
+
     def reset(self) -> None:
         try:
             self.client.delete_collection(self.collection_name)
@@ -86,16 +94,16 @@ class ChromaVectorStore:
                 RetrievedChunk(
                     chunk=TextChunk(
                         id=chunk_id,
-                        post_id=str(metadata.get("post_id", "")),
+                        post_id=str(metadata.get("post_id", metadata.get("original_id", ""))),
                         source=str(metadata.get("source", "unknown")),
                         title=str(metadata.get("title", "제목 없음")),
                         text=document or "",
-                        url=str(metadata.get("url", "")),
+                        url=str(metadata.get("url", metadata.get("source_url", ""))),
                         published_at=str(metadata.get("published_at") or "") or None,
                         chunk_index=int(metadata.get("chunk_index", 0)),
-                        topic_key=str(metadata["topic_key"]),
-                        topic_label=str(metadata["topic_label"]),
-                        is_latest_topic=bool(metadata["is_latest_topic"]),
+                        topic_key=str(metadata.get("topic_key", "general")),
+                        topic_label=str(metadata.get("topic_label", "전체 공지")),
+                        is_latest_topic=bool(metadata.get("is_latest_topic", True)),
                     ),
                     score=max(0.0, min(1.0, 1.0 - float(distance))),
                 )

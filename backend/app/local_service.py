@@ -95,7 +95,7 @@ class LocalHashProvider:
             source_number += 1
             date = f" ({item.chunk.published_at})" if item.chunk.published_at else ""
             excerpt = self._excerpt(item.chunk.text, question)
-            lines.append(f"\n\n- {item.chunk.title}{date}: {excerpt} [자료 {source_number}]")
+            lines.append(f"\n\n- {item.chunk.title}{date}: {excerpt} [{source_number}]")
             if source_number >= 3:
                 break
         lines.append("\n\n정확한 신청 가능 여부와 마감일은 아래 원문 공지를 확인해 주세요.")

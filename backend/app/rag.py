@@ -54,6 +54,17 @@ class RAGService:
         return sources
 
     @staticmethod
+    def _unique_by_url(items: list[RetrievedChunk]) -> list[RetrievedChunk]:
+        unique: list[RetrievedChunk] = []
+        seen_urls: set[str] = set()
+        for item in items:
+            if item.chunk.url in seen_urls:
+                continue
+            seen_urls.add(item.chunk.url)
+            unique.append(item)
+        return unique
+
+    @staticmethod
     def _rerank(question: str, items: list[RetrievedChunk]) -> list[RetrievedChunk]:
         terms = {
             term.lower()
@@ -73,7 +84,8 @@ class RAGService:
         topic = self.topic_catalog.classify(question) if self.topic_catalog else None
         query_embedding = self.provider.embed([question])[0]
         where = None
-        if topic is not None:
+        supports_topic_filters = getattr(self.vector_store, "supports_topic_filters", lambda: True)
+        if topic is not None and supports_topic_filters():
             where = {"is_latest_topic": True}
             if topic.key != self.topic_catalog.default_topic_key:
                 where = {
@@ -82,12 +94,20 @@ class RAGService:
                         {"topic_key": topic.key},
                     ]
                 }
-        retrieved = self._rerank(
-            question, self.vector_store.query(query_embedding, self.top_k, where=where)
+        retrieval_limit = self.top_k * 3
+        retrieved_items = self.vector_store.query(
+            query_embedding, retrieval_limit, where=where
         )
+        if not retrieved_items and where is not None:
+            # Newly added topics may not exist in an index built with older metadata.
+            # Falling back keeps their official posts reachable until the next re-index.
+            retrieved_items = self.vector_store.query(query_embedding, retrieval_limit)
+        retrieved = self._rerank(question, retrieved_items)
         candidates = [item for item in retrieved if item.score >= self.min_score]
         best_score = max((item.score for item in candidates), default=0.0)
-        relevant = [item for item in candidates if item.score >= best_score * 0.75]
+        relevant = self._unique_by_url(
+            [item for item in candidates if item.score >= best_score * 0.75]
+        )[: self.top_k]
         suggestions = (
             suggested_questions(self.topic_catalog, topic.key) if topic else []
         )

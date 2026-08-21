@@ -14,6 +14,12 @@
       "suggested_questions": ["수강신청 기간은 언제야?", "수강신청 변경 방법은?"]
     },
     {
+      "key": "course_evaluation",
+      "label": "강의평가",
+      "keywords": ["강의평가", "강의 평가", "강의평"],
+      "suggested_questions": ["강의평가 기간은 언제야?", "강의평가는 어디에서 해?"]
+    },
+    {
       "key": "capstone",
       "label": "캡스톤디자인",
       "keywords": ["캡스톤디자인", "캡스톤 디자인"],

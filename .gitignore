@@ -5,6 +5,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
+backend/.pytest-tmp/
 .superpowers/
 .worktrees/
 
@@ -14,9 +15,23 @@ frontend/out/
 *.tsbuildinfo
 
 chroma_db/
+chroma-data/
 data/processed/*
 !data/processed/.gitkeep
 data/evaluation/reports/
+
+# Build output, coverage, and compiled binaries
+bin/
+obj/
+build/
+dist/
+coverage/
+frontend/coverage/
+*.exe
+*.dll
+*.so
+*.dylib
+*.pdb
 
 .DS_Store
 Thumbs.db

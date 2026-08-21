@@ -48,7 +48,7 @@ class OpenAIProvider:
     def answer(self, question: str, contexts: Sequence[RetrievedChunk]) -> str:
         context_text = "\n\n".join(
             (
-                f"[자료 {index}]\n"
+                f"[{index}]\n"
                 f"제목: {item.chunk.title}\n"
                 f"작성일: {item.chunk.published_at or '알 수 없음'}\n"
                 f"출처: {item.chunk.source}\n"
@@ -65,7 +65,7 @@ class OpenAIProvider:
                 "제공된 자료에 명시된 사실만 사용해 한국어로 답하세요. "
                 "자료에 답이 없거나 서로 충돌하면 그 사실을 분명히 말하고 추측하지 마세요. "
                 "날짜와 신청 기한은 원문 작성일 및 문맥을 함께 확인하도록 안내하세요. "
-                "답변에서 근거 자료를 [자료 1] 형식으로 표시하세요."
+                "답변에서 근거 자료를 [1] 형식으로 표시하세요."
             ),
             input=f"질문:\n{question}\n\n검색된 자료:\n{context_text}",
         )

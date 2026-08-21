@@ -34,4 +34,4 @@ def test_local_answer_contains_source_marker() -> None:
     answer = provider.answer("수강신청은 어디서 해?", [context])
 
     assert "통합정보시스템" in answer
-    assert "[자료 1]" in answer
+    assert "[1]" in answer

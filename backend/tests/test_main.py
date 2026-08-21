@@ -2,6 +2,15 @@ from backend.app import main
 from backend.app.config import Settings
 
 
+def test_openapi_documents_chat_and_health_endpoints() -> None:
+    schema = main.app.openapi()
+
+    assert schema["info"]["title"] == "SE Mentor Bot API"
+    assert schema["paths"]["/api/health"]["get"]["tags"] == ["System"]
+    assert schema["paths"]["/api/chat"]["post"]["tags"] == ["Chat"]
+    assert "409" in schema["paths"]["/api/chat"]["post"]["responses"]
+
+
 def test_get_rag_service_injects_topic_context(monkeypatch, tmp_path) -> None:
     settings = Settings(
         ai_provider="local",

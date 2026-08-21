@@ -36,6 +36,15 @@ class FakeProvider:
         return "통합정보시스템에서 신청합니다. [자료 1]"
 
 
+class CapturingProvider(FakeProvider):
+    def __init__(self) -> None:
+        self.contexts: list[RetrievedChunk] = []
+
+    def answer(self, question: str, contexts: Sequence[RetrievedChunk]) -> str:
+        self.contexts = list(contexts)
+        return "첫 번째 자료 [1], 두 번째 자료 [2]"
+
+
 class FakeStore:
     def __init__(self, results: list[RetrievedChunk]) -> None:
         self.results = results
@@ -128,6 +137,47 @@ def test_rag_returns_grounded_answer_and_source() -> None:
     assert result.grounded is True
     assert provider.answer_called is True
     assert result.sources[0].title == "캡스톤디자인 안내"
+
+
+def test_rag_uses_unique_posts_for_answer_contexts_and_sources() -> None:
+    provider = CapturingProvider()
+    first_chunk = retrieved().model_copy(
+        update={
+            "chunk": retrieved().chunk.model_copy(
+                update={"id": "kumoh:123:0", "url": "https://example.com/first"}
+            )
+        }
+    )
+    duplicate_chunk = retrieved(0.88).model_copy(
+        update={
+            "chunk": retrieved(0.88).chunk.model_copy(
+                update={"id": "kumoh:123:1", "url": "https://example.com/first"}
+            )
+        }
+    )
+    second_chunk = retrieved(0.86).model_copy(
+        update={
+            "chunk": retrieved(0.86).chunk.model_copy(
+                update={"id": "kumoh:456:0", "url": "https://example.com/second"}
+            )
+        }
+    )
+    service = RAGService(
+        provider=provider,
+        vector_store=FakeStore([first_chunk, duplicate_chunk, second_chunk]),  # type: ignore[arg-type]
+        top_k=2,
+    )
+
+    result = service.ask("강의평가 기간은 언제야?")
+
+    assert [item.chunk.url for item in provider.contexts] == [
+        "https://example.com/first",
+        "https://example.com/second",
+    ]
+    assert [source.url for source in result.sources] == [
+        "https://example.com/first",
+        "https://example.com/second",
+    ]
 
 
 def test_rag_rejects_low_similarity_without_calling_generation() -> None:

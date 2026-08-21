@@ -83,6 +83,16 @@ docker compose up --build
 
 크롤링과 인덱싱은 로컬 명령으로 먼저 수행하고, 생성된 `data/`와 `chroma_db/`가 컨테이너에 마운트되도록 구성되어 있습니다.
 
+## API 명세
+
+FastAPI가 OpenAPI 명세와 Swagger UI를 자동 생성합니다.
+
+- Swagger UI: <http://localhost:8000/docs>
+- OpenAPI JSON: <http://localhost:8000/openapi.json>
+- 같은 Wi-Fi로 공유 중이라면: `http://서버-IP:3000/docs`, `http://서버-IP:3000/openapi.json`
+
+주요 엔드포인트는 `GET /api/health`(서비스 상태)와 `POST /api/chat`(근거 기반 답변)입니다. Swagger UI에서 요청 예시를 입력해 직접 실행할 수 있습니다.
+
 ## 검증
 
 ```powershell
