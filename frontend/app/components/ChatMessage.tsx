@@ -30,11 +30,14 @@ function citedSourcesOf(content: string, sources: Source[]): Source[] {
     cited.add(Number(match[1]));
   }
 
-  const picked = sources.filter((source) => cited.has(source.index));
-
-  // 인용 표기가 하나도 없으면(모델이 규칙을 안 지킨 경우) 전부 보여준다.
-  // 근거를 아예 감추는 것보다는 낫다.
-  return picked.length > 0 ? picked : sources;
+  // 인용이 하나도 없으면 아무것도 보여주지 않는다.
+  //
+  // "자료에서 확인할 수 없습니다"라고 답한 경우가 여기에 해당한다.
+  // 검색은 top-k 를 가져왔지만 답변의 근거로 쓰이지 않은 것들이다.
+  // 그걸 "참고한 게시글"로 띄우면 답변과 정면으로 어긋난다.
+  // 실제로 휴학·복학·자퇴 질문에서 답은 확인 불가인데 지도교수 상담
+  // 게시글 5개가 근거처럼 붙어 나왔다.
+  return sources.filter((source) => cited.has(source.index));
 }
 
 export function ChatMessage({ message, isLoading, onSuggestion, onClarify }: Props) {
