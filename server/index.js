@@ -69,11 +69,103 @@ const ANSWER_RULES = [
   "9. 인사말이나 맺음말은 쓰지 않는다.",
 ].join("\n");
 
-const SUGGESTED = [
-  "수강지도 상담은 언제야?",
-  "이정연 장학금 신청 어떻게 해?",
-  "캡스톤디자인 주제 제안서 기한이 언제야?",
-];
+// 추천 질문 풀.
+//
+// 고정 3개를 계속 띄우면 챗봇이 그것만 답할 수 있는 것처럼 보인다.
+// 주제별로 묶어두고 매 응답마다 서로 다른 주제에서 3개를 뽑는다.
+//
+// 여기 있는 질문은 전부 실제로 답변되는지 확인한 것이다.
+// (41개 후보를 API에 그대로 넣어 거부·되묻기 없이 답하는지 전수 검사)
+// 추천 질문이 "자료에서 확인할 수 없습니다"로 이어지면 안 되므로,
+// 질문을 추가할 때도 반드시 먼저 돌려보고 넣는다.
+const SUGGESTED_POOL = {
+  수업: [
+    "2학기 수강신청 언제부터야?",
+    "수강지도 상담은 언제야?",
+    "수강꾸러미가 뭐야?",
+    "수강신청 가능 학점이 몇 학점이야?",
+    "공결 신청은 어떻게 해?",
+    "성적 이의신청 기간이 언제야?",
+    "조기취업자 출석인정 신청은 어떻게 해?",
+    "학점이월제가 뭐야?",
+  ],
+  학적: [
+    "조기졸업 신청 조건이 뭐야?",
+    "마이크로디그리 이수 신청은 어떻게 해?",
+    "졸업논문 결과보고서 제출 기한이 언제야?",
+    "졸업예비사정 내역은 어디서 봐?",
+    "추가이수과정 포기 신청은 어떻게 해?",
+  ],
+  장학금: [
+    "이정연 장학금 신청 어떻게 해?",
+    "외국어성적우수장학금 신청 조건이 뭐야?",
+    "장학금 종류 뭐가 있어?",
+    "KIT역량장학금이 뭐야?",
+    "성적장학생 외국어성적표는 언제까지 내?",
+  ],
+  캡스톤: [
+    "캡스톤디자인1 일정이 어떻게 돼?",
+    "캡스톤디자인 지도교수는 언제 배정돼?",
+    "학부연구생 모집하는 연구실 있어?",
+    "캡스톤디자인 지원금은 어떻게 써?",
+  ],
+  취업: [
+    "인턴십 모집 공고 있어?",
+    "채용설명회 일정 있어?",
+    "취업진로상담 교과목이 뭐야?",
+  ],
+  비교과: [
+    "방산AI 부트캠프 어떻게 참여해?",
+    "비교과 프로그램 뭐가 있어?",
+    "특강이나 캠프 모집 공고 있어?",
+  ],
+  학생회: [
+    "학과 MT 언제 가?",
+    "과잠 신청은 어떻게 해?",
+    "사물함 신청은 언제 해?",
+    "학생회비는 얼마야?",
+    "학과 동아리 뭐가 있어?",
+  ],
+  행정: [
+    "실습실 공사 언제까지 해?",
+    "학사경고자 튜터링 프로그램이 뭐야?",
+  ],
+  대학원: [
+    "학·석사 연계과정 지원은 어떻게 해?",
+    "학부생도 대학원 과목 들을 수 있어?",
+  ],
+  강의평: [
+    "자료구조 강의 어때?",
+    "객체지향소프트웨어공학 수업 어떤지 알려줘",
+    "컴퓨터구조 강의평 알려줘",
+    "웹프로그래밍 과제 많아?",
+  ],
+};
+
+const SUGGESTED_TOPICS = Object.keys(SUGGESTED_POOL);
+
+function pickRandom(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+// 서로 다른 주제에서 count 개를 뽑는다.
+// 같은 주제에서 두 개가 나오면(예: 장학금 질문 두 개) 목록이 단조로워진다.
+//
+// exclude 는 방금 받은 질문이다. 사용자가 물어본 것을 그대로 다시
+// 추천하면 안 된다. 표기가 조금 달라도(물음표, 띄어쓰기) 같은 질문으로 본다.
+function pickSuggested(exclude = "", count = 3) {
+  const normalize = (t) => t.replace(/[\s?？!.]/gu, "");
+  const skip = normalize(exclude);
+  const topics = [...SUGGESTED_TOPICS];
+  const picked = [];
+
+  while (picked.length < count && topics.length) {
+    const [topic] = topics.splice(Math.floor(Math.random() * topics.length), 1);
+    const usable = SUGGESTED_POOL[topic].filter((q) => normalize(q) !== skip);
+    if (usable.length) picked.push(pickRandom(usable));
+  }
+  return picked;
+}
 
 // ---------------------------------------------------------------- 세션
 // 프론트가 session_id 를 보내지 않으므로 클라이언트 주소로 구분한다.
@@ -192,7 +284,7 @@ async function answerQuestion(ctx, question, confirmedIntentKey) {
         sources: [],
         interpreted_intent: options[0],
         clarification_options: options,
-        suggested_questions: SUGGESTED,
+        suggested_questions: pickSuggested(question),
         recent_notices: [],
       };
     }
@@ -204,7 +296,7 @@ async function answerQuestion(ctx, question, confirmedIntentKey) {
       sources: [],
       interpreted_intent: null,
       clarification_options: [],
-      suggested_questions: SUGGESTED,
+      suggested_questions: pickSuggested(question),
       recent_notices: [],
     };
   }
@@ -217,7 +309,7 @@ async function answerQuestion(ctx, question, confirmedIntentKey) {
       sources: [],
       interpreted_intent: null,
       clarification_options: [],
-      suggested_questions: SUGGESTED,
+      suggested_questions: pickSuggested(question),
       recent_notices: [],
     };
   }
@@ -235,7 +327,7 @@ async function answerQuestion(ctx, question, confirmedIntentKey) {
       sources: [],
       interpreted_intent: null,
       clarification_options: [],
-      suggested_questions: SUGGESTED,
+      suggested_questions: pickSuggested(question),
       recent_notices: [],
     };
   }
@@ -271,7 +363,7 @@ async function answerQuestion(ctx, question, confirmedIntentKey) {
     sources,
     interpreted_intent: null,
     clarification_options: [],
-    suggested_questions: SUGGESTED,
+    suggested_questions: pickSuggested(question),
     recent_notices: [],
   };
 }
