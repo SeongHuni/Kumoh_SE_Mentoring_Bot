@@ -1,24 +1,15 @@
-import type { RecentNotice, ResponseType } from "./types";
+import type { RecentNotice } from "./types";
 
 type Props = {
   notices: RecentNotice[];
-  responseType?: ResponseType;
 };
 
-export function RecentNoticeList({ notices, responseType = "answer" }: Props) {
+export function RecentNoticeList({ notices }: Props) {
   if (notices.length === 0) return null;
 
-  const noAnswer = responseType === "no_answer";
-  const label = noAnswer ? "답변 근거와 별개인 참고용 최근 공지" : "최근 공지";
-
   return (
-    <section className="recent-notice-section" aria-label={label}>
-      <p className="notice-heading">{label}</p>
-      <p className="notice-description">
-        {noAnswer
-          ? "위 답변의 근거가 아닌 참고 자료입니다."
-          : "답변 출처와 별도로 제공하는 게시판 최신 공지입니다."}
-      </p>
+    <section className="recent-notice-section" aria-label="최근 공지">
+      <p className="notice-heading">최근 공지</p>
       <div className="recent-notice-list">
         {notices.map((notice) => (
           <a
