@@ -90,26 +90,39 @@ function isHttpUrl(value) {
   }
 }
 
-// 프론트의 isSource 검증을 통과하는 항목만 남긴다.
-// URL 없는 강의평은 여기서 빠지지만 본문 근거로는 이미 쓰였다.
+// 강의평 제목은 "과목명 (교수명) 강의평 N" 형태다. 링크가 없으므로
+// 화면에서 "어떤 과목의 어떤 교수 강의평인지"를 대신 보여주기 위해 분해한다.
+function parseReviewTitle(title) {
+  const m = String(title || "").match(/^(.+?)\s*\(([^)]+)\)\s*강의평/u);
+  if (!m) return null;
+  return { course: m[1].trim(), professor: m[2].trim() };
+}
+
+// 검색 결과를 그대로, 같은 순서로 내보낸다.
+//
+// 순서가 중요하다. 답변 프롬프트에서 [1], [2] 는 retrieved 의 순서를 그대로 쓰고,
+// 화면에서도 sources[N-1] 로 참조한다. 여기서 걸러내거나 순서를 바꾸면
+// 답변 본문의 번호와 출처 목록이 어긋난다.
+//
+// 그래서 URL 없는 강의평도 빼지 않고 url: null 로 내보낸다.
+// 화면에서 무엇을 감출지는 프론트가 정한다(실제 인용된 것만 표시).
 function toSources(retrieved) {
-  const seen = new Set();
-  const out = [];
-  for (const r of retrieved) {
+  return retrieved.map((r, i) => {
     const m = r.metadata || {};
-    if (!isHttpUrl(m.source_url)) continue;
-    if (seen.has(m.source_url)) continue;
-    if (!m.title || !m.source) continue;
-    seen.add(m.source_url);
-    out.push({
-      title: String(m.title),
-      url: String(m.source_url),
-      source: String(m.source),
+    const review = m.source === "에브리타임" ? parseReviewTitle(m.title) : null;
+
+    return {
+      index: i + 1,
+      title: String(m.title || ""),
+      url: isHttpUrl(m.source_url) ? String(m.source_url) : null,
+      source: String(m.source || ""),
       published_at: m.published_at ? String(m.published_at) : null,
       score: Number(r.score.toFixed(4)),
-    });
-  }
-  return out;
+      kind: review ? "review" : "notice",
+      course: review ? review.course : null,
+      professor: review ? review.professor : null,
+    };
+  });
 }
 
 function toClarificationOptions(candidates) {
@@ -224,7 +237,7 @@ async function answerQuestion(ctx, question, confirmedIntentKey) {
   session.addPair(question, answer);
 
   const sources = toSources(retrieved);
-  const grounded = sources.length > 0 || retrieved.length > 0;
+  const grounded = retrieved.length > 0;
 
   return {
     response_type: "answer",

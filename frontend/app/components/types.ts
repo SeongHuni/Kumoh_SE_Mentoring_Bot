@@ -1,9 +1,18 @@
+// 서버는 검색 결과를 걸러내지 않고 그대로, 같은 순서로 보낸다.
+// 답변 본문의 [1], [2] 가 sources[N-1] 을 가리키므로 순서를 바꾸면 안 된다.
+// 화면에서 무엇을 보여줄지는 프론트가 정한다(실제로 인용된 것만).
 export type Source = {
+  index: number;
   title: string;
-  url: string;
+  // 에브리타임 강의평은 원문 링크가 없어 null 이다.
+  url: string | null;
   source: string;
   published_at: string | null;
   score: number;
+  kind: "notice" | "review";
+  // 강의평일 때만 채워진다. 링크 대신 "과목 (교수)" 로 표시한다.
+  course: string | null;
+  professor: string | null;
 };
 
 export type RecentNotice = {

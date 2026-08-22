@@ -26,7 +26,8 @@ function InlineMarkdown({ text, sources }: { text: string; sources: Source[] }) 
     if (match[1]) {
       const source = sources[citationNumber - 1];
       nodes.push(
-        source ? (
+        // 강의평은 원문 링크가 없다(url === null). 그럴 때는 링크로 만들지 않는다.
+        source?.url ? (
           <a
             className="citation-link"
             href={source.url}
