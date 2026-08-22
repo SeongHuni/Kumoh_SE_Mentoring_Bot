@@ -51,11 +51,30 @@ function buildSystem(today) {
    예: 첫 질문이 "그 공지 알려줘."
 3. reject — 개인 신상, 실시간 외부 정보, 데이터 밖 일반 지식, 위험·불법 요청일 때
 
+질문이 짧다는 이유로 reject 하지 않는다. "MT 언제야?", "엠티 가?", "과잠 신청" 처럼
+단어 몇 개뿐이어도 학과 행사·제도를 가리키면 search 로 처리한다.
+장학금·행사 이름에 사람 이름이 들어가는 경우(예: 이정연 장학금)도 개인 신상이 아니다.
+
 이전 대화에 주제가 하나만 있으면 그것으로 대상을 복원해 반드시 search 로 처리한다.
 질문이 짧거나 대명사로 시작한다는 이유만으로 clarify 하지 않는다.
    예: "수강지도 상담은 언제야?" → "그럼 승인 안 되면?"
        주제가 수강지도 상담 하나뿐이므로 search.
        standalone_query = "수강지도 상담 미승인 시 수강신청 제한"
+
+[standalone_query 작성 규칙 — 중요]
+검색은 임베딩 유사도로 이루어진다. 짧은 약어나 단어 한두 개짜리 질의는
+엉뚱한 문서를 불러온다. 실제로 "MT 일정"은 TA 멘토 프로그램 공지를 먼저 찾았다.
+그래서 standalone_query 에는 대상을 특정할 맥락 단어를 반드시 넣는다.
+
+- 약어(MT, TA, SW, AI 등)나 짧은 명사만 있으면 소속·주제 단어를 덧붙인다.
+    "MT 언제야?"        -> "소프트웨어전공 학과 MT 일정"
+    "과잠 신청"          -> "소프트웨어전공 학과 과잠바 신청"
+    "SEcon 언제야"       -> "소프트웨어전공 SEcon 행사 일정"
+- 이 챗봇이 다루는 범위는 금오공과대학교 소프트웨어전공이다.
+  학과 행사·제도를 묻는 질문이면 "소프트웨어전공" 또는 "학과"를 넣는다.
+- 이미 대상이 충분히 구체적이면(공지 제목, 장학금 이름 등) 그대로 둔다.
+    "이정연 장학금 신청 방법" -> 그대로
+- 질의는 3~10 단어 정도로 만든다. 대화 원문을 통째로 붙이지 않는다.
 
 [시점(temporal_constraint) 규칙]
 - "explicit": 질문이나 대화에 연도·학기가 명시된 경우. year 에 숫자를 넣는다.
@@ -168,14 +187,20 @@ function planToFilters(plan) {
   const sources = ROUTE_SOURCES[plan.route];
   if (sources) filters.source = sources;
 
-  const categories = plan.category_candidates.filter((c) => {
-    // 에브리타임 문서는 전부 '강의평'이다. 다른 분류를 걸면 아무것도 안 나온다.
-    if (plan.route === "student_review") return c === "강의평";
-    // 공식 공지에는 '강의평'이 없다.
-    if (plan.route === "official_notice") return c !== "강의평";
-    return true;
-  });
-  if (categories.length) filters.category = categories;
+  // 분류(category)는 필터로 걸지 않는다.
+  //
+  // 300문항 측정 결과, 분류를 '완벽하게' 맞혔을 때의 Recall@5 상한이 0.803 인데
+  // 필터를 아예 안 걸면 0.740 이다. 즉 잘 맞혀도 이득은 6.3pp 뿐이다.
+  // 반면 틀리면 정답 문서가 후보에서 통째로 빠진다. 실제로 '2학기 MT 수요조사'
+  // 질의에서 계획기가 '비교과·행사'를 골랐는데 해당 공지는 '학생회'로 분류돼 있어
+  // 정답이 제외됐다. 같은 MT 주제가 '행정·안내'와 '학생회'로 흩어져 있어
+  // 분류를 정확히 맞히는 것 자체가 불가능하다.
+  //
+  // 출처(route) 필터는 유지한다 — 공지와 강의평은 성격이 분명히 다르고
+  // 문서가 어느 쪽에 속하는지도 명확하다.
+  //
+  // plan.category_candidates 는 버리지 않는다. 화면 표시와 사후 분석에 쓰고,
+  // 나중에 소프트 가중치로 활용할 여지를 남긴다.
 
   if (plan.temporal_constraint.mode === "explicit" && plan.temporal_constraint.year) {
     filters.year = plan.temporal_constraint.year;

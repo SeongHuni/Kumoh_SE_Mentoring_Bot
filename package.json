@@ -18,7 +18,10 @@
     "api": "node server/index.js",
     "web": "npm --prefix frontend run dev",
     "web:build": "npm --prefix frontend run build",
-    "web:test": "npm --prefix frontend run test"
+    "web:test": "npm --prefix frontend run test",
+    "collect:fetch": "node scripts/collect/fetch-new-posts.js",
+    "collect:convert": "node scripts/collect/convert-new-posts.js",
+    "collect:ingest": "node scripts/collect/ingest-new-posts.js"
   },
   "dependencies": {
     "chromadb": "^3.5.0"

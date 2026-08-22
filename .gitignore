@@ -31,3 +31,8 @@ outputs/chunking_experiments/**/sentence_embeddings.jsonl
 # 파이썬
 __pycache__/
 *.pyc
+
+# 벡터 DB 압축본 — Git에 넣지 않는다.
+# 28MB 바이너리이고 데이터를 갱신할 때마다 통째로 바뀌어서 저장소가 계속 무거워진다.
+# 팀원에게 줄 때는 파일로 직접 전달하거나 node scripts/make-share-bundle.js 를 쓴다.
+chroma-data.zip
