@@ -1,0 +1,48 @@
+{
+  "source": "Everytime",
+  "course": {
+    "name": "소프트웨어개론",
+    "professor": "이종열",
+    "average_rating": 4.0,
+    "review_count": 4,
+    "rating_distribution": null,
+    "assignment": null,
+    "assignment_distribution": null,
+    "group_project": null,
+    "group_project_distribution": null,
+    "grading": null,
+    "grading_distribution": null,
+    "attendance": "전자출결",
+    "exam": "두 번"
+  },
+  "reviews": [
+    {
+      "id": "소프트웨어개론_이종열_1",
+      "rating": 5,
+      "semester": "25년 2학기 수강자",
+      "likes": 0,
+      "content": "시험 전날에 확인문제 쑥 훑으면서 이해, 정리만 해도 A+ 손쉽게 나왔음. 교수님에게 질문 수시로 드림 되게 좋아하심. 확실하게 플 받고 싶으면 앞자리에 자주 앉고, 질문 몇번 드리는 걸 추천. 편차가 있겠지만 난 크게 암기할 필요도 없었고 너무 꿀과목이였음"
+    },
+    {
+      "id": "소프트웨어개론_이종열_2",
+      "rating": 5,
+      "semester": "25년 2학기 수강자",
+      "likes": 0,
+      "content": "소프트웨어 관련 과목들을 간단하게 배우는 과목입니다.\n교수님이 제공해주시는 pdf자료를 바탕으로 수업이 진행됩니다.\n과제는 적고, 수업을 들었다면 충분히 할 수 있는 수준입니다.\n시험은 교수님이 제공해주시는 확인문제와 pdf 내용에서만 나옵니다.\n교수님이 열정적이셔서 수업을 듣는데 지루함은 없습니다."
+    },
+    {
+      "id": "소프트웨어개론_이종열_3",
+      "rating": 5,
+      "semester": "25년 2학기 수강자",
+      "likes": 0,
+      "content": "1학년 2학기라 학생들이 공부 안해서 학점따기 쉬움\n과제로 내라고 한 확인문제 1,2 달달 외우면 A이상 확정\n앞자리 앉는거 좋아하셔서 앞자리 앉으면 플러스 달아주십니다. 참고요.\n약간 컴소공과의 전공분야 교양느낌 수업"
+    },
+    {
+      "id": "소프트웨어개론_이종열_4",
+      "rating": 1,
+      "semester": "25년 2학기 수강자",
+      "likes": 0,
+      "content": "교수도 아니면서 도대체 왜 전공을 가르치는지 의문\n복학하면 컴소공에서 없어져있길 바람"
+    }
+  ]
+}

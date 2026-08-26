@@ -1,0 +1,27 @@
+{
+  "source": "Everytime",
+  "course": {
+    "name": "웹서버프로그래밍",
+    "professor": "김성렬",
+    "average_rating": 4.0,
+    "review_count": 1,
+    "rating_distribution": null,
+    "assignment": null,
+    "assignment_distribution": null,
+    "group_project": null,
+    "group_project_distribution": null,
+    "grading": null,
+    "grading_distribution": null,
+    "attendance": null,
+    "exam": null
+  },
+  "reviews": [
+    {
+      "id": "웹서버프로그래밍_김성렬_1",
+      "rating": 4,
+      "semester": "26년 1학기 수강자",
+      "likes": 0,
+      "content": "정말 다 좋은데 너무 많은 양을 한번에 배움 그래도 교수님은 유쾌하심"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "source": "Everytime",
+  "course": {
+    "name": "데이터베이스",
+    "professor": "김선명",
+    "average_rating": 4.33,
+    "review_count": 3,
+    "rating_distribution": null,
+    "assignment": null,
+    "assignment_distribution": null,
+    "group_project": null,
+    "group_project_distribution": null,
+    "grading": null,
+    "grading_distribution": null,
+    "attendance": null,
+    "exam": "두 번"
+  },
+  "reviews": [
+    {
+      "id": "데이터베이스_김선명_1",
+      "rating": 5,
+      "semester": "25년 1학기 수강자",
+      "likes": 0,
+      "content": "SQL문 쓸 수 있게 연습하고 이론적인 부분들 중요해보이는 것들만 공부하면 성적 잘 나옵니다."
+    },
+    {
+      "id": "데이터베이스_김선명_2",
+      "rating": 3,
+      "semester": "24년 1학기 수강자",
+      "likes": 2,
+      "content": "팀플있는데 혼자 가능하다해주심 피피티 내용이 엄청 많은데 나는 책으로 혼자 공부했는데 중간은 갔음"
+    },
+    {
+      "id": "데이터베이스_김선명_3",
+      "rating": 5,
+      "semester": "24년 1학기 수강자",
+      "likes": 2,
+      "content": "강의를 열심히 하심. 꼼꼼하게 개념을 집어주시는데 너무 열정적으로 하셔서 덩달아 끌려가는 느낌을 받음\n다만 실습위주가 아닌 진짜 개념위주라서 지루할 수는 있다만 궁금한건 본인이 직접 실습해보면 이해하기는 쉬움.\n과제부담은 거의 없었음.\n시험은 .. 허무할정도로 쉽게 나오거나 아님 어렵거나.."
+    }
+  ]
+}

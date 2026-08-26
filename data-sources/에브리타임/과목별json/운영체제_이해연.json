@@ -1,0 +1,55 @@
+{
+  "source": "Everytime",
+  "course": {
+    "name": "운영체제",
+    "professor": "이해연",
+    "average_rating": 5.0,
+    "review_count": 5,
+    "rating_distribution": null,
+    "assignment": null,
+    "assignment_distribution": null,
+    "group_project": null,
+    "group_project_distribution": null,
+    "grading": null,
+    "grading_distribution": null,
+    "attendance": "직접호명",
+    "exam": "두 번"
+  },
+  "reviews": [
+    {
+      "id": "운영체제_이해연_1",
+      "rating": 5,
+      "semester": "25년 2학기 수강자",
+      "likes": 0,
+      "content": "중간 기말때 뭐 낼건지 대놓고 알려주는 강의가 있다?!?!?!?!?"
+    },
+    {
+      "id": "운영체제_이해연_2",
+      "rating": 5,
+      "semester": "23년 2학기 수강자",
+      "likes": 0,
+      "content": "앞자리에서 수업 빡 집중하고\n시험공부 총 5시간정도 투자하니까 에이쁠 나왔어요\n과제가 조잘조잘 나오는것만 좀 귀찮음"
+    },
+    {
+      "id": "운영체제_이해연_3",
+      "rating": 5,
+      "semester": "23년 2학기 수강자",
+      "likes": 0,
+      "content": "올해가 첫 수업이라 그런지 시험난이도 조절을 잘못하신듯. 그것과는 별개로 운영체제라는 과목에서 얻어갈 수 있는건 상당히 많았던 것 같음. 시험과 과제는 호불호가 갈릴 수 있지만 강의력하나만큼은 우리과 탑3 교수님이니까 열심히 따라가셈"
+    },
+    {
+      "id": "운영체제_이해연_4",
+      "rating": 5,
+      "semester": "23년 2학기 수강자",
+      "likes": 0,
+      "content": "진짜 좋고 잘 가르치는 교수님 덕분에 얻어가는 것도 많음 근데 과제 비율에 비해 과제가 많은게 유일한 단점 그래도 이번 해에 운영체제 맡으셔서 천만다행이라 생각함"
+    },
+    {
+      "id": "운영체제_이해연_5",
+      "rating": 5,
+      "semester": "23년 2학기 수강자",
+      "likes": 0,
+      "content": "예전 운영체제보다 쾌적한 강의지만 진도가 빠름"
+    }
+  ]
+}

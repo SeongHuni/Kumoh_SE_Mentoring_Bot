@@ -1,0 +1,27 @@
+{
+  "source": "Everytime",
+  "course": {
+    "name": "정보보안과블록체인",
+    "professor": "이광희",
+    "average_rating": 4.0,
+    "review_count": 1,
+    "rating_distribution": null,
+    "assignment": null,
+    "assignment_distribution": null,
+    "group_project": null,
+    "group_project_distribution": null,
+    "grading": null,
+    "grading_distribution": null,
+    "attendance": null,
+    "exam": null
+  },
+  "reviews": [
+    {
+      "id": "정보보안과블록체인_이광희_1",
+      "rating": 4,
+      "semester": "24년 2학기 수강자",
+      "likes": 0,
+      "content": "보안과 관련된 개념들을 물흐르듯 설명하는 강의. 교수님이 굉장히 기계적이심.. 강의력이 안좋으시거나 그런건 아닌데, 생각보다 한학기 동안 많은 내용을 다루기 때문에 정신바짝 차려야 따라갈 수 있음. 특히 암호학부터는 한번 놓치면 다음 수업부터 제정신으로 듣는게 불가능함. 기말고사는 암호학 내용이 거의 절반 이상이 나옴. 계산, 증명하는 문제 좋아하심. 수업시간에는 가끔 농담도 하시는데 이상하게 복도에서 마주치면 굉장히 차가운 교수님.. 선뜻 다가가기가 어려움.\n 시험문제도 예측이 불가능함. 수업시간에 강조한 내용도 막상시험가면 자투리 문제로 살짝나오거나 안나오는 내용도 많음. 그래도 시험에 낸다고하시는건 다 내시지만 수업시간에 시험관련 언급이 거의 없어서 크게 도움은 안됨."
+    }
+  ]
+}

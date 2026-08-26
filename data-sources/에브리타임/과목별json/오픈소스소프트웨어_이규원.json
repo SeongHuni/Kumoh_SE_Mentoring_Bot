@@ -1,0 +1,48 @@
+{
+  "source": "Everytime",
+  "course": {
+    "name": "오픈소스소프트웨어",
+    "professor": "이규원",
+    "average_rating": 4.25,
+    "review_count": 4,
+    "rating_distribution": null,
+    "assignment": null,
+    "assignment_distribution": null,
+    "group_project": null,
+    "group_project_distribution": null,
+    "grading": null,
+    "grading_distribution": null,
+    "attendance": "전자출결",
+    "exam": "한 번"
+  },
+  "reviews": [
+    {
+      "id": "오픈소스소프트웨어_이규원_1",
+      "rating": 5,
+      "semester": "25년 2학기 수강자",
+      "likes": 0,
+      "content": "리눅스 강의입니다. 강의계획서에 git 적혀있긴 할텐데 거의 안한다고 봐도 무방합니다.\n과제는 수업시간에 한 명령어 응용해서 실행결과 올리는거 입니다. 거의 매주 있었어요.\n시험은 기말 한번만 쳤네요."
+    },
+    {
+      "id": "오픈소스소프트웨어_이규원_2",
+      "rating": 3,
+      "semester": "25년 2학기 수강자",
+      "likes": 0,
+      "content": "리눅스 강의. Git 수업 비중이 적어서 너무 아쉬웠음."
+    },
+    {
+      "id": "오픈소스소프트웨어_이규원_3",
+      "rating": 4,
+      "semester": "22년 2학기 수강자",
+      "likes": 0,
+      "content": "리눅스에 대해서 배우는데 진도를 엄청 천천히 나가심. 덕분에 리눅스에 익숙하지 않아도 적응할 시간이 충분하다. 다만 수업 진행이 느려서 종강할 때까지도 진도를 모두 못뺐었다.\n과제가 꽤나 많지만 어렵지 않다. 시험에 과제 내용도 많이 나오니 참고."
+    },
+    {
+      "id": "오픈소스소프트웨어_이규원_4",
+      "rating": 5,
+      "semester": "22년 2학기 수강자",
+      "likes": 0,
+      "content": "내용도 쉽고 강의 속도가 느린편\n실습위주로 진행하심.\n과제는 7개인데 그리 어렵지 않음. 중간 이하 정도\n시험은 기말 한 번"
+    }
+  ]
+}

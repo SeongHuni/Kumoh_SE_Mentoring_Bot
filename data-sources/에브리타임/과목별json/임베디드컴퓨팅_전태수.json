@@ -1,0 +1,19 @@
+{
+  "source": "Everytime",
+  "course": {
+    "name": "임베디드컴퓨팅",
+    "professor": "전태수",
+    "average_rating": null,
+    "review_count": null,
+    "rating_distribution": null,
+    "assignment": null,
+    "assignment_distribution": null,
+    "group_project": null,
+    "group_project_distribution": null,
+    "grading": null,
+    "grading_distribution": null,
+    "attendance": null,
+    "exam": null
+  },
+  "reviews": []
+}

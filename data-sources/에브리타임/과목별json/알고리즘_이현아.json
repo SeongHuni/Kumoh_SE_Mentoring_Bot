@@ -1,0 +1,41 @@
+{
+  "source": "Everytime",
+  "course": {
+    "name": "알고리즘",
+    "professor": "이현아",
+    "average_rating": 5.0,
+    "review_count": 3,
+    "rating_distribution": null,
+    "assignment": null,
+    "assignment_distribution": null,
+    "group_project": null,
+    "group_project_distribution": null,
+    "grading": null,
+    "grading_distribution": null,
+    "attendance": null,
+    "exam": null
+  },
+  "reviews": [
+    {
+      "id": "알고리즘_이현아_1",
+      "rating": 5,
+      "semester": "25년 1학기 수강자",
+      "likes": 0,
+      "content": "발표 없습니다. 아래 평가는 캡스톤에 쓸 걸 잘못 쓴 듯. 과제 등 부담은 거의 없지만 난이도가 조금 있습니다."
+    },
+    {
+      "id": "알고리즘_이현아_2",
+      "rating": 5,
+      "semester": "25년 1학기 수강자",
+      "likes": 0,
+      "content": "교수님이 객관적으로 평가하십니다. 발표때마다 피드백해주시는것도 도움이 됩니다"
+    },
+    {
+      "id": "알고리즘_이현아_3",
+      "rating": 5,
+      "semester": "25년 1학기 수강자",
+      "likes": 0,
+      "content": "자료구조 수업이 다소 밀도 있고 빡빡하게 느껴졌다면, 알고리즘 수업은 훨~씬 여유로운 분위기에서 진행됩니다. \n50분 수업 중 약 10~15분은 취업, 업계 동향 등 다양한 사담이 있고, 수업 내용이 난이도는 조금 있으나 따라가기 충분한 속도로 천천히 진행됩니다.\n다루는 주제는 점화식, 브루트포스, Divide & Conquer, Trade-off, DP, Greedy, NP 등 문제 해결 기법 전반이며, 구현보다는 이론적 이해에 초점을 둡니다. 따라서 코딩 테스트 대비용이라기보단, 알고리즘의 개념적 깊이를 쌓고 싶은 분들께 적합합니다.\n과제는 총 2개로, 중간 전후로 간단한 점화식 손풀이 과제 1개 기말 전까지 백준 티어 과제 1개가 있습니다. (요구 수준은 높지 않음)\n시험은 오픈북(책, 필기, PDF 등 모두 허용)이며, 인터넷이 차단된 컴퓨터실에서 진행됩니다. 문제는 자료를 참고하면 풀 수 있는 수준으로 출제됩니다.\n시험 스타일은 딱 손코딩 없는 오픈북 자료구조 정도로 생각하시면 됩니다. \n알고리즘에 관심 있으신 분이라면 큰 부담 없이 수강하셔도 좋습니다.\n수강평이 없어서 하나 써봤는데, 조금이나마 도움이 되었으면 좋겠습니다."
+    }
+  ]
+}

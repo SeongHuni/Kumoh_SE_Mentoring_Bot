@@ -1,0 +1,19 @@
+{
+  "source": "Everytime",
+  "course": {
+    "name": "프로그래밍응용",
+    "professor": "김시관",
+    "average_rating": null,
+    "review_count": null,
+    "rating_distribution": null,
+    "assignment": null,
+    "assignment_distribution": null,
+    "group_project": null,
+    "group_project_distribution": null,
+    "grading": null,
+    "grading_distribution": null,
+    "attendance": null,
+    "exam": null
+  },
+  "reviews": []
+}

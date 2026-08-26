@@ -1,0 +1,92 @@
+[
+  {
+    "question": "2026학년도 2학기 수강꾸러미 신청 기간이 언제인가요?",
+    "answer_doc_ids": ["kumoh-notice-49317"],
+    "type": "사실확인",
+    "note": "7/22 10:00 ~ 7/24 18:00"
+  },
+  {
+    "question": "수강꾸러미가 뭔가요?",
+    "answer_doc_ids": ["kumoh-notice-49317"],
+    "type": "개념설명",
+    "note": "장바구니처럼 미리 담아두는 제도"
+  },
+  {
+    "question": "캡스톤디자인1 팀은 몇 명으로 구성해야 하나요?",
+    "answer_doc_ids": ["kumoh-notice-49254"],
+    "type": "사실확인",
+    "note": "팀당 3명, 2인/4인 불가"
+  },
+  {
+    "question": "캡스톤디자인 담당 교수님이 누구세요?",
+    "answer_doc_ids": ["kumoh-notice-49254"],
+    "type": "사실확인",
+    "note": "김병만, 이현아, 김선명, 이해연, 전태수, 김영원"
+  },
+  {
+    "question": "이번 학기에 딥러닝 과목 들을 수 있나요?",
+    "answer_doc_ids": ["kumoh-notice-49234"],
+    "type": "변경사항",
+    "note": "방산특화딥러닝으로 대체 개설"
+  },
+  {
+    "question": "방산특화딥러닝이랑 딥러닝 둘 다 들어도 되나요?",
+    "answer_doc_ids": ["kumoh-notice-49234"],
+    "type": "조건확인",
+    "note": "상호인정 과목이라 둘 중 하나만"
+  },
+  {
+    "question": "외국어성적우수장학금 신청하려면 어떻게 하나요?",
+    "answer_doc_ids": ["kumoh-notice-49075", "kumoh-notice-49070"],
+    "type": "절차",
+    "note": "제출점수/기준점수 두 종류 공지 존재"
+  },
+  {
+    "question": "마이크로디그리 이수 신청은 어떻게 하나요?",
+    "answer_doc_ids": ["kumoh-notice-49146", "kumoh-notice-48969"],
+    "type": "절차",
+    "note": "졸업예정자용 / 24학번 이전용"
+  },
+  {
+    "question": "수강지도 상담은 언제까지 받아야 하나요?",
+    "answer_doc_ids": ["kumoh-notice-49330"],
+    "type": "사실확인",
+    "note": "7/27~8/5 18시까지 승인"
+  },
+  {
+    "question": "성적 열람하려면 뭘 해야 하나요?",
+    "answer_doc_ids": ["kumoh-notice-48976"],
+    "type": "조건확인",
+    "note": "교육만족도 조사 완료 후 열람 가능"
+  },
+  {
+    "question": "학부연구생 모집하는 연구실 있나요?",
+    "answer_doc_ids": ["kumoh-notice-48221"],
+    "type": "탐색",
+    "note": "D445 KLE Lab"
+  },
+  {
+    "question": "C++프로그래밍 강의 어떤가요?",
+    "answer_doc_ids": ["everytime_C++프로그래밍_이현아_summary"],
+    "type": "강의평_요약",
+    "note": "평점 4.82, 과제 많음"
+  },
+  {
+    "question": "이현아 교수님 수업 과제 많나요?",
+    "answer_doc_ids": ["everytime_C++프로그래밍_이현아_summary"],
+    "type": "강의평_속성",
+    "note": "과제 많은 편 91%"
+  },
+  {
+    "question": "채용설명회 일정 알려주세요",
+    "answer_doc_ids": ["kumoh-notice-48756"],
+    "type": "탐색",
+    "note": "(주)세원물산 채용설명회"
+  },
+  {
+    "question": "인턴십 지원사업 있나요?",
+    "answer_doc_ids": ["kumoh-notice-47103"],
+    "type": "탐색",
+    "note": "구미 청년 정착 인턴십"
+  }
+]

@@ -1,0 +1,226 @@
+{
+    "자료구조": {
+        "semester": 1,
+        "professor": "이현아",
+        "credit": 4,
+        "major_type": "전공",
+        "required_type": "필수"
+    },
+    "컴퓨터구조": {
+        "semester": 1,
+        "professor": "이해연",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "필수"
+    },
+    "데이터베이스": {
+        "semester": 1,
+        "professor": "김선명",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "필수"
+    },
+    "프로그래밍응용": {
+        "semester": 1,
+        "professor": "김시관",
+        "credit": 2,
+        "major_type": "전공",
+        "required_type": "필수"
+    },
+    "객체지향소프트웨어공학": {
+        "semester": 1,
+        "professor": "이종열",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "필수"
+    },
+    "창의프로젝트": {
+        "semester": 1,
+        "professor": "이규원",
+        "credit": 2,
+        "major_type": "전공",
+        "required_type": "필수"
+    },
+    "임베디드컴퓨팅": {
+        "semester": 1,
+        "professor": "전태수",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "선택"
+    },
+    "인공지능": {
+        "semester": 1,
+        "professor": "김영우",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "선택"
+    },
+    "모바일프로그래밍": {
+        "semester": 1,
+        "professor": "김시관",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "선택"
+    },
+    "컴퓨터그래픽스": {
+        "semester": 1,
+        "professor": "김영원",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "선택"
+    },
+    "윈도우즈프로그래밍": {
+        "semester": 1,
+        "professor": "김영원",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "선택"
+    },
+    "웹서버프로그래밍": {
+        "semester": 1,
+        "professor": "김성렬",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "선택"
+    },
+    "캡스톤디자인2": {
+        "semester": 1,
+        "professor": "미정",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "필수"
+    },
+    "알고리즘": {
+        "semester": 1,
+        "professor": "이현아",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "선택"
+    },
+    "웹프로젝트실무": {
+        "semester": 1,
+        "professor": "김성렬",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "선택"
+    },
+    "4차산업핵심기술": {
+        "semester": 1,
+        "professor": "김시관",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "선택"
+    },
+    "빅데이터": {
+        "semester": 1,
+        "professor": "이광희",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "선택"
+    },
+    "자바프로그래밍": {
+        "semester": 2,
+        "professor": "김병만",
+        "credit": 4,
+        "major_type": "전공",
+        "required_type": "필수"
+    },
+    "소프트웨어개론": {
+        "semester": 2,
+        "professor": "이종열",
+        "credit": 2,
+        "major_type": "전공",
+        "required_type": "선택"
+    },
+    "논리회로": {
+        "semester": 2,
+        "professor": "이광희",
+        "credit": 2,
+        "major_type": "전공",
+        "required_type": "선택"
+    },
+    "운영체제": {
+        "semester": 2,
+        "professor": "이해연",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "필수"
+    },
+    "컴퓨터네트워크": {
+        "semester": 2,
+        "professor": "김선명",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "필수"
+    },
+    "융합프로젝트": {
+        "semester": 2,
+        "professor": "김선명",
+        "credit": 2,
+        "major_type": "전공",
+        "required_type": "필수"
+    },
+    "C++프로그래밍": {
+        "semester": 2,
+        "professor": "이현아",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "선택"
+    },
+    "오픈소스소프트웨어": {
+        "semester": 2,
+        "professor": "이규원",
+        "credit": 2,
+        "major_type": "전공",
+        "required_type": "선택"
+    },
+    "웹프로그래밍": {
+        "semester": 2,
+        "professor": "김성렬",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "선택"
+    },
+    "캡스톤디자인1": {
+        "semester": 2,
+        "professor": "미정",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "필수"
+    },
+    "디자인패턴": {
+        "semester": 2,
+        "professor": "전태수",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "선택"
+    },
+    "정보보안과블록체인": {
+        "semester": 2,
+        "professor": "이광희",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "선택"
+    },
+    "컴퓨터비전": {
+        "semester": 2,
+        "professor": "김영우",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "선택"
+    },
+    "메타버스실감기술": {
+        "semester": 2,
+        "professor": "김영원",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "선택"
+    },
+    "자연어처리": {
+        "semester": 2,
+        "professor": "이광희",
+        "credit": 3,
+        "major_type": "전공",
+        "required_type": "선택"
+    }
+}

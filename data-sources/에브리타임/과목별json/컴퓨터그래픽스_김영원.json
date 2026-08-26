@@ -1,0 +1,27 @@
+{
+  "source": "Everytime",
+  "course": {
+    "name": "컴퓨터그래픽스",
+    "professor": "김영원",
+    "average_rating": 5.0,
+    "review_count": 1,
+    "rating_distribution": null,
+    "assignment": null,
+    "assignment_distribution": null,
+    "group_project": null,
+    "group_project_distribution": null,
+    "grading": null,
+    "grading_distribution": null,
+    "attendance": null,
+    "exam": null
+  },
+  "reviews": [
+    {
+      "id": "컴퓨터그래픽스_김영원_1",
+      "rating": 5,
+      "semester": "26년 1학기 수강자",
+      "likes": 0,
+      "content": "교수님 재밌으시고 실습 위주라 생각보다는 할만한 과목\n아무래도 유니티를 하다보니 유니티 하던 사람이 들으면 좋을듯\n시험은 수업 잘 안들었으면 어려울 수 있음, 진짜 수업만 잘 들었으면 반타작은 칠 순 있겠으나 그렇다고 공부가 필요 없는 건 아니고, 나올만한 것들 잘 봐야함\n유니티, 게임 좋아하면 추천은 하는데 프로젝트 잘 만들어야 성적 잘 받을 수 있으니 참고하고, 프로젝트 관련해서 상담 요청하면 시간 내주셔서 많이 봐주셔서 엄청 도움이 되었음."
+    }
+  ]
+}

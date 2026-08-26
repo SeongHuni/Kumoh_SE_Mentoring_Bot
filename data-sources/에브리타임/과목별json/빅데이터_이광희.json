@@ -1,0 +1,27 @@
+{
+  "source": "Everytime",
+  "course": {
+    "name": "빅데이터",
+    "professor": "이광희",
+    "average_rating": 2.0,
+    "review_count": 1,
+    "rating_distribution": null,
+    "assignment": null,
+    "assignment_distribution": null,
+    "group_project": null,
+    "group_project_distribution": null,
+    "grading": null,
+    "grading_distribution": null,
+    "attendance": null,
+    "exam": null
+  },
+  "reviews": [
+    {
+      "id": "빅데이터_이광희_1",
+      "rating": 2,
+      "semester": "26년 1학기 수강자",
+      "likes": 0,
+      "content": "아무리 생각해도 기말고사는 너무했다 생각함. \n강의 자체는 괜찮았는데 \n기말고사가 수업에서 자세히 설명해주지 않은 쪽으로 나왔음.\n주마다 퀴즈 풀게 하는게 문제는 아니지만 \n개인적으로 압박이 좀 걸렸음. \n기말고사 대해선 개인적인 주장이나 생각일 수 있으나 \n아무리 생각해도 너무했다고 생각함. 나머지는 괜찮음."
+    }
+  ]
+}

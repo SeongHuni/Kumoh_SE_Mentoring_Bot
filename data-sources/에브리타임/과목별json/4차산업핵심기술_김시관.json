@@ -1,0 +1,27 @@
+{
+  "source": "Everytime",
+  "course": {
+    "name": "4차산업핵심기술",
+    "professor": "김시관",
+    "average_rating": 5.0,
+    "review_count": 1,
+    "rating_distribution": null,
+    "assignment": null,
+    "assignment_distribution": null,
+    "group_project": null,
+    "group_project_distribution": null,
+    "grading": null,
+    "grading_distribution": null,
+    "attendance": null,
+    "exam": null
+  },
+  "reviews": [
+    {
+      "id": "4차산업핵심기술_김시관_1",
+      "rating": 5,
+      "semester": "25년 1학기 수강자",
+      "likes": 1,
+      "content": "수업은 발표만하고 시험문제도 수강생들이 만든거 그대로 나옴\n시험준비 2시간깔짝하고 발표만해도 A+ 나옴 갸꿀"
+    }
+  ]
+}

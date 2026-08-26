@@ -1,0 +1,19 @@
+{
+  "source": "Everytime",
+  "course": {
+    "name": "논리회로",
+    "professor": "이광희",
+    "average_rating": null,
+    "review_count": null,
+    "rating_distribution": null,
+    "assignment": null,
+    "assignment_distribution": null,
+    "group_project": null,
+    "group_project_distribution": null,
+    "grading": null,
+    "grading_distribution": null,
+    "attendance": null,
+    "exam": null
+  },
+  "reviews": []
+}

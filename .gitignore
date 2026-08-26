@@ -40,3 +40,11 @@ chroma-data.zip
 # 빌드 산출물 / 임시 백업
 frontend/tsconfig.tsbuildinfo
 outputs/frontend-src-backup/
+
+# 코퍼스 백업 (적재 전 스냅샷). 재생성 가능하고 1.8MB 라 매번 통째로 바뀐다.
+outputs/corpus-backup-*.json
+
+# 보관용 폴더는 저장소 밖(../\_archive/)에 둔다.
+# 옛 공유 번들(sw-rag-share), 크롤 원본 3종, zip 중복본이 들어 있다.
+# 챗봇 동작에는 필요 없고, 원본 대조가 필요할 때만 로컬에서 본다.
+_archive/
