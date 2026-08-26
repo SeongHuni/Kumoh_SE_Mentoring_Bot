@@ -145,7 +145,7 @@ node scripts/chat.js "질문1" "질문2"   # 여러 질문을 한 세션으로
 }
 ```
 
-`GET /api/health` · `GET /api/live` 도 있습니다.
+`GET /api/health` 도 있습니다. API 문서는 http://localhost:8787/docs 에서 볼 수 있습니다.
 
 > `sources[].url`은 유효한 http(s) URL이어야 프론트 검증을 통과합니다. 에브리타임 강의평은 URL이 없어 출처 목록에서 제외되지만 답변 근거로는 사용됩니다.
 
@@ -155,7 +155,7 @@ node scripts/chat.js "질문1" "질문2"   # 여러 질문을 한 세션으로
 
 ```
 ├── frontend/            Next.js 15 + React 19 (팀원 구현 UI)
-├── server/index.js      HTTP API — 프론트 계약에 맞춘 응답
+├── backend/             FastAPI — 검색 계획기 · 답변 규칙 · 세션
 ├── scripts/
 │   ├── chat.js              대화형 CLI (기본)
 │   ├── chat-noboost.js      대조군 — 가중치 미적용

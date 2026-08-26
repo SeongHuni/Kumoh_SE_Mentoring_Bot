@@ -11,7 +11,8 @@
   7. 답변 생성     검색된 자료만 근거로
   8. 출처          검색된 순서 그대로, 걸러내지 않고
 
-(Node 판 server/index.js 의 answerQuestion 을 옮긴 것이다.)
+원래 Node 서버의 answerQuestion 이었다. 백엔드를 Python 으로 일원화하면서
+server/index.js 는 지웠고, 지금은 여기가 정본이다.
 """
 
 from __future__ import annotations

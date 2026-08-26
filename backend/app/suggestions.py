@@ -8,7 +8,7 @@
 추천 질문이 "자료에서 확인할 수 없습니다"로 이어지면 안 되므로,
 질문을 추가할 때도 반드시 먼저 돌려보고 넣는다.
 
-(Node 판 server/index.js 의 SUGGESTED_POOL 을 옮긴 것이다.)
+원래 Node 서버의 SUGGESTED_POOL 이었다. server/index.js 는 지웠다.
 """
 
 from __future__ import annotations

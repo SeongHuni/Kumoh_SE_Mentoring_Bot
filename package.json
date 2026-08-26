@@ -15,7 +15,7 @@
     "chroma:py": "chroma run --path ./chroma-data --port 8000",
     "chat:k8": "node scripts/chat.js --k 8",
     "chat:noboost": "node scripts/chat-noboost.js",
-    "api": "node server/index.js",
+    "api": "python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8787",
     "web": "npm --prefix frontend run dev",
     "web:build": "npm --prefix frontend run build",
     "web:test": "npm --prefix frontend run test",

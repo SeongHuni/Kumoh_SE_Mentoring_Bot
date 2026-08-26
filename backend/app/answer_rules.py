@@ -16,7 +16,8 @@
 
 측정: 과잉거부 5/12 -> 0/14, 환각 1/4 -> 0/4
 
-(Node 판 server/index.js 의 ANSWER_RULES 를 옮긴 것이다.)
+이 규칙은 원래 Node 서버에 있었다. 백엔드를 Python 으로 일원화하면서
+server/index.js 는 지웠고, 지금은 여기가 정본이다.
 """
 
 from __future__ import annotations

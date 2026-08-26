@@ -53,14 +53,14 @@ if (Test-Endpoint "http://localhost:8000/api/v2/heartbeat") {
 }
 
 # 2) API
-if (Test-Endpoint "http://localhost:8787/api/live") {
+if (Test-Endpoint "http://localhost:8787/api/health") {
     Write-Host "  API(8787): 이미 실행 중" -ForegroundColor DarkGray
 } else {
     Write-Host "  API(8787) 시작..." -ForegroundColor DarkGray
-    Start-Process -FilePath "node" -ArgumentList "server/index.js" `
+    Start-Process -FilePath "python" -ArgumentList "-m","uvicorn","backend.app.main:app","--host","127.0.0.1","--port","8787" `
         -WorkingDirectory $PSScriptRoot -WindowStyle Hidden `
         -RedirectStandardOutput "api-server.log" -RedirectStandardError "api-server.log.err"
-    if (-not (Wait-For "http://localhost:8787/api/live" "API(8787)")) {
+    if (-not (Wait-For "http://localhost:8787/api/health" "API(8787)")) {
         Write-Host "  로그: api-server.log.err" -ForegroundColor Red
         Read-Host "`n  엔터를 누르면 종료합니다"; exit 1
     }
