@@ -48,3 +48,6 @@ outputs/corpus-backup-*.json
 # 옛 공유 번들(sw-rag-share), 크롤 원본 3종, zip 중복본이 들어 있다.
 # 챗봇 동작에는 필요 없고, 원본 대조가 필요할 때만 로컬에서 본다.
 _archive/
+
+# Chroma SQLite 백업 (적재 전 스냅샷). 26MB 바이너리라 저장소에 넣지 않는다.
+outputs/chroma-sqlite-backup-*.bak
