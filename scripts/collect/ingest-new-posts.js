@@ -3,6 +3,9 @@
 //   node scripts/collect/ingest-new-posts.js            실제 반영
 //   node scripts/collect/ingest-new-posts.js --dry-run  무엇이 바뀌는지만 확인
 //
+// 다른 원천을 넣을 때는 --input 으로 변환 결과 파일을 지정한다.
+//   node scripts/collect/ingest-new-posts.js --input outputs/faq_converted.json --dry-run
+//
 // 기존 1,474청크는 그대로 두고 새 청크만 얹는다. 전체 재적재가 아니므로
 // 임베딩 비용도 신규분만 든다.
 //
@@ -23,7 +26,14 @@ const { COLLECTION, CHROMA_URL, connectionOptions, waitForServer } = require("..
 
 const ROOT = process.cwd();
 const CORPUS = path.join(ROOT, "data", "document통합파일(에타리뷰분리).json");
-const NEW_DOCS = path.join(ROOT, "outputs", "new_posts_converted.json");
+// 기본값은 게시판 새 글이다. --input 으로 다른 변환 결과를 지정할 수 있다.
+const inputArg = (() => {
+  const i = process.argv.indexOf("--input");
+  return i >= 0 ? process.argv[i + 1] : null;
+})();
+const NEW_DOCS = inputArg
+  ? path.resolve(ROOT, inputArg)
+  : path.join(ROOT, "outputs", "new_posts_converted.json");
 const EXP_DIR = path.join(ROOT, "outputs", "chunking_experiments", "D_500");
 const CHUNK_SIZE = 500;
 const DRY = process.argv.includes("--dry-run");
