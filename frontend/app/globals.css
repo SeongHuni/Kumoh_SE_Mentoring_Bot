@@ -7,6 +7,9 @@
   --green: #176b52;
   --green-dark: #104c3b;
   --green-pale: #e9f2ec;
+  /* 되묻기 패널 바탕. green-pale 은 블록처럼 무거워서 한 단계 더 내렸다. */
+  --green-wash: #f5faf7;
+  --green-hairline: #dde9e2;
 }
 
 * {
@@ -595,5 +598,114 @@ a {
     justify-content: center;
     padding: 0;
     font-size: 17px;
+  }
+}
+
+/* ---------------------------------------------------------------- 되묻기
+   대상이 특정되지 않았을 때 선택지를 보여주는 패널.
+   답변이 아니라 '질문을 좁히는 단계'라는 것이 보여야 해서, 답변 말풍선과
+   달리 연한 바탕에 왼쪽 굵은 선을 둔다.
+
+   스타일이 원래 없어서 브라우저 기본 버튼으로 렌더되고 있었다. */
+.intent-panel {
+  display: grid;
+  gap: 9px;
+  margin: 10px 0 0;
+  padding: 12px 14px;
+  /* 바탕을 옅게 내리면 흰 카드와의 대비가 약해진다.
+     그래서 헤어라인 테두리로 '한 묶음'이라는 것을 대신 표시한다. */
+  border: 1px solid var(--green-hairline);
+  border-left: 2px solid #8fb9a5;
+  border-radius: 4px 10px 10px 4px;
+  background: var(--green-wash);
+}
+
+.intent-panel-heading {
+  margin: 0;
+  color: #3f6b58;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.intent-options {
+  display: grid;
+  gap: 6px;
+}
+
+/* 세로로 쌓는다. 가로로 흘리면 항목마다 폭이 달라 눈이 따라가기 어렵고,
+   좁은 화면에서 줄바꿈이 지저분해진다. */
+.intent-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d5e3da;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.12s ease, background 0.12s ease, transform 0.12s ease;
+}
+
+.intent-option:hover:not(:disabled) {
+  border-color: var(--green);
+  background: #fff;
+  transform: translateX(2px);
+}
+
+.intent-option:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+.intent-option:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.intent-option-text {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.intent-option-label {
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.intent-option-hint {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+/* 화살표는 장식이라 평소엔 물러나 있다가 hover 때 드러난다. */
+.intent-option-arrow {
+  flex: none;
+  color: var(--green);
+  font-size: 13px;
+  opacity: 0.45;
+  transition: opacity 0.12s ease;
+}
+
+.intent-option:hover:not(:disabled) .intent-option-arrow {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intent-option,
+  .intent-option-arrow {
+    transition: none;
+  }
+
+  .intent-option:hover:not(:disabled) {
+    transform: none;
   }
 }
