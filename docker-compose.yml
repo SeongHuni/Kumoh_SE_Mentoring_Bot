@@ -21,10 +21,17 @@
 # 둘 다 8000 이면 포트 게시가 조용히 실패하고, 그러면 "컨테이너는 떠 있는데
 # 접속이 안 되는" 상태가 된다. 실제로 그렇게 한 번 막혔다.
 
+# [컨테이너 이름]
+# container_name 을 고정하지 않는다. 고정하면 같은 이름의 컨테이너가 이미
+# 있을 때 "name is already in use" 로 실패한다. 저장소를 두 곳에 클론했거나
+# 옛 컨테이너가 남아 있으면 바로 걸린다.
+# 이름을 비워두면 Docker 가 폴더 이름을 앞에 붙여 알아서 구분한다.
+# compose 명령은 서비스 이름(chroma, backend, frontend)을 쓰므로 불편함이 없다.
+#   docker compose logs -f backend
+#
 services:
   chroma:
     image: chromadb/chroma:latest
-    container_name: chroma
     restart: unless-stopped
     ports:
       - "8000:8000"
@@ -38,7 +45,6 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    container_name: se-backend
     restart: unless-stopped
     depends_on:
       - chroma
@@ -67,7 +73,6 @@ services:
         # 이 값은 빌드 시점에 자바스크립트 번들에 박힌다.
         # 브라우저가 호출하는 주소이므로 컨테이너 이름이 아니라 호스트 주소여야 한다.
         NEXT_PUBLIC_API_URL: http://localhost:8787
-    container_name: se-frontend
     restart: unless-stopped
     depends_on:
       - backend
