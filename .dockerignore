@@ -1,4 +1,45 @@
-# 시드 이미지 빌드 시 chroma-data 외에는 아무것도 보내지 않는다.
-# outputs/가 917MB라 이걸 빼지 않으면 빌드 컨텍스트 전송만으로 수 분이 걸린다.
-*
-!chroma-data
+# 빌드 컨텍스트에서 뺄 것.
+#
+# 전에는 "* 로 다 빼고 chroma-data 만 허용"하는 파일이었다. 시드 이미지 하나만
+# 만들 때는 맞았지만, 지금은 backend/ 와 frontend/ 소스를 빌드해야 해서
+# 그대로 두면 COPY 가 전부 실패한다.
+
+# 비밀 — 이미지에 절대 굽지 않는다.
+# 키는 compose 의 env_file 로 실행 시점에만 넘긴다.
+.env
+.env.*
+.secrets/
+embedding-api-key.txt
+
+# 의존성 (이미지 안에서 다시 설치한다)
+node_modules
+**/node_modules
+frontend/.next
+frontend/out
+
+# 벡터 DB — 26MB 이고 볼륨으로 붙이므로 이미지에 넣지 않는다.
+chroma-data/
+chroma-data-python-backup/
+
+# 실험 산출물 — 917MB. 이걸 안 빼면 빌드 컨텍스트 전송만으로 수 분이 걸린다.
+outputs/
+dist/
+
+# 저장소 밖 보관용
+_archive/
+
+# 이미지에 필요 없는 것
+.git
+.gitignore
+*.log
+*.log.err
+__pycache__/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+docs/
+experiments/
+data-sources/
+scripts/
+server/
+tests/

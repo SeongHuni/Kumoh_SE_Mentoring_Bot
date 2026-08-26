@@ -1,3 +1,26 @@
+# 서비스 전체를 한 번에 띄운다.
+#
+#   docker compose up -d --build     처음이거나 코드를 고쳤을 때
+#   docker compose up -d             그다음부터
+#   docker compose logs -f backend   로그 보기
+#   docker compose down              전부 내리기
+#
+# 뜨고 나면 http://localhost:3000 이다.
+#
+# [실행 전 준비]
+# 프로젝트 루트에 .env 파일이 있어야 한다. 최소한 이 한 줄이 필요하다.
+#   OPENAI_API_KEY=sk-...
+# .env 는 .gitignore 에 있으므로 저장소에 올라가지 않는다.
+#
+# [포트]
+#   3000  프론트 (사용자가 여는 주소)
+#   8787  백엔드 API (프론트가 브라우저에서 직접 호출한다)
+#   8000  Chroma (컨테이너끼리만 쓴다. 호스트 게시는 디버깅용)
+#
+# 백엔드를 8787 로 둔 이유는 Chroma 가 8000 을 쓰기 때문이다.
+# 둘 다 8000 이면 포트 게시가 조용히 실패하고, 그러면 "컨테이너는 떠 있는데
+# 접속이 안 되는" 상태가 된다. 실제로 그렇게 한 번 막혔다.
+
 services:
   chroma:
     image: chromadb/chroma:latest
@@ -9,5 +32,47 @@ services:
     volumes:
       - ./chroma-data:/data
     # healthcheck는 두지 않는다. Rust 기반 공식 이미지에는 curl/wget이 없어
-    # 컨테이너 안에서 HTTP를 찔러볼 방법이 없다. 대신 scripts/load-chroma.js가
-    # 호스트에서 heartbeat를 재시도하며 기다린다.
+    # 컨테이너 안에서 HTTP를 찔러볼 방법이 없다. 대신 백엔드가 재시도하며 기다린다.
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: se-backend
+    restart: unless-stopped
+    depends_on:
+      - chroma
+    ports:
+      - "8787:8787"
+    environment:
+      # 컨테이너 안에서는 localhost 가 자기 자신이다.
+      # 다른 컨테이너는 compose 가 만들어주는 서비스 이름으로 찾는다.
+      CHROMA_URL: http://chroma:8000
+      CHROMA_COLLECTION: sw_notice_d500
+      OPENAI_CHAT_MODEL: gpt-4o-mini
+      OPENAI_EMBEDDING_MODEL: text-embedding-3-small
+      # 프론트는 브라우저에서 호출하므로 호스트 주소로 들어온다.
+      CORS_ORIGINS: http://localhost:3000
+    env_file:
+      - .env
+    volumes:
+      # 중요도 규칙은 코드가 아니라 데이터라서, 고칠 때마다 다시 빌드하지 않도록 붙인다.
+      - ./data/importance.json:/app/data/importance.json:ro
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        # 이 값은 빌드 시점에 자바스크립트 번들에 박힌다.
+        # 브라우저가 호출하는 주소이므로 컨테이너 이름이 아니라 호스트 주소여야 한다.
+        NEXT_PUBLIC_API_URL: http://localhost:8787
+    container_name: se-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    environment:
+      # /docs 같은 서버 사이드 프록시는 컨테이너 네트워크로 간다.
+      API_PROXY_TARGET: http://backend:8787
