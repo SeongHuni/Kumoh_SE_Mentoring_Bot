@@ -52,6 +52,7 @@ class OpenAIRagClient:
         response = self.answer_client.responses.create(
             model=self.settings.answer_model,
             store=False,
+            temperature=self.settings.answer_temperature,
             max_output_tokens=700,
             instructions=(
                 "당신은 금오공과대학교 소프트웨어공학과 안내 도우미입니다. "

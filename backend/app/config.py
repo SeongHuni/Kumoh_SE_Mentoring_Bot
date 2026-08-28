@@ -26,6 +26,7 @@ CHUNK_SIZE_TOKENS = 500
 CHUNK_OVERLAP_TOKENS = 0
 RAG_TOP_K = 5
 CATEGORY_PROBE_K = 20
+ANSWER_TEMPERATURE = 0.0
 
 
 @dataclass(frozen=True)
@@ -41,6 +42,7 @@ class Settings:
     chunk_overlap_tokens: int = CHUNK_OVERLAP_TOKENS
     top_k: int = RAG_TOP_K
     category_probe_k: int = CATEGORY_PROBE_K
+    answer_temperature: float = ANSWER_TEMPERATURE
 
     @property
     def api_keys_configured(self) -> bool:
@@ -54,4 +56,5 @@ def get_settings() -> Settings:
         answer_api_key=_first_nonempty("ANSWER_API_KEY"),
         embedding_model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small").strip(),
         answer_model=os.getenv("ANSWER_MODEL", "gpt-4.1-mini").strip(),
+        answer_temperature=float(os.getenv("ANSWER_TEMPERATURE", str(ANSWER_TEMPERATURE))),
     )

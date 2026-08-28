@@ -7,6 +7,7 @@ def test_defaults_target_the_prepared_chroma_collection(monkeypatch) -> None:
         "ANSWER_API_KEY",
         "EMBEDDING_MODEL",
         "ANSWER_MODEL",
+        "ANSWER_TEMPERATURE",
     ):
         monkeypatch.delenv(name, raising=False)
     get_settings.cache_clear()
@@ -16,6 +17,16 @@ def test_defaults_target_the_prepared_chroma_collection(monkeypatch) -> None:
     assert settings.chroma_path.name == "chroma-data"
     assert settings.chroma_collection == "sw_notice_d500"
     assert settings.embedding_model == "text-embedding-3-small"
+    assert settings.answer_temperature == 0.0
     assert settings.chunk_size_tokens == 500
     assert settings.chunk_overlap_tokens == 0
     assert not settings.api_keys_configured
+
+
+def test_answer_temperature_can_be_overridden(monkeypatch) -> None:
+    monkeypatch.setenv("ANSWER_TEMPERATURE", "0.2")
+    get_settings.cache_clear()
+
+    settings = get_settings()
+
+    assert settings.answer_temperature == 0.2
