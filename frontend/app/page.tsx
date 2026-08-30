@@ -6,18 +6,34 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 // 대화로 이어진다. 서버가 접속 주소(IP)로 사용자를 구분하는 방식은 같은
 // 네트워크의 여러 기기가 하나의 IP 뒤로 묶이면(NAT) 대화가 섞일 수 있어서,
 // 그것과 무관하게 항상 구분되도록 브라우저마다 고유 ID 를 만들어 보낸다.
+// crypto.randomUUID() 는 보안 컨텍스트(HTTPS)에서만 쓸 수 있다.
+// 발표장 접속은 IP:포트 로 하는 일반 HTTP 라 보안 컨텍스트가 아니고,
+// iOS Safari 는 이때 이 함수를 막는다. 실제로 이것 때문에 페이지 전체가
+// "client-side exception" 으로 죽었다. crypto 를 쓸 수 없는 환경에서도
+// 절대 던지지 않는 대안으로 만든다.
+function randomId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    try {
+      return crypto.randomUUID();
+    } catch {
+      // 보안 컨텍스트가 아니면 여기로 떨어진다. 아래 대안으로 넘어간다.
+    }
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 function getSessionId(): string {
   const KEY = "se-chat-session-id";
   try {
     const existing = window.localStorage.getItem(KEY);
     if (existing) return existing;
-    const created = crypto.randomUUID();
+    const created = randomId();
     window.localStorage.setItem(KEY, created);
     return created;
   } catch {
     // 개인정보 보호 모드 등으로 localStorage 를 못 쓰면 매 요청 새 ID.
     // 대화 이력이 안 이어질 뿐 기능은 그대로 동작한다.
-    return crypto.randomUUID();
+    return randomId();
   }
 }
 
