@@ -1,16 +1,17 @@
 import type { ReactNode } from "react";
 
-import { collectListItems } from "./ListCollector";
+import {
+  ORDERED_ITEM,
+  UNORDERED_ITEM,
+  collectOrderedItems,
+  collectUnorderedItems,
+} from "./ListCollector";
 import type { Source } from "./types";
 
 type Props = {
   content: string;
   sources: Source[];
 };
-
-// 목록 항목 판별. collectListItems 와 같은 정규식을 써야 하므로 상수로 둔다.
-const UNORDERED_ITEM = /^[-*+]\s+(.+)$/;
-const ORDERED_ITEM = /^\d+[.)]\s+(.+)$/;
 
 const inlineToken = /(\[(?:자료\s*)?(\d+)\])|(\[([^\]]+)\]\((https?:\/\/[^\s)]+)\))|(`[^`]+`)|(\*\*[^*]+\*\*)|(__[^_]+__)|(\*[^*\n]+\*)|(_[^_\n]+_)/g;
 
@@ -153,7 +154,7 @@ export function MessageMarkdown({ content, sources }: Props) {
 
     const unordered = line.match(UNORDERED_ITEM);
     if (unordered) {
-      const collected = collectListItems(lines, lineIndex, UNORDERED_ITEM);
+      const collected = collectUnorderedItems(lines, lineIndex);
       const items = collected.items;
       lineIndex = collected.nextIndex;
       blocks.push(
@@ -170,14 +171,23 @@ export function MessageMarkdown({ content, sources }: Props) {
 
     const ordered = line.match(ORDERED_ITEM);
     if (ordered) {
-      const collected = collectListItems(lines, lineIndex, ORDERED_ITEM);
+      const collected = collectOrderedItems(lines, lineIndex);
       const items = collected.items;
       lineIndex = collected.nextIndex;
       blocks.push(
         <ol key={`ordered-${lineIndex}`}>
           {items.map((item, index) => (
-            <li key={`${item}-${index}`}>
-              <InlineMarkdown text={item} sources={sources} />
+            <li key={`${item.text}-${index}`}>
+              <InlineMarkdown text={item.text} sources={sources} />
+              {item.children.length > 0 && (
+                <ul>
+                  {item.children.map((child, childIndex) => (
+                    <li key={`${child}-${childIndex}`}>
+                      <InlineMarkdown text={child} sources={sources} />
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))}
         </ol>,
