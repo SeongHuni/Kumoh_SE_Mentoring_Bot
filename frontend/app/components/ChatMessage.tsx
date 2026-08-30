@@ -25,8 +25,11 @@ function isAssistantMessage(message: Message): message is AssistantMessage {
 //
 // 번호는 다시 매기지 않는다. 본문의 [3] 과 목록의 [3] 이 같은 자료를 가리켜야 한다.
 function citedSourcesOf(content: string, sources: Source[]): Source[] {
+  // MessageMarkdown 의 inlineToken 과 같은 형태를 받아야 한다.
+  // 본문은 [자료 1] 도 인용으로 렌더하는데 여기서 [1] 만 세면,
+  // 모델이 [자료 1] 로 쓸 때 링크는 보이는데 출처 목록이 통째로 사라진다.
   const cited = new Set<number>();
-  for (const match of content.matchAll(/\[(\d{1,2})\]/gu)) {
+  for (const match of content.matchAll(/\[(?:자료\s*)?(\d{1,2})\]/gu)) {
     cited.add(Number(match[1]));
   }
 

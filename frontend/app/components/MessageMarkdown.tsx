@@ -1,11 +1,16 @@
 import type { ReactNode } from "react";
 
+import { collectListItems } from "./ListCollector";
 import type { Source } from "./types";
 
 type Props = {
   content: string;
   sources: Source[];
 };
+
+// 목록 항목 판별. collectListItems 와 같은 정규식을 써야 하므로 상수로 둔다.
+const UNORDERED_ITEM = /^[-*+]\s+(.+)$/;
+const ORDERED_ITEM = /^\d+[.)]\s+(.+)$/;
 
 const inlineToken = /(\[(?:자료\s*)?(\d+)\])|(\[([^\]]+)\]\((https?:\/\/[^\s)]+)\))|(`[^`]+`)|(\*\*[^*]+\*\*)|(__[^_]+__)|(\*[^*\n]+\*)|(_[^_\n]+_)/g;
 
@@ -146,15 +151,11 @@ export function MessageMarkdown({ content, sources }: Props) {
       continue;
     }
 
-    const unordered = line.match(/^[-*+]\s+(.+)$/);
+    const unordered = line.match(UNORDERED_ITEM);
     if (unordered) {
-      const items: string[] = [];
-      while (lineIndex < lines.length) {
-        const item = lines[lineIndex].match(/^[-*+]\s+(.+)$/);
-        if (!item) break;
-        items.push(item[1]);
-        lineIndex += 1;
-      }
+      const collected = collectListItems(lines, lineIndex, UNORDERED_ITEM);
+      const items = collected.items;
+      lineIndex = collected.nextIndex;
       blocks.push(
         <ul key={`unordered-${lineIndex}`}>
           {items.map((item, index) => (
@@ -167,15 +168,11 @@ export function MessageMarkdown({ content, sources }: Props) {
       continue;
     }
 
-    const ordered = line.match(/^\d+[.)]\s+(.+)$/);
+    const ordered = line.match(ORDERED_ITEM);
     if (ordered) {
-      const items: string[] = [];
-      while (lineIndex < lines.length) {
-        const item = lines[lineIndex].match(/^\d+[.)]\s+(.+)$/);
-        if (!item) break;
-        items.push(item[1]);
-        lineIndex += 1;
-      }
+      const collected = collectListItems(lines, lineIndex, ORDERED_ITEM);
+      const items = collected.items;
+      lineIndex = collected.nextIndex;
       blocks.push(
         <ol key={`ordered-${lineIndex}`}>
           {items.map((item, index) => (
