@@ -1,0 +1,225 @@
+[
+  {
+    "question": "신청 어떻게 해?",
+    "clarify_options": [
+      "사물함 신청",
+      "장학금 신청",
+      "과잠 신청",
+      "현장실습 신청"
+    ],
+    "A_query": "사물함 신청 방법",
+    "B_query": "신청 방법 안내",
+    "A": {
+      "citations": 2,
+      "length": 398,
+      "refused": false,
+      "ok": true,
+      "preview": "사물함 신청은 다음과 같은 절차로 진행됩니다.  1. **신청 기간**: 2026년 1학기 사물함 신청 기간은 03"
+    },
+    "B": {
+      "citations": 2,
+      "length": 245,
+      "refused": false,
+      "ok": true,
+      "preview": "신청 방법은 다음과 같습니다:  1. **신청 경로**: (Onekit) 통합정보시스템에서 학생서비스 > 수업 > "
+    },
+    "C": {
+      "citations": 1,
+      "length": 287,
+      "refused": false,
+      "ok": true,
+      "preview": "신청 방법에 대한 정보는 공결 신청과 관련된 자료가 있습니다.   ### 공결 신청 방법: 1. **신청 경로**:"
+    }
+  },
+  {
+    "question": "일정 알려줘",
+    "clarify_options": [
+      "수강신청 일정",
+      "행사 일정",
+      "캡스톤디자인 일정",
+      "MT 일정"
+    ],
+    "A_query": "수강신청 일정",
+    "B_query": "소프트웨어전공 학과 일정 안내",
+    "A": {
+      "citations": 3,
+      "length": 377,
+      "refused": false,
+      "ok": true,
+      "preview": "자료에서 확인할 수 있는 일정은 다음과 같습니다:  - **2026학년도 1학기 수강신청 변경(정정) 기간**:  "
+    },
+    "B": {
+      "citations": 2,
+      "length": 271,
+      "refused": false,
+      "ok": true,
+      "preview": "자료에서 확인할 수 있는 일정은 다음과 같습니다:  - **대학원 신입생 모집 설명회 및 OPEN LAB**   -"
+    },
+    "C": {
+      "citations": 2,
+      "length": 124,
+      "refused": false,
+      "ok": true,
+      "preview": "자료에서 확인할 수 있는 일정은 다음과 같습니다:  - **프로그래밍응용 수업 일정**:   - 5월 15일: 자습"
+    }
+  },
+  {
+    "question": "언제야?",
+    "clarify_options": [
+      "MT 일정",
+      "수강신청 일정",
+      "캡스톤디자인 일정",
+      "홈커밍데이 일정"
+    ],
+    "A_query": "소프트웨어전공 학과 MT 일정",
+    "B_query": "소프트웨어전공 학과 행사 일정",
+    "A": {
+      "citations": 0,
+      "length": 16,
+      "refused": true,
+      "ok": false,
+      "preview": "자료에서 확인할 수 없습니다."
+    },
+    "B": {
+      "citations": 0,
+      "length": 16,
+      "refused": true,
+      "ok": false,
+      "preview": "자료에서 확인할 수 없습니다."
+    },
+    "C": {
+      "citations": 0,
+      "length": 16,
+      "refused": true,
+      "ok": false,
+      "preview": "자료에서 확인할 수 없습니다."
+    }
+  },
+  {
+    "question": "상담 받고 싶어",
+    "clarify_options": [
+      "수강지도 상담",
+      "진로 상담",
+      "학업 상담"
+    ],
+    "A_query": "수강지도 상담 일정",
+    "B_query": "수강지도 상담 안내",
+    "A": {
+      "citations": 4,
+      "length": 388,
+      "refused": false,
+      "ok": true,
+      "preview": "상담을 받고 싶다면, 수강지도 상담을 진행할 수 있습니다. 상담 방법은 온라인, 이메일, 전화, 직접 방문 등 여러"
+    },
+    "B": {
+      "citations": 5,
+      "length": 560,
+      "refused": false,
+      "ok": true,
+      "preview": "상담을 받고 싶다면, 소프트웨어전공의 경우 다음과 같은 방법으로 수강지도 상담을 진행할 수 있습니다:  - 상담 양"
+    },
+    "C": {
+      "citations": 4,
+      "length": 302,
+      "refused": false,
+      "ok": true,
+      "preview": "상담을 받고 싶다면, 수강지도 상담을 진행할 수 있습니다. 상담 방법은 다음과 같습니다:  - **온라인, 이메일,"
+    }
+  },
+  {
+    "question": "지원 받을 수 있어?",
+    "clarify_options": [
+      "장학금 지원",
+      "수업 지원",
+      "행사 지원",
+      "연구 지원"
+    ],
+    "A_query": "장학금 지원 안내",
+    "B_query": "장학금 지원 안내",
+    "A": {
+      "citations": 3,
+      "length": 392,
+      "refused": false,
+      "ok": true,
+      "preview": "지원 자격에 따라 다릅니다. 다음은 지원 가능한 장학금의 예입니다:  1. **석사우수장학금(이공계)**:    -"
+    },
+    "B": {
+      "citations": 3,
+      "length": 392,
+      "refused": false,
+      "ok": true,
+      "preview": "지원 자격에 따라 다릅니다. 다음은 지원 가능한 장학금의 예입니다:  1. **석사우수장학금(이공계)**:    -"
+    },
+    "C": {
+      "citations": 0,
+      "length": 16,
+      "refused": true,
+      "ok": false,
+      "preview": "자료에서 확인할 수 없습니다."
+    }
+  },
+  {
+    "question": "어디서 확인해?",
+    "clarify_options": [
+      "학과 공지",
+      "장학금 정보",
+      "수업 일정",
+      "행사 일정"
+    ],
+    "A_query": "소프트웨어전공 학과 공지 확인 방법",
+    "B_query": "소프트웨어전공 학과 공지 확인 방법",
+    "A": {
+      "citations": 0,
+      "length": 16,
+      "refused": true,
+      "ok": false,
+      "preview": "자료에서 확인할 수 없습니다."
+    },
+    "B": {
+      "citations": 0,
+      "length": 16,
+      "refused": true,
+      "ok": false,
+      "preview": "자료에서 확인할 수 없습니다."
+    },
+    "C": {
+      "citations": 1,
+      "length": 132,
+      "refused": false,
+      "ok": true,
+      "preview": "어디서 확인할 수 있는지에 대한 질문에 대한 답변은 다음과 같습니다:  - 학교 학사 일정은 '홈페이지 메뉴 - 교"
+    }
+  },
+  {
+    "question": "수업 추천해줘",
+    "clarify_options": [
+      "전공 과목 추천",
+      "교양 과목 추천",
+      "필수 과목 추천",
+      "선택 과목 추천"
+    ],
+    "A_query": "소프트웨어전공 추천 전공 과목",
+    "B_query": "소프트웨어전공 수업 추천",
+    "A": {
+      "citations": 0,
+      "length": 66,
+      "refused": true,
+      "ok": false,
+      "preview": "자료에서 수업 추천에 대한 구체적인 내용은 확인할 수 없습니다. 따라서, 수업 추천에 대한 정보는 제공할 수 없습니"
+    },
+    "B": {
+      "citations": 0,
+      "length": 35,
+      "refused": true,
+      "ok": false,
+      "preview": "자료에서 수업 추천에 대한 구체적인 정보는 확인할 수 없습니다."
+    },
+    "C": {
+      "citations": 0,
+      "length": 30,
+      "refused": true,
+      "ok": false,
+      "preview": "자료에서 수업 추천에 대한 정보는 확인할 수 없습니다."
+    }
+  }
+]
