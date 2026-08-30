@@ -2,6 +2,25 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 
+// 브라우저별 세션 ID. localStorage 에 한 번 만들어 두면 새로고침해도 같은
+// 대화로 이어진다. 서버가 접속 주소(IP)로 사용자를 구분하는 방식은 같은
+// 네트워크의 여러 기기가 하나의 IP 뒤로 묶이면(NAT) 대화가 섞일 수 있어서,
+// 그것과 무관하게 항상 구분되도록 브라우저마다 고유 ID 를 만들어 보낸다.
+function getSessionId(): string {
+  const KEY = "se-chat-session-id";
+  try {
+    const existing = window.localStorage.getItem(KEY);
+    if (existing) return existing;
+    const created = crypto.randomUUID();
+    window.localStorage.setItem(KEY, created);
+    return created;
+  } catch {
+    // 개인정보 보호 모드 등으로 localStorage 를 못 쓰면 매 요청 새 ID.
+    // 대화 이력이 안 이어질 뿐 기능은 그대로 동작한다.
+    return crypto.randomUUID();
+  }
+}
+
 import { ChatMessage } from "./components/ChatMessage";
 import type {
   AssistantMessage,
@@ -10,7 +29,11 @@ import type {
   UserMessage,
 } from "./components/types";
 
-const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// 빈 문자열이 기본값이다. 상대 경로(/api/chat)로 나가면 "지금 이 페이지를
+// 연 주소" 그대로 요청하게 되어, 발표장에서 IP 가 뭐든 몇 명이 접속하든
+// 항상 같은 오리진으로 맞물린다. next.config.ts 의 rewrite 가 그걸
+// 컨테이너 내부에서 backend 로 넘긴다.
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 // Local-network and production proxies use `/api`, while the client app adds
 // the endpoint path below. Keep both an origin URL and `/api` as valid config.
 const apiUrl = configuredApiUrl.replace(/\/api\/?$/, "");
@@ -35,6 +58,13 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([initialMessage]);
   const [question, setQuestion] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  // 서버 사이드 렌더링 시점에는 window 가 없으므로 useEffect 안에서만 만든다.
+  // 렌더링 결과에 쓰이는 값이 아니라 제출 시점에만 읽으므로 초기값 null 로
+  // 시작해도 사용자가 실제로 입력을 보낼 즈음에는 항상 채워져 있다.
+  const sessionIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    sessionIdRef.current = getSessionId();
+  }, []);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const latestMessageRef = useRef<HTMLDivElement>(null);
   const hasConversation = messages.length > 1;
@@ -71,6 +101,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           question: trimmed,
+          session_id: sessionIdRef.current,
           ...(options.confirmedIntentKey
             ? { confirmed_intent_key: options.confirmedIntentKey }
             : {}),

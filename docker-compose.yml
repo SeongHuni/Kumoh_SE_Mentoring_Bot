@@ -70,9 +70,15 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        # 이 값은 빌드 시점에 자바스크립트 번들에 박힌다.
-        # 브라우저가 호출하는 주소이므로 컨테이너 이름이 아니라 호스트 주소여야 한다.
-        NEXT_PUBLIC_API_URL: http://localhost:8787
+        # 빈 문자열로 둔다. 채워 넣으면 그 주소가 자바스크립트 번들에 박혀
+        # "지금 접속한 주소"와 무관하게 그 값 그대로 호출한다. 그러면 발표장에서
+        # 청중 각자의 기기가 자신의 localhost 를 호출하게 되어 시연이 깨진다.
+        # 비워두면 상대 경로(/api/chat)로 나가고, next.config.ts 의 rewrite 가
+        # 컨테이너 내부에서 backend 로 넘긴다. IP 가 뭐든 항상 맞물린다.
+        NEXT_PUBLIC_API_URL: ""
+        # rewrites() 는 next build 시점에 굳는다. 아래 environment: 의 값은
+        # 빌드가 끝난 뒤에 적용되어 이미 늦으므로, 같은 값을 빌드 인자로도 준다.
+        API_PROXY_TARGET: http://backend:8787
     restart: unless-stopped
     depends_on:
       - backend
