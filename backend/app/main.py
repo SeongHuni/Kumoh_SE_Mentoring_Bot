@@ -11,6 +11,7 @@ from openai import APIError
 from backend.app.config import get_settings
 from backend.app.domain import BoardPost
 from backend.app.provider_factory import create_provider, effective_models, selected_provider_name
+from backend.app.conversation_log import log_turn
 from backend.app.ranking import load_scoring_config
 from backend.app.rag import RAGService
 from backend.app.session import Session
@@ -143,9 +144,10 @@ async def chat(payload: ChatRequest, request: Request) -> ChatResponse:
             status_code=409,
             detail="벡터 인덱스가 비어 있습니다. 인덱싱을 먼저 실행하세요.",
         )
-    session = _get_session(_session_key(payload, request))
+    session_key = _session_key(payload, request)
+    session = _get_session(session_key)
     try:
-        return await run_in_threadpool(
+        response = await run_in_threadpool(
             get_rag_service().ask,
             payload.question,
             session,
@@ -153,3 +155,13 @@ async def chat(payload: ChatRequest, request: Request) -> ChatResponse:
         )
     except APIError as exc:
         raise HTTPException(status_code=502, detail="OpenAI API 요청에 실패했습니다.") from exc
+
+    # 기록 실패로 답변 자체가 막히면 안 되므로 별도로 감싼다.
+    try:
+        await run_in_threadpool(
+            log_turn, settings.conversations_path, session_key, payload.question, response
+        )
+    except OSError as exc:
+        print(f"대화 기록 저장 실패: {exc}")
+
+    return response

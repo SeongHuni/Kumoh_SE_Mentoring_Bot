@@ -36,6 +36,7 @@ def test_get_rag_service_wires_store_and_scoring(monkeypatch, tmp_path) -> None:
         chroma_url=None,
         importance_path=importance,
         session_ttl_seconds=1800,
+        conversations_path=tmp_path / "conversations",
         raw_posts_path=tmp_path / "posts.json",
         topic_rules_path=tmp_path / "topic_rules.json",
         rag_top_k=7,

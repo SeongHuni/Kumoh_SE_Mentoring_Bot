@@ -33,6 +33,7 @@ class Settings:
     chroma_url: str | None
     importance_path: Path
     session_ttl_seconds: int
+    conversations_path: Path
     raw_posts_path: Path
     topic_rules_path: Path
     rag_top_k: int
@@ -61,6 +62,7 @@ def get_settings() -> Settings:
         chroma_url=os.getenv("CHROMA_URL", "http://localhost:8000") or None,
         importance_path=_resolve_path(os.getenv("IMPORTANCE_PATH", "./data/importance.json")),
         session_ttl_seconds=int(os.getenv("SESSION_TTL_SECONDS", "1800")),
+        conversations_path=_resolve_path(os.getenv("CONVERSATIONS_PATH", "./data/conversations")),
         raw_posts_path=_resolve_path(os.getenv("RAW_POSTS_PATH", "./data/raw/posts.json")),
         topic_rules_path=_resolve_path(os.getenv("TOPIC_RULES_PATH", "./data/topic_rules.json")),
         rag_top_k=max(1, int(os.getenv("RAG_TOP_K", "5"))),

@@ -51,3 +51,6 @@ _archive/
 
 # Chroma SQLite 백업 (적재 전 스냅샷). 26MB 바이너리라 저장소에 넣지 않는다.
 outputs/chroma-sqlite-backup-*.bak
+
+# 청중 대화 기록 — 개인 질문 내용이라 git 에 올리지 않는다.
+data/conversations/

@@ -64,6 +64,8 @@ services:
     volumes:
       # 중요도 규칙은 코드가 아니라 데이터라서, 고칠 때마다 다시 빌드하지 않도록 붙인다.
       - ./data/importance.json:/app/data/importance.json:ro
+      # 청중 대화 기록. 호스트 폴더에 붙여야 컨테이너를 지워도 남는다.
+      - ./data/conversations:/app/data/conversations
 
   frontend:
     build:
