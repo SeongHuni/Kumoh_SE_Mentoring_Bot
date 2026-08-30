@@ -119,4 +119,43 @@ describe("MessageMarkdown 목록", () => {
     expect(container.querySelectorAll("ol")).toHaveLength(1);
     expect(container.querySelectorAll("ol > li")).toHaveLength(3);
   });
+  it("들여쓴 불릿 상세가 있어도 번호가 이어진다", () => {
+    // 실제 답변에서 가장 흔한 형태. 불릿이 3칸 들여쓰기돼 온다.
+    // 목록 판별이 줄 맨 앞만 보면 여기서 끊겨 번호가 다시 1 이 된다.
+    const content = [
+      "채용설명회 일정은 다음과 같습니다:",
+      "",
+      "1. **(주)세원물산 채용설명회**",
+      "   - 일시: 2026년 6월 18일(목) 15:00~16:00",
+      "   - 장소: 디지털관 시청각실",
+      "",
+      "2. **다쏘시스템 채용설명회**",
+      "   - 일시: 2025년 3월 19일(수) 12:30~13:30",
+      "   - 장소: 디지털관 시청각실(DB127)",
+      "",
+      "3. **GADLEX 기업체 채용 설명회**",
+      "   - 일시: 2025년 9월 17일(수) 13:00~17:00",
+      "",
+      "각 설명회에 대한 자세한 내용은 해당 자료를 참고하시기 바랍니다.",
+    ].join(NL);
+
+    const { container } = render(
+      <MessageMarkdown content={content} sources={noSources} />,
+    );
+
+    const lists = container.querySelectorAll("ol");
+    expect(lists).toHaveLength(1);
+
+    const topLevel = lists[0].querySelectorAll(":scope > li");
+    expect(topLevel).toHaveLength(3);
+
+    expect(topLevel[0].querySelectorAll("ul li")).toHaveLength(2);
+    expect(topLevel[2].querySelectorAll("ul li")).toHaveLength(1);
+
+    expect(
+      screen.getByText(
+        "각 설명회에 대한 자세한 내용은 해당 자료를 참고하시기 바랍니다.",
+      ),
+    ).toBeTruthy();
+  });
 });

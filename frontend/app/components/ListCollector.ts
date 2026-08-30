@@ -27,8 +27,17 @@
 // 번호는 우리가 매기지 않는다. <ol> 이 알아서 1, 2, 3 으로 센다.
 // LLM 이 "1." 만 반복해서 써 보내도 화면에는 제대로 나온다.
 
-export const UNORDERED_ITEM = /^[-*+]\s+(.+)$/;
-export const ORDERED_ITEM = /^\d+[.)]\s+(.+)$/;
+// 들여쓰기를 허용한다. 실제 답변은 두 형태가 다 온다.
+//
+//   1. (주)세원물산 채용설명회
+//      - 일시: ...        <- 3칸 들여쓴 불릿
+//
+//   1. 셈틀꾼 동아리
+//   - 일시: ...           <- 들여쓰기 없는 불릿
+//
+// 앞에 공백이 있다고 목록이 아니라고 보면 거기서 끊겨 번호가 다시 1 이 된다.
+export const UNORDERED_ITEM = /^\s*[-*+]\s+(.+)$/;
+export const ORDERED_ITEM = /^\s*\d+[.)]\s+(.+)$/;
 
 export type OrderedItem = {
   text: string;

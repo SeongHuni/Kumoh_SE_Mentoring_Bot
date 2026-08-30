@@ -75,7 +75,9 @@ function InlineMarkdown({ text, sources }: { text: string; sources: Source[] }) 
 }
 
 function isBlockStart(line: string) {
-  return /^(#{1,3}\s+|>\s?|[-*+]\s+|\d+[.)]\s+|```|---+$)/.test(line);
+  // 목록 판별과 같은 기준으로 들여쓰기를 허용한다.
+  // 여기서만 들여쓴 불릿을 놓치면 문단이 그 줄을 삼켜 목록이 깨진다.
+  return /^\s*(#{1,3}\s+|>\s?|[-*+]\s+|\d+[.)]\s+|```|---+$)/.test(line);
 }
 
 function Paragraph({ lines, sources }: { lines: string[]; sources: Source[] }) {
