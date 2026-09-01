@@ -24,8 +24,8 @@ docker compose up -d --build
 
 **http://localhost:3000**
 
-처음 클론한 팀원은 `chroma-data/`(벡터 DB, git에 없음)를 따로 받아야 합니다.
-전체 절차·문제 해결은 `docs/팀원_실행하기.md`를 참고하세요.
+`chroma-data/`(벡터 DB)가 저장소에 포함돼 있어서 clone 직후 바로 검색이 됩니다.
+`.env`에 `OPENAI_API_KEY`만 넣으면 됩니다. 전체 절차·문제 해결은 `docs/팀원_실행하기.md`를 참고하세요.
 
 ```bash
 curl http://localhost:8787/api/health   # indexed_chunks 가 1549 여야 정상

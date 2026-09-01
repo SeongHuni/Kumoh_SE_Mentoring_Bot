@@ -14,8 +14,8 @@ frontend/.next/
 frontend/out/
 dist/
 
-# 런타임 데이터 (재생성 가능)
-chroma-data/
+# 런타임 데이터
+# chroma-data/ 는 챗봇이 바로 동작하도록 git에 포함한다 (아래 참고).
 chroma-data-python-backup/
 outputs/.embedding_cache/
 
@@ -32,9 +32,7 @@ outputs/chunking_experiments/**/sentence_embeddings.jsonl
 __pycache__/
 *.pyc
 
-# 벡터 DB 압축본 — Git에 넣지 않는다.
-# 28MB 바이너리이고 데이터를 갱신할 때마다 통째로 바뀌어서 저장소가 계속 무거워진다.
-# 팀원에게 줄 때는 파일로 직접 전달하거나 node scripts/make-share-bundle.js 를 쓴다.
+# 벡터 DB 압축본 — chroma-data/ 를 직접 git에 넣으므로 zip은 중복이라 안 넣는다.
 chroma-data.zip
 
 # 빌드 산출물 / 임시 백업
@@ -54,3 +52,6 @@ outputs/chroma-sqlite-backup-*.bak
 
 # 청중 대화 기록 — 개인 질문 내용이라 git 에 올리지 않는다.
 data/conversations/
+
+# 접속 QR — 그날그날 IP를 인코딩하므로 git 에 올리지 않는다 (scripts/generate_qr.py 로 로컬에서 생성).
+docs/챗봇_접속_QR.png
