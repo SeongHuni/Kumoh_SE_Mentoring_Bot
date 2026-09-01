@@ -203,6 +203,7 @@ answer = self.provider.answer(question, retrieved)
 │   └── build-*.py           발표 PPTX 생성
 ├── data/
 │   ├── document통합파일(에타리뷰분리).json   원본 코퍼스 907문서
+│   ├── sample_documents.json                 문서 형식 예시 4건 (아래 참고)
 │   └── importance.json                      중요도 가중치
 ├── outputs/
 │   ├── chunking_experiments/   18개 청킹 실험 산출물
@@ -252,3 +253,30 @@ npm run eval        # 골든셋으로 검증
 node scripts/embed-chunks.js D_500    # 임베딩 생성 (본인 키로 약 $0.03)
 npm run load
 ```
+
+### 다른 문서로 chroma-data 새로 만들기
+
+이 챗봇 코퍼스가 아니라 **완전히 다른 문서 집합**으로 chroma-data를 새로 만들고 싶다면
+(다른 학과, 다른 게시판 등), `data/sample_documents.json`이 문서 형식 예시입니다.
+
+```json
+{
+  "page_content": "제목: <제목>\n출처: <source>\n분류: <category>\n작성일: <YYYY-MM-DD>\n\n<본문>",
+  "metadata": { "id": "...", "source": "...", "sourceUrl": "...", "title": "...",
+                "author": "...", "published_at": "...", "category": "...", "crawled_at": "..." }
+}
+```
+
+이 형식으로 문서 배열을 만들어 `data/document통합파일(에타리뷰분리).json` 자리에 넣고 —
+
+```bash
+node scripts/create-chunks.js         # 청킹 (D_500 등 6종 재생성)
+node scripts/embed-chunks.js D_500    # 임베딩
+npm run load                          # Chroma 적재
+```
+
+— 를 실행하면 그 문서들로 chroma-data가 만들어집니다. `category`는 11종 체계
+(`수업·장학금·행정·안내·학적·졸업·비교과·행사·취업·진로·연구·캡스톤·학생회·대학원·강의평·기타`) 중
+하나를 쓰는 걸 권합니다 — 검색 필터로는 안 쓰이지만 화면 표시에 쓰입니다. se게시판이 아닌
+출처를 기존 코퍼스에 **증분으로 얹는** 자세한 절차(스키마 필드별 의미, 강의평 제목 규칙 등)는
+`docs/데이터_추가하기.md`의 "다른 출처의 문서 수동으로 추가하기"를 참고하세요.
